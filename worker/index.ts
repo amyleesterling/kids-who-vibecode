@@ -12,7 +12,12 @@ export type ClubDatabase = {
   batch(statements: D1Statement[]): Promise<unknown[]>
 }
 
-type Env = { DB: ClubDatabase }
+type Env = {
+  DB: ClubDatabase
+  RESEND_API_KEY?: string
+  NEWSLETTER_CRON_SECRET?: string
+  NEWSLETTER_FROM_EMAIL?: string
+}
 
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), {
   status,
@@ -32,6 +37,16 @@ const validUrl = (value: unknown, required = true) => {
     return url.protocol === 'https:' ? url.toString() : null
   } catch { return null }
 }
+const validEmail = (value: unknown) => {
+  const result = text(value).toLowerCase()
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result) && result.length <= 160 ? result : null
+}
+const escapeHtml = (value: unknown) => String(value ?? '')
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#039;')
 
 async function initialize(db: ClubDatabase) {
   await ensureDatabase(db)
@@ -162,6 +177,107 @@ async function submitChallengeIdea(db: ClubDatabase, request: Request) {
   return json({ ok: true }, 201)
 }
 
+async function subscribe(db: ClubDatabase, request: Request) {
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null
+  if (!body || text(body.website)) return json({ error: 'Invalid signup' }, 400)
+
+  const email = validEmail(body.email)
+  const adultConsent = body.adultConsent === true
+  if (!email || !adultConsent) {
+    return json({ error: 'Please enter a valid grown-up email and confirm the permission box.' }, 400)
+  }
+
+  const now = new Date().toISOString()
+  const existing = await db.prepare(`SELECT id FROM subscribers WHERE email = ?`).bind(email).first<{ id: string }>()
+  if (existing) {
+    await db.prepare(`
+      UPDATE subscribers
+      SET status = 'active', adult_consent = 1, updated_at = ?
+      WHERE email = ?
+    `).bind(now, email).run()
+  } else {
+    await db.prepare(`
+      INSERT INTO subscribers (
+        id, email, adult_consent, status, unsubscribe_token, source, created_at, updated_at
+      ) VALUES (?, ?, 1, 'active', ?, 'website', ?, ?)
+    `).bind(crypto.randomUUID(), email, crypto.randomUUID(), now, now).run()
+  }
+
+  return json({ ok: true }, 201)
+}
+
+async function unsubscribe(db: ClubDatabase, request: Request) {
+  const token = new URL(request.url).searchParams.get('token') || ''
+  if (token.length < 20 || token.length > 100) return new Response('That unsubscribe link is not valid.', { status: 400 })
+  await db.prepare(`UPDATE subscribers SET status = 'unsubscribed', updated_at = ? WHERE unsubscribe_token = ?`)
+    .bind(new Date().toISOString(), token).run()
+
+  return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Unsubscribed · Vibe Code Club</title><body style="font-family:system-ui;background:#fffaf0;color:#211d38;padding:48px"><main style="max-width:620px;margin:auto"><h1>You’re unsubscribed.</h1><p>No more weekly challenge emails will be sent to this address. You can always join again at <a href="https://vibecodeclub.org/#subscribe">vibecodeclub.org</a>.</p></main></body></html>`, {
+    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
+  })
+}
+
+async function sendWeeklyChallenge(db: ClubDatabase, request: Request, env: Env) {
+  const authorization = request.headers.get('authorization') || ''
+  if (!env.NEWSLETTER_CRON_SECRET || authorization !== `Bearer ${env.NEWSLETTER_CRON_SECRET}`) {
+    return json({ error: 'Unauthorized' }, 401)
+  }
+  if (!env.RESEND_API_KEY || !env.NEWSLETTER_FROM_EMAIL) {
+    return json({ error: 'Email delivery is not configured' }, 503)
+  }
+
+  const challenge = await db.prepare(`
+    SELECT id, week_label AS weekLabel, title, prompt, brief
+    FROM challenges WHERE status = 'active' LIMIT 1
+  `).first<{ id: string; weekLabel: string; title: string; prompt: string; brief: string }>()
+  if (!challenge) return json({ error: 'No active challenge' }, 404)
+
+  const { results: subscribers } = await db.prepare(`
+    SELECT s.email, s.unsubscribe_token AS unsubscribeToken
+    FROM subscribers s
+    LEFT JOIN newsletter_deliveries d ON d.challenge_id = ? AND d.email = s.email
+    WHERE s.status = 'active' AND d.email IS NULL
+    ORDER BY s.created_at ASC
+    LIMIT 500
+  `).bind(challenge.id).all<{ email: string; unsubscribeToken: string }>()
+
+  let sent = 0
+  const failures: string[] = []
+  for (let offset = 0; offset < subscribers.length; offset += 10) {
+    const group = subscribers.slice(offset, offset + 10)
+    await Promise.all(group.map(async (subscriber) => {
+      const unsubscribeUrl = `https://vibecodeclub.org/api/unsubscribe?token=${encodeURIComponent(subscriber.unsubscribeToken)}`
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${env.RESEND_API_KEY}`,
+          'content-type': 'application/json',
+          'idempotency-key': `weekly-${challenge.id}-${subscriber.unsubscribeToken}`,
+        },
+        body: JSON.stringify({
+          from: env.NEWSLETTER_FROM_EMAIL,
+          to: [subscriber.email],
+          subject: `${challenge.title} — this week at Vibe Code Club`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#211d38"><p style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#ff5b55">${escapeHtml(challenge.weekLabel)}</p><h1 style="font-size:36px;line-height:1.05">${escapeHtml(challenge.title)}</h1><p style="font-size:19px"><strong>${escapeHtml(challenge.prompt)}</strong></p><p style="font-size:16px;line-height:1.6">${escapeHtml(challenge.brief)}</p><p style="margin:32px 0"><a href="https://vibecodeclub.org/#challenge" style="background:#211d38;color:#fff;padding:14px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Open this week’s challenge →</a></p><hr style="border:0;border-top:1px solid #ddd"><p style="font-size:12px;color:#666">You’re receiving this grown-up newsletter because this address subscribed at Vibe Code Club. <a href="${unsubscribeUrl}">Unsubscribe</a>.</p></div>`,
+          text: `${challenge.title}\n\n${challenge.prompt}\n\n${challenge.brief}\n\nOpen the challenge: https://vibecodeclub.org/#challenge\n\nUnsubscribe: ${unsubscribeUrl}`,
+        }),
+      })
+      if (!response.ok) {
+        failures.push(subscriber.email)
+        return
+      }
+      const result = await response.json().catch(() => ({})) as { id?: string }
+      await db.prepare(`
+        INSERT OR IGNORE INTO newsletter_deliveries (challenge_id, email, provider_id, sent_at)
+        VALUES (?, ?, ?, ?)
+      `).bind(challenge.id, subscriber.email, result.id || '', new Date().toISOString()).run()
+      sent += 1
+    }))
+  }
+
+  return json({ ok: failures.length === 0, sent, failed: failures.length, remaining: subscribers.length - sent })
+}
+
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url)
@@ -173,6 +289,9 @@ export default {
       if (request.method === 'POST' && url.pathname === '/api/vote') return vote(env.DB, request)
       if (request.method === 'POST' && url.pathname === '/api/submissions') return submit(env.DB, request)
       if (request.method === 'POST' && url.pathname === '/api/challenge-ideas') return submitChallengeIdea(env.DB, request)
+      if (request.method === 'POST' && url.pathname === '/api/subscribers') return subscribe(env.DB, request)
+      if (request.method === 'GET' && url.pathname === '/api/unsubscribe') return unsubscribe(env.DB, request)
+      if (request.method === 'POST' && url.pathname === '/api/newsletter/send-weekly') return sendWeeklyChallenge(env.DB, request, env)
       return json({ error: 'Not found' }, 404)
     } catch (error) {
       console.error('Community API error', error)

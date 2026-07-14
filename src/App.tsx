@@ -2,10 +2,10 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
   ArrowRight, Check, ChevronDown, Code2, ExternalLink, Github, Heart, Lightbulb,
-  LockKeyhole, Menu, MousePointer2, ShieldCheck, Sparkles, X,
+  LockKeyhole, Mail, Menu, MousePointer2, ShieldCheck, Sparkles, X,
 } from 'lucide-react'
 import { upcomingChallenges } from './data'
-import { loadCommunity, saveVote, submitChallengeIdea, submitProject } from './lib/community'
+import { loadCommunity, saveVote, subscribeWeeklyChallenge, submitChallengeIdea, submitProject } from './lib/community'
 import type { Challenge, ChallengeIdeaInput, CommunitySnapshot, Project, SubmissionInput } from './types'
 
 const emptySubmission: SubmissionInput = {
@@ -227,6 +227,49 @@ function ChallengeIdeaModal({ onClose }: { onClose: () => void }) {
   )
 }
 
+function WeeklySignup() {
+  const [email, setEmail] = useState('')
+  const [adultConsent, setAdultConsent] = useState(false)
+  const [status, setStatus] = useState<'idle' | 'saving' | 'done' | 'error'>('idle')
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!adultConsent) { setStatus('error'); return }
+    setStatus('saving')
+    try {
+      await subscribeWeeklyChallenge(email, adultConsent)
+      setStatus('done')
+      setEmail('')
+      setAdultConsent(false)
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  return (
+    <section id="subscribe" className="newsletter-section">
+      <div className="page-shell newsletter-card">
+        <div className="newsletter-art" aria-hidden="true"><Mail size={48} /><span>NEW<br />MISSION!</span><i>✦</i></div>
+        <div className="newsletter-copy">
+          <span className="kicker">A tiny email for the grown-ups</span>
+          <h2>Get the weekly challenge.</h2>
+          <p>One playful coding prompt every Monday. No kid emails, no spam, and one-click unsubscribe anytime.</p>
+        </div>
+        {status === 'done' ? (
+          <div className="newsletter-success" role="status"><Check size={25} /><div><b>You’re on the grown-up list!</b><span>The next challenge will head your way.</span></div></div>
+        ) : (
+          <form className="newsletter-form" onSubmit={handleSubmit}>
+            <label htmlFor="newsletter-email">Grown-up email</label>
+            <div className="newsletter-input-row"><input id="newsletter-email" required type="email" maxLength={160} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="grownup@example.com" /><button className="button button-dark" disabled={status === 'saving'} type="submit">{status === 'saving' ? 'Joining…' : 'Send me the challenge'} <ArrowRight size={17} /></button></div>
+            <label className="newsletter-consent"><input type="checkbox" checked={adultConsent} onChange={(event) => setAdultConsent(event.target.checked)} /><span>I’m 18+ and want Vibe Code Club’s weekly challenge emails.</span></label>
+            {status === 'error' && <p className="newsletter-error" role="alert">Please add a valid grown-up email and check the permission box.</p>}
+          </form>
+        )}
+      </div>
+    </section>
+  )
+}
+
 function App() {
   const [community, setCommunity] = useState<CommunitySnapshot | null>(null)
   const [showSubmit, setShowSubmit] = useState(false)
@@ -281,6 +324,7 @@ function App() {
           <a href="#challenge" onClick={() => setMobileNav(false)}>This week</a>
           <a href="#gallery" onClick={() => setMobileNav(false)}>The gallery</a>
           <a href="#how" onClick={() => setMobileNav(false)}>How it works</a>
+          <a href="#subscribe" onClick={() => setMobileNav(false)}>Weekly email</a>
           <a href="#grownups" onClick={() => setMobileNav(false)}>For grown-ups</a>
         </nav>
         <button className="button button-small button-dark header-submit" onClick={() => setShowSubmit(true)}>Submit a build <ArrowRight size={16} /></button>
@@ -361,6 +405,8 @@ function App() {
           </div>
         </section>
 
+        <WeeklySignup />
+
         <section id="grownups" className="grownups-section">
           <div className="page-shell grownups-layout">
             <div className="safety-art"><ShieldCheck size={66} /><span className="safety-star">✦</span><span className="safety-code">{'{ safe + silly }'}</span></div>
@@ -369,7 +415,7 @@ function App() {
         </section>
       </main>
 
-      <footer><div className="page-shell footer-layout"><Logo /><p>Made for small coders with big ideas.</p><div><a href="#grownups">Safety</a><a href="mailto:hello@vibecode.club">Contact</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING WEIRD</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
+      <footer><div className="page-shell footer-layout"><Logo /><p>Made for small coders with big ideas.</p><div><a href="#subscribe">Weekly email</a><a href="#grownups">Safety</a><a href="mailto:hello@vibecodeclub.org">Contact</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING WEIRD</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
       {community.source === 'demo' && <div className="demo-badge" title="The community database could not be reached">Offline demo <ChevronDown size={13} /></div>}
       {notice && <div className="toast" role="status"><Heart size={17} fill="currentColor" /> {notice}</div>}
       {showSubmit && <SubmissionModal challenge={community.challenge} onClose={() => setShowSubmit(false)} />}

@@ -69,3 +69,15 @@ export async function submitChallengeIdea(input: ChallengeIdeaInput) {
     throw new Error(result.error || 'Idea submission failed')
   }
 }
+
+export async function subscribeWeeklyChallenge(email: string, adultConsent: boolean) {
+  const response = await fetch('/api/subscribers', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, adultConsent, website: '' }),
+  })
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({ error: 'Signup failed' })) as { error?: string }
+    throw new Error(result.error || 'Signup failed')
+  }
+}

@@ -1,0 +1,33 @@
+name: Send weekly challenge email
+
+on:
+  schedule:
+    - cron: '0 13 * * 1'
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send this week's challenge
+        env:
+          NEWSLETTER_CRON_SECRET: ${{ secrets.NEWSLETTER_CRON_SECRET }}
+        run: |
+          if [ -z "$NEWSLETTER_CRON_SECRET" ]; then
+            echo "Newsletter delivery is not enabled yet."
+            exit 0
+          fi
+          status=$(curl --silent --show-error --output response.json --write-out "%{http_code}" \
+            --request POST \
+            --header "Authorization: Bearer $NEWSLETTER_CRON_SECRET" \
+            https://vibecodeclub.org/api/newsletter/send-weekly)
+          if [ "$status" = "200" ]; then
+            cat response.json
+            exit 0
+          fi
+          if [ "$status" = "503" ]; then
+            echo "Subscribers are being collected; the email provider is not connected yet."
+            exit 0
+          fi
+          cat response.json
+          exit 1
