@@ -41,4 +41,11 @@ export const challengeDraftSeeds = [
     starterIdeas: ['Build-your-own moon crackers', 'A mood-changing smoothie', 'The world’s crunchiest cloud'],
     tools: ['Scratch', 'Canva Code', 'HTML + JS', 'Anything you love'], status: 'idea',
   },
+  {
+    id: 'mixed-up-map', title: 'Create a mixed-up map', eyebrow: 'Wrong turns strongly encouraged.',
+    prompt: 'Draw an impossible map and make its strangest places explorable.',
+    brief: 'Create at least three locations and a way to travel between them. Hide a shortcut, surprise, or very unhelpful landmark somewhere on the journey.',
+    starterIdeas: ['A map inside a giant shoe', 'Cloud islands connected by noodles', 'A neighborhood for monsters'],
+    tools: ['Scratch', 'Twine', 'HTML + CSS', 'Anything you love'], status: 'idea',
+  },
 ] as const
