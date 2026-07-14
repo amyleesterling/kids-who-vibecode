@@ -1,0 +1,58 @@
+export const scheduledChallenges = [
+  {
+    id: 'tiny-worlds', weekLabel: 'Challenge 01 · Jul 13–19', title: 'Build a tiny world', eyebrow: 'Small screen. Big imagination.',
+    prompt: 'Create a little place we can visit. Who lives there? What happens when we tap, click, or press a key?',
+    brief: 'Make a tiny interactive world with at least one surprise. It can be a website, game, animation, or something nobody has named yet.',
+    opensAt: '2026-07-13T13:00:00.000Z', closesAt: '2026-07-20T04:00:00.000Z', votingOpensAt: '2026-07-20T13:00:00.000Z', votingClosesAt: '2026-07-27T13:00:00.000Z',
+    starterIdeas: ['A moon base for cats', 'A garden that sings', 'A city inside a raindrop'], tools: ['Scratch', 'HTML + CSS', 'Replit', 'Anything you love'],
+  },
+  {
+    id: 'make-it-musical', weekLabel: 'Challenge 02 · Jul 20–26', title: 'Make it musical', eyebrow: 'Turn curiosity into sound.',
+    prompt: 'Build something that blips, bloops, sings, or stomps when we interact with it.',
+    brief: 'Create a musical toy, tiny instrument, sound-reactive scene, or rhythm game. Give visitors at least two different sounds to discover.',
+    opensAt: '2026-07-20T13:00:00.000Z', closesAt: '2026-07-27T04:00:00.000Z', votingOpensAt: '2026-07-27T13:00:00.000Z', votingClosesAt: '2026-08-03T13:00:00.000Z',
+    starterIdeas: ['A keyboard played by frogs', 'A beat-making breakfast', 'Weather that makes music'], tools: ['Scratch', 'Tone.js', 'HTML + JS', 'Anything you love'],
+  },
+  {
+    id: 'invent-a-creature', weekLabel: 'Challenge 03 · Jul 27–Aug 2', title: 'Invent a creature', eyebrow: 'Odd talents encouraged.',
+    prompt: 'Invent a creature with a home, a personality, and one very surprising talent.',
+    brief: 'Introduce us to your creature through a game, interactive profile, animation, or tiny world. Let us do something that reveals who they are.',
+    opensAt: '2026-07-27T13:00:00.000Z', closesAt: '2026-08-03T04:00:00.000Z', votingOpensAt: '2026-08-03T13:00:00.000Z', votingClosesAt: '2026-08-10T13:00:00.000Z',
+    starterIdeas: ['A shy cloud dragon', 'A sock-eating moon mouse', 'A jellyfish who tells jokes'], tools: ['Scratch', 'p5.js', 'Replit', 'Anything you love'],
+  },
+  {
+    id: 'helpful-little-robot', weekLabel: 'Challenge 04 · Aug 3–9', title: 'Helpful little robot', eyebrow: 'Tiny robot. Mighty mission.',
+    prompt: 'Design a little robot that solves one small, silly, or surprisingly useful problem.',
+    brief: 'Show what your robot does and give visitors a way to help it work. The problem can be real, imaginary, or wonderfully ridiculous.',
+    opensAt: '2026-08-03T13:00:00.000Z', closesAt: '2026-08-10T04:00:00.000Z', votingOpensAt: '2026-08-10T13:00:00.000Z', votingClosesAt: '2026-08-17T13:00:00.000Z',
+    starterIdeas: ['A lost-sock finder', 'A snack reminder', 'A robot that cheers up houseplants'], tools: ['Scratch', 'HTML + CSS', 'JavaScript', 'Anything you love'],
+  },
+  {
+    id: 'weird-weather', weekLabel: 'Challenge 05 · Aug 10–16', title: 'Weather gone weird', eyebrow: 'Forecast: delightfully impossible.',
+    prompt: 'Create a weather machine for a world where anything can fall from the sky.',
+    brief: 'Let visitors change the forecast, meet someone affected by it, or solve a weather-related problem. Normal rain is optional.',
+    opensAt: '2026-08-10T13:00:00.000Z', closesAt: '2026-08-17T04:00:00.000Z', votingOpensAt: '2026-08-17T13:00:00.000Z', votingClosesAt: '2026-08-24T13:00:00.000Z',
+    starterIdeas: ['Taco Tuesday tornado', 'A rainbow repair shop', 'Clouds that sneeze bubbles'], tools: ['Scratch', 'p5.js', 'HTML + JS', 'Anything you love'],
+  },
+  {
+    id: 'secret-door', weekLabel: 'Challenge 06 · Aug 17–23', title: 'Open a secret door', eyebrow: 'Every door needs a surprise.',
+    prompt: 'Build a mysterious door and reveal what happens when someone figures out how to open it.',
+    brief: 'Hide a clue, create a tiny puzzle, or make the door react in an unexpected way. What waits on the other side is entirely up to you.',
+    opensAt: '2026-08-17T13:00:00.000Z', closesAt: '2026-08-24T04:00:00.000Z', votingOpensAt: '2026-08-24T13:00:00.000Z', votingClosesAt: '2026-08-31T13:00:00.000Z',
+    starterIdeas: ['A door inside a sandwich', 'A portal to dinosaur school', 'The world’s smallest escape room'], tools: ['Scratch', 'Twine', 'HTML + JS', 'Anything you love'],
+  },
+  {
+    id: 'make-someone-smile', weekLabel: 'Challenge 07 · Aug 24–30', title: 'Make someone smile', eyebrow: 'Code can be a tiny gift.',
+    prompt: 'Create a playful digital surprise designed to make somebody’s day a little brighter.',
+    brief: 'It could tell jokes, celebrate a person, make cheerful art, or deliver a kindness mission. Build it for someone specific or for everyone.',
+    opensAt: '2026-08-24T13:00:00.000Z', closesAt: '2026-08-31T04:00:00.000Z', votingOpensAt: '2026-08-31T13:00:00.000Z', votingClosesAt: '2026-09-07T13:00:00.000Z',
+    starterIdeas: ['A compliment confetti cannon', 'A joke-telling potato', 'A kindness quest'], tools: ['Scratch', 'Canva Code', 'HTML + CSS', 'Anything you love'],
+  },
+  {
+    id: 'only-you', weekLabel: 'Challenge 08 · Aug 31–Sep 6', title: 'Only you could make this', eyebrow: 'The grand build week.',
+    prompt: 'Build something that combines your favorite ideas from the summer into one project that feels completely yours.',
+    brief: 'Remix, expand, or start fresh. Show us the characters, interactions, sounds, jokes, colors, or strange little details that make your coding style yours.',
+    opensAt: '2026-08-31T13:00:00.000Z', closesAt: '2026-09-07T04:00:00.000Z', votingOpensAt: '2026-09-07T13:00:00.000Z', votingClosesAt: '2026-09-14T13:00:00.000Z',
+    starterIdeas: ['Remix an earlier challenge', 'Make a clubhouse for your characters', 'Invent a project category'], tools: ['Your favorite tool', 'Your favorite AI helper', 'Anything you love'],
+  },
+]

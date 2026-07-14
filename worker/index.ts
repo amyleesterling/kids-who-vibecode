@@ -107,27 +107,50 @@ async function initialize(db: ClubDatabase) {
 
 async function community(db: ClubDatabase, request: Request) {
   const voterId = new URL(request.url).searchParams.get('voterId') || ''
+  const now = new Date().toISOString()
   const challenge = await db.prepare(`
     SELECT id, week_label AS weekLabel, title, eyebrow, prompt, brief,
-      closes_at AS closesAt, status, starter_ideas AS starterIdeas, tools
+      opens_at AS opensAt, closes_at AS closesAt, voting_opens_at AS votingOpensAt,
+      voting_closes_at AS votingClosesAt, status, starter_ideas AS starterIdeas, tools
     FROM challenges WHERE status = 'active' LIMIT 1
   `).first<Record<string, unknown>>()
   if (!challenge) return json({ error: 'No active challenge' }, 404)
 
-  const { results: projects } = await db.prepare(`
+  const galleryChallenge = await db.prepare(`
+    SELECT id, week_label AS weekLabel, title, voting_opens_at AS votingOpensAt,
+      voting_closes_at AS votingClosesAt
+    FROM challenges
+    WHERE voting_opens_at <= ? AND voting_closes_at > ?
+    ORDER BY voting_opens_at DESC LIMIT 1
+  `).bind(now, now).first<Record<string, unknown>>()
+  const galleryId = galleryChallenge ? String(galleryChallenge.id) : String(challenge.id)
+  const projectsStatement = galleryChallenge ? db.prepare(`
     SELECT id, challenge_id AS challengeId, title, builder, age_band AS ageBand,
       description, repo_url AS repoUrl, demo_url AS demoUrl, base_votes AS baseVotes,
       scene, accent, image_key AS imageKey,
       CASE WHEN id IN ('mossy-moon', 'bubble-town', 'snack-forest', 'monster-disco') THEN 1 ELSE 0 END AS isSample
     FROM projects WHERE challenge_id = ? AND status = 'approved'
-  `).bind(challenge.id).all<Record<string, unknown>>()
-  const { results: counts } = await db.prepare(`
+      AND id NOT IN ('mossy-moon', 'bubble-town', 'snack-forest', 'monster-disco')
+  `).bind(galleryId) : db.prepare(`
+    SELECT id, challenge_id AS challengeId, title, builder, age_band AS ageBand,
+      description, repo_url AS repoUrl, demo_url AS demoUrl, base_votes AS baseVotes,
+      scene, accent, image_key AS imageKey, 1 AS isSample
+    FROM projects
+    WHERE challenge_id = ? AND status = 'approved'
+      AND id IN ('mossy-moon', 'bubble-town', 'snack-forest', 'monster-disco')
+  `).bind(galleryId)
+  const { results: projects } = await projectsStatement.all<Record<string, unknown>>()
+  const { results: counts } = galleryChallenge ? await db.prepare(`
     SELECT project_id AS projectId, COUNT(*) AS count
     FROM votes WHERE challenge_id = ? GROUP BY project_id
-  `).bind(challenge.id).all<{ projectId: string; count: number }>()
-  const currentVote = voterId ? await db.prepare(`
+  `).bind(galleryId).all<{ projectId: string; count: number }>() : { results: [] as Array<{ projectId: string; count: number }> }
+  const currentVote = voterId && galleryChallenge ? await db.prepare(`
     SELECT project_id AS projectId FROM votes WHERE challenge_id = ? AND voter_id = ?
-  `).bind(challenge.id, voterId).first<{ projectId: string }>() : null
+  `).bind(galleryId, voterId).first<{ projectId: string }>() : null
+  const { results: upcomingChallenges } = await db.prepare(`
+    SELECT id, week_label AS weekLabel, title, eyebrow, prompt, opens_at AS opensAt,
+      closes_at AS closesAt FROM challenges WHERE opens_at > ? ORDER BY opens_at LIMIT 3
+  `).bind(now).all<Record<string, unknown>>()
 
   return json({
     challenge: {
@@ -142,6 +165,10 @@ async function community(db: ClubDatabase, request: Request) {
     })),
     voteCounts: Object.fromEntries(counts.map((item) => [item.projectId, Number(item.count)])),
     myVote: currentVote?.projectId || null,
+    galleryChallenge,
+    votingOpen: Boolean(galleryChallenge),
+    acceptingSubmissions: String(challenge.closesAt) > now,
+    upcomingChallenges,
     source: 'database',
   })
 }
@@ -153,11 +180,14 @@ async function vote(db: ClubDatabase, request: Request) {
   const voterId = validText(body?.voterId, 80)
   if (!challengeId || !projectId || !voterId) return json({ error: 'Invalid vote' }, 400)
 
+  const now = new Date().toISOString()
   const project = await db.prepare(`
-    SELECT id FROM projects
-    WHERE id = ? AND challenge_id = ? AND status = 'approved'
-      AND id NOT IN ('mossy-moon', 'bubble-town', 'snack-forest', 'monster-disco')
-  `).bind(projectId, challengeId).first<{ id: string }>()
+    SELECT p.id FROM projects p
+    JOIN challenges c ON c.id = p.challenge_id
+    WHERE p.id = ? AND p.challenge_id = ? AND p.status = 'approved'
+      AND p.id NOT IN ('mossy-moon', 'bubble-town', 'snack-forest', 'monster-disco')
+      AND c.voting_opens_at <= ? AND c.voting_closes_at > ?
+  `).bind(projectId, challengeId, now, now).first<{ id: string }>()
   if (!project) return json({ error: 'Project not found' }, 404)
 
   await db.prepare(`
@@ -194,7 +224,9 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request) 
     return json({ error: 'Project images must be a WebP, JPEG, or PNG under 5 MB.' }, 400)
   }
 
-  const challenge = await db.prepare(`SELECT id FROM challenges WHERE id = ? AND status = 'active'`).bind(challengeId).first<{ id: string }>()
+  const challenge = await db.prepare(`
+    SELECT id FROM challenges WHERE id = ? AND status = 'active' AND closes_at > ?
+  `).bind(challengeId, new Date().toISOString()).first<{ id: string }>()
   if (!challenge) return json({ error: 'That challenge is no longer accepting submissions.' }, 400)
 
   const id = crypto.randomUUID()
@@ -425,6 +457,7 @@ function adminLogout() {
 
 async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
   if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
+  const now = new Date().toISOString()
   const { results: submissions } = await db.prepare(`
     SELECT id, challenge_id AS challengeId, child_nickname AS childNickname,
       age_band AS ageBand, project_title AS projectTitle, description, repo_url AS repoUrl,
@@ -448,6 +481,17 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
     SELECT id, item_type AS itemType, item_id AS itemId, action, created_at AS createdAt
     FROM moderation_events ORDER BY created_at DESC LIMIT 50
   `).all<Record<string, unknown>>()
+  const { results: challengeRows } = await db.prepare(`
+    SELECT id, week_label AS weekLabel, title, eyebrow, prompt, brief,
+      opens_at AS opensAt, closes_at AS closesAt, voting_opens_at AS votingOpensAt,
+      voting_closes_at AS votingClosesAt, status, starter_ideas AS starterIdeas, tools
+    FROM challenges ORDER BY opens_at
+  `).all<Record<string, unknown>>()
+  const challenges = challengeRows.map((challenge) => ({
+    ...challenge,
+    starterIdeas: JSON.parse(String(challenge.starterIdeas || '[]')),
+    tools: JSON.parse(String(challenge.tools || '[]')),
+  }))
 
   return json({
     submissions: submissions.map((item) => ({
@@ -458,6 +502,13 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
     ideas,
     subscribers,
     activity,
+    schedule: {
+      now,
+      currentChallenge: challenges.find((challenge) => challenge.status === 'active') || null,
+      votingChallenge: challenges.find((challenge) => String(challenge.votingOpensAt) <= now && String(challenge.votingClosesAt) > now) || null,
+      nextChallenge: challenges.find((challenge) => String(challenge.opensAt) > now) || null,
+      challenges,
+    },
   })
 }
 
@@ -508,6 +559,48 @@ async function adminUploadSubmissionImage(db: ClubDatabase, uploads: ClubUploads
   }
 
   if (submission.imageKey && submission.imageKey !== imageKey) await uploads.delete(submission.imageKey).catch(() => undefined)
+  return json({ ok: true })
+}
+
+async function adminUpdateChallenge(db: ClubDatabase, request: Request, env: Env) {
+  if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
+  const id = decodeURIComponent(new URL(request.url).pathname.split('/').pop() || '')
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null
+  const title = validText(body?.title, 80, 3)
+  const eyebrow = validText(body?.eyebrow, 100, 3)
+  const prompt = validText(body?.prompt, 400, 10)
+  const brief = validText(body?.brief, 800, 10)
+  const weekLabel = validText(body?.weekLabel, 80, 3)
+  const starterIdeas = Array.isArray(body?.starterIdeas) ? body.starterIdeas.map((item) => validText(item, 100)).filter(Boolean) : []
+  const tools = Array.isArray(body?.tools) ? body.tools.map((item) => validText(item, 60)).filter(Boolean) : []
+  const opensAt = validText(body?.opensAt, 40)
+  const closesAt = validText(body?.closesAt, 40)
+  const votingOpensAt = validText(body?.votingOpensAt, 40)
+  const votingClosesAt = validText(body?.votingClosesAt, 40)
+  const dates = [opensAt, closesAt, votingOpensAt, votingClosesAt].map((value) => value ? Date.parse(value) : Number.NaN)
+  if (!title || !eyebrow || !prompt || !brief || !weekLabel || starterIdeas.length < 1 || tools.length < 1 || dates.some(Number.isNaN)) {
+    return json({ error: 'Complete every challenge field before saving.' }, 400)
+  }
+  if (!(dates[0] < dates[1] && dates[1] <= dates[2] && dates[2] < dates[3])) {
+    return json({ error: 'The build window must end before voting opens, and voting must end afterward.' }, 400)
+  }
+  const existing = await db.prepare(`SELECT opens_at AS opensAt FROM challenges WHERE id = ?`).bind(id).first<{ opensAt: string }>()
+  if (!existing) return json({ error: 'Challenge not found' }, 404)
+  if (Date.parse(existing.opensAt) <= Date.now()) return json({ error: 'Only upcoming challenges can be edited.' }, 409)
+
+  await db.batch([
+    db.prepare(`
+      UPDATE challenges SET week_label = ?, title = ?, eyebrow = ?, prompt = ?, brief = ?,
+        opens_at = ?, closes_at = ?, voting_opens_at = ?, voting_closes_at = ?,
+        starter_ideas = ?, tools = ?, status = 'upcoming'
+      WHERE id = ?
+    `).bind(
+      weekLabel, title, eyebrow, prompt, brief, opensAt, closesAt, votingOpensAt, votingClosesAt,
+      JSON.stringify(starterIdeas), JSON.stringify(tools), id,
+    ),
+    db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'challenge', ?, 'schedule_updated', ?)`)
+      .bind(crypto.randomUUID(), id, new Date().toISOString()),
+  ])
   return json({ ok: true })
 }
 
@@ -610,6 +703,7 @@ export default {
       if (request.method === 'GET' && url.pathname === '/api/admin/dashboard') return adminDashboard(env.DB, request, env)
       if (request.method === 'GET' && url.pathname.startsWith('/api/admin/submission-images/')) return adminSubmissionImage(env.DB, env.UPLOADS, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/submission-images/')) return adminUploadSubmissionImage(env.DB, env.UPLOADS, request, env)
+      if (request.method === 'POST' && url.pathname.startsWith('/api/admin/challenges/')) return adminUpdateChallenge(env.DB, request, env)
       if (request.method === 'POST' && url.pathname === '/api/admin/moderate') return adminModerate(env.DB, request, env)
       return json({ error: 'Not found' }, 404)
     } catch (error) {

@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ArrowLeft, Check, ExternalLink, Github, Image as ImageIcon, ImagePlus, Inbox,
-  Lightbulb, LogOut, Mail, RefreshCw, ShieldCheck, Sparkles, X,
+  ArrowLeft, CalendarDays, Check, Clock3, ExternalLink, Github, Heart, Image as ImageIcon, ImagePlus, Inbox,
+  Lightbulb, LogOut, Mail, RefreshCw, Save, ShieldCheck, Sparkles, X,
 } from 'lucide-react'
 import { prepareProjectImage } from './lib/projectImage'
 
@@ -45,14 +45,37 @@ type AdminSubscriber = {
   updatedAt: string
 }
 
+type AdminChallenge = {
+  id: string
+  weekLabel: string
+  title: string
+  eyebrow: string
+  prompt: string
+  brief: string
+  opensAt: string
+  closesAt: string
+  votingOpensAt: string
+  votingClosesAt: string
+  status: 'active' | 'upcoming' | 'closed'
+  starterIdeas: string[]
+  tools: string[]
+}
+
 type Dashboard = {
   submissions: AdminSubmission[]
   ideas: AdminIdea[]
   subscribers: AdminSubscriber[]
   activity: Array<{ id: string; itemType: string; itemId: string; action: string; createdAt: string }>
+  schedule: {
+    now: string
+    currentChallenge: AdminChallenge | null
+    votingChallenge: AdminChallenge | null
+    nextChallenge: AdminChallenge | null
+    challenges: AdminChallenge[]
+  }
 }
 
-type AdminTab = 'submissions' | 'ideas' | 'subscribers'
+type AdminTab = 'challenges' | 'submissions' | 'ideas' | 'subscribers'
 
 function dateLabel(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
@@ -63,18 +86,89 @@ function fileSize(value?: number) {
   return value > 1_000_000 ? `${(value / 1_000_000).toFixed(1)} MB` : `${Math.ceil(value / 1000)} KB`
 }
 
+function remainingLabel(value?: string, now = Date.now()) {
+  if (!value) return 'Not scheduled'
+  const milliseconds = Math.max(0, new Date(value).getTime() - now)
+  const days = Math.floor(milliseconds / 86_400_000)
+  const hours = Math.floor((milliseconds % 86_400_000) / 3_600_000)
+  const minutes = Math.floor((milliseconds % 3_600_000) / 60_000)
+  return days ? `${days}d ${hours}h` : hours ? `${hours}h ${minutes}m` : `${minutes}m`
+}
+
+function localDateTime(value: string) {
+  const date = new Date(value)
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+  return local.toISOString().slice(0, 16)
+}
+
 async function readError(response: Response) {
   const body = await response.json().catch(() => ({ error: 'Something went wrong.' })) as { error?: string }
   return body.error || 'Something went wrong.'
+}
+
+function UpcomingChallengeEditor({ challenge, busy, onSave }: {
+  challenge: AdminChallenge
+  busy: boolean
+  onSave: (challenge: AdminChallenge) => Promise<void>
+}) {
+  const [draft, setDraft] = useState(() => ({
+    ...challenge,
+    opensAt: localDateTime(challenge.opensAt),
+    closesAt: localDateTime(challenge.closesAt),
+    votingOpensAt: localDateTime(challenge.votingOpensAt),
+    votingClosesAt: localDateTime(challenge.votingClosesAt),
+    starterIdeas: challenge.starterIdeas.join('\n'),
+    tools: challenge.tools.join(', '),
+  }))
+  const update = (name: string, value: string) => setDraft((current) => ({ ...current, [name]: value }))
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    await onSave({
+      ...challenge,
+      weekLabel: draft.weekLabel,
+      title: draft.title,
+      eyebrow: draft.eyebrow,
+      prompt: draft.prompt,
+      brief: draft.brief,
+      opensAt: new Date(draft.opensAt).toISOString(),
+      closesAt: new Date(draft.closesAt).toISOString(),
+      votingOpensAt: new Date(draft.votingOpensAt).toISOString(),
+      votingClosesAt: new Date(draft.votingClosesAt).toISOString(),
+      starterIdeas: draft.starterIdeas.split('\n').map((item) => item.trim()).filter(Boolean),
+      tools: draft.tools.split(',').map((item) => item.trim()).filter(Boolean),
+    })
+  }
+
+  return (
+    <form className="challenge-editor" onSubmit={submit}>
+      <div className="challenge-editor-intro"><span className="kicker">Next scheduled challenge</span><h3>{challenge.title}</h3><p>Saving changes updates the launch schedule immediately. Times use this device’s timezone.</p></div>
+      <div className="challenge-form-grid">
+        <label><span>Week label</span><input required value={draft.weekLabel} onChange={(event) => update('weekLabel', event.target.value)} /></label>
+        <label><span>Challenge title</span><input required value={draft.title} onChange={(event) => update('title', event.target.value)} /></label>
+        <label className="wide"><span>Short tagline</span><input required value={draft.eyebrow} onChange={(event) => update('eyebrow', event.target.value)} /></label>
+        <label className="wide"><span>The prompt</span><textarea required rows={3} value={draft.prompt} onChange={(event) => update('prompt', event.target.value)} /></label>
+        <label className="wide"><span>Build brief</span><textarea required rows={4} value={draft.brief} onChange={(event) => update('brief', event.target.value)} /></label>
+        <label><span>Build opens</span><input required type="datetime-local" value={draft.opensAt} onChange={(event) => update('opensAt', event.target.value)} /></label>
+        <label><span>Submissions close</span><input required type="datetime-local" value={draft.closesAt} onChange={(event) => update('closesAt', event.target.value)} /></label>
+        <label><span>Voting opens</span><input required type="datetime-local" value={draft.votingOpensAt} onChange={(event) => update('votingOpensAt', event.target.value)} /></label>
+        <label><span>Voting closes</span><input required type="datetime-local" value={draft.votingClosesAt} onChange={(event) => update('votingClosesAt', event.target.value)} /></label>
+        <label className="wide"><span>Starter ideas · one per line</span><textarea required rows={3} value={draft.starterIdeas} onChange={(event) => update('starterIdeas', event.target.value)} /></label>
+        <label className="wide"><span>Suggested tools · comma separated</span><input required value={draft.tools} onChange={(event) => update('tools', event.target.value)} /></label>
+      </div>
+      <button className="admin-save-challenge" disabled={busy} type="submit"><Save size={17} /> {busy ? 'Saving…' : 'Save upcoming challenge'}</button>
+    </form>
+  )
 }
 
 function AdminApp() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null)
   const [dashboard, setDashboard] = useState<Dashboard | null>(null)
   const [password, setPassword] = useState('')
-  const [tab, setTab] = useState<AdminTab>('submissions')
+  const [tab, setTab] = useState<AdminTab>('challenges')
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
+  const [clock, setClock] = useState(Date.now())
 
   const loadDashboard = useCallback(async () => {
     setError('')
@@ -90,8 +184,13 @@ function AdminApp() {
   }, [])
 
   useEffect(() => { loadDashboard().catch((reason) => { setAuthenticated(false); setError(reason.message) }) }, [loadDashboard])
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const counts = useMemo(() => ({
+    challenges: dashboard?.schedule.challenges.filter((item) => item.status === 'upcoming').length || 0,
     submissions: dashboard?.submissions.filter((item) => item.status === 'pending').length || 0,
     ideas: dashboard?.ideas.filter((item) => item.status === 'pending').length || 0,
     subscribers: dashboard?.subscribers.filter((item) => item.status === 'active').length || 0,
@@ -155,6 +254,20 @@ function AdminApp() {
     }
   }
 
+  async function saveChallenge(challenge: AdminChallenge) {
+    const key = `challenge:${challenge.id}`
+    setBusy(key)
+    setError('')
+    const response = await fetch(`/api/admin/challenges/${encodeURIComponent(challenge.id)}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(challenge),
+    })
+    if (!response.ok) setError(await readError(response))
+    else await loadDashboard().catch((reason) => setError(reason.message))
+    setBusy('')
+  }
+
   if (authenticated === null) {
     return <main className="admin-loading"><span><Sparkles /></span><p>Opening the clubhouse inbox…</p></main>
   }
@@ -186,7 +299,14 @@ function AdminApp() {
         <div className="admin-header-actions"><a className="button button-light" href="/" target="_blank">View public site <ExternalLink size={16} /></a><button className="admin-icon-button" onClick={() => loadDashboard().catch((reason) => setError(reason.message))} aria-label="Refresh inbox"><RefreshCw size={18} /></button><button className="admin-icon-button" onClick={logout} aria-label="Sign out"><LogOut size={18} /></button></div>
       </header>
 
+      <section className="admin-schedule-overview" aria-label="Challenge schedule overview">
+        <article className="schedule-card current"><span><Clock3 size={17} /> Building now</span><h2>{dashboard?.schedule.currentChallenge?.title || 'No active challenge'}</h2>{dashboard?.schedule.currentChallenge && <><b>{remainingLabel(dashboard.schedule.currentChallenge.closesAt, clock)} left to submit</b><small>Closes {dateLabel(dashboard.schedule.currentChallenge.closesAt)}</small></>}</article>
+        <article className="schedule-card voting"><span><Heart size={17} /> Voting now</span><h2>{dashboard?.schedule.votingChallenge?.title || 'Voting waits for Monday'}</h2>{dashboard?.schedule.votingChallenge ? <><b>{remainingLabel(dashboard.schedule.votingChallenge.votingClosesAt, clock)} left to vote</b><small>Closes {dateLabel(dashboard.schedule.votingChallenge.votingClosesAt)}</small></> : dashboard?.schedule.currentChallenge && <><b>Delayed for a fair start</b><small>Opens {dateLabel(dashboard.schedule.currentChallenge.votingOpensAt)}</small></>}</article>
+        <article className="schedule-card next"><span><CalendarDays size={17} /> Up next</span><h2>{dashboard?.schedule.nextChallenge?.title || 'Summer finale'}</h2>{dashboard?.schedule.nextChallenge && <><b>Auto-launches in {remainingLabel(dashboard.schedule.nextChallenge.opensAt, clock)}</b><small>{dateLabel(dashboard.schedule.nextChallenge.opensAt)}</small></>}</article>
+      </section>
+
       <nav className="admin-tabs" aria-label="Clubhouse inbox sections">
+        <button className={tab === 'challenges' ? 'active' : ''} onClick={() => setTab('challenges')}><CalendarDays size={18} /> Challenges <b>{counts.challenges}</b></button>
         <button className={tab === 'submissions' ? 'active' : ''} onClick={() => setTab('submissions')}><Inbox size={18} /> Projects <b>{counts.submissions}</b></button>
         <button className={tab === 'ideas' ? 'active' : ''} onClick={() => setTab('ideas')}><Lightbulb size={18} /> Challenge ideas <b>{counts.ideas}</b></button>
         <button className={tab === 'subscribers' ? 'active' : ''} onClick={() => setTab('subscribers')}><Mail size={18} /> Grown-up emails <b>{counts.subscribers}</b></button>
@@ -195,6 +315,15 @@ function AdminApp() {
       {error && <p className="admin-global-error" role="alert">{error}</p>}
 
       <main className="admin-content">
+        {tab === 'challenges' && <section>
+          <div className="admin-section-heading"><div><span className="kicker">Automatic weekly rollover</span><h2>Upcoming challenge</h2></div><p>The public site chooses the active prompt and voting gallery from these dates—no Monday-morning button press needed.</p></div>
+          {dashboard?.schedule.nextChallenge ? <UpcomingChallengeEditor key={dashboard.schedule.nextChallenge.id} challenge={dashboard.schedule.nextChallenge} busy={busy === `challenge:${dashboard.schedule.nextChallenge.id}`} onSave={saveChallenge} /> : <div className="admin-empty"><CalendarDays size={35} /><h3>No upcoming challenge is scheduled.</h3></div>}
+          <div className="season-schedule">
+            <div className="season-schedule-heading"><span className="kicker">The full summer session</span><h3>Challenge calendar</h3></div>
+            {dashboard?.schedule.challenges.map((challenge) => <article key={challenge.id} className={`season-row status-${challenge.status}`}><span className="admin-status">{challenge.status}</span><div><b>{challenge.title}</b><small>{challenge.weekLabel}</small></div><div><span>Build</span><small>{dateLabel(challenge.opensAt)} → {dateLabel(challenge.closesAt)}</small></div><div><span>Vote</span><small>{dateLabel(challenge.votingOpensAt)} → {dateLabel(challenge.votingClosesAt)}</small></div></article>)}
+          </div>
+        </section>}
+
         {tab === 'submissions' && <section>
           <div className="admin-section-heading"><div><span className="kicker">Moderation queue</span><h2>Project submissions</h2></div><p>Open every code and playable link before approving.</p></div>
           <div className="admin-card-list">
@@ -228,7 +357,7 @@ function AdminApp() {
                   <div className="private-contact"><ShieldCheck size={16} /><span><b>Private grown-up contact</b>{item.parentName} · <a href={`mailto:${item.parentEmail}`}>{item.parentEmail}</a></span></div>
                 </div>
               </div>
-              <div className="admin-card-actions"><span>Challenge: {item.challengeId}</span><div><button disabled={busy === `submission:${item.id}`} className="admin-reject" onClick={() => moderate('submission', item.id, 'reject', `Reject “${item.projectTitle}” and keep it out of the gallery?`)}><X size={16} /> Reject</button><button disabled={busy === `submission:${item.id}`} className="admin-approve" onClick={() => moderate('submission', item.id, 'approve', `Approve “${item.projectTitle}” and publish it in the gallery?`)}><Check size={16} /> Approve & publish</button></div></div>
+              <div className="admin-card-actions"><span>Challenge: {item.challengeId}</span><div><button disabled={busy === `submission:${item.id}`} className="admin-reject" onClick={() => moderate('submission', item.id, 'reject', `Reject “${item.projectTitle}” and keep it out of the gallery?`)}><X size={16} /> Reject</button><button disabled={busy === `submission:${item.id}`} className="admin-approve" onClick={() => moderate('submission', item.id, 'approve', `Approve “${item.projectTitle}” for its scheduled gallery week?`)}><Check size={16} /> Approve for gallery</button></div></div>
             </article>)}
             {!dashboard?.submissions.length && <div className="admin-empty"><Inbox size={35} /><h3>The project inbox is empty.</h3></div>}
           </div>

@@ -1,4 +1,5 @@
 import type { ClubDatabase } from '../worker/index'
+import { scheduledChallenges } from './challenges'
 
 export const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS challenges (
@@ -8,7 +9,10 @@ export const schemaStatements = [
     eyebrow TEXT NOT NULL,
     prompt TEXT NOT NULL,
     brief TEXT NOT NULL,
+    opens_at TEXT NOT NULL,
     closes_at TEXT NOT NULL,
+    voting_opens_at TEXT NOT NULL,
+    voting_closes_at TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('active', 'upcoming', 'closed')),
     starter_ideas TEXT NOT NULL,
     tools TEXT NOT NULL
@@ -102,32 +106,24 @@ export const schemaStatements = [
   `CREATE INDEX IF NOT EXISTS challenge_ideas_status_created_idx ON challenge_ideas (status, created_at)`,
   `CREATE INDEX IF NOT EXISTS subscribers_status_created_idx ON subscribers (status, created_at)`,
   `CREATE INDEX IF NOT EXISTS moderation_events_item_idx ON moderation_events (item_type, item_id, created_at)`,
+  `CREATE INDEX IF NOT EXISTS challenges_schedule_idx ON challenges (opens_at, closes_at, voting_opens_at, voting_closes_at)`,
 ]
-
-function nextSunday() {
-  const date = new Date()
-  const daysUntilSunday = (7 - date.getUTCDay()) % 7 || 7
-  date.setUTCDate(date.getUTCDate() + daysUntilSunday)
-  date.setUTCHours(23, 59, 0, 0)
-  return date.toISOString()
-}
 
 export async function ensureDatabase(db: ClubDatabase) {
   await db.batch(schemaStatements.map((statement) => db.prepare(statement)))
 }
 
 export async function seedDatabase(db: ClubDatabase) {
-  const challenge = db.prepare(`
+  const challenges = scheduledChallenges.map((challenge) => db.prepare(`
     INSERT OR IGNORE INTO challenges (
-      id, week_label, title, eyebrow, prompt, brief, closes_at, status, starter_ideas, tools
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)
+      id, week_label, title, eyebrow, prompt, brief, opens_at, closes_at,
+      voting_opens_at, voting_closes_at, status, starter_ideas, tools
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', ?, ?)
   `).bind(
-    'tiny-worlds', 'Challenge 01 · This week', 'Build a tiny world', 'Small screen. Big imagination.',
-    'Create a little place we can visit. Who lives there? What happens when we tap, click, or press a key?',
-    'Make a tiny interactive world with at least one surprise. It can be a website, game, animation, or something nobody has named yet.',
-    nextSunday(), JSON.stringify(['A moon base for cats', 'A garden that sings', 'A city inside a raindrop']),
-    JSON.stringify(['Scratch', 'HTML + CSS', 'Replit', 'Anything you love']),
-  )
+    challenge.id, challenge.weekLabel, challenge.title, challenge.eyebrow, challenge.prompt, challenge.brief,
+    challenge.opensAt, challenge.closesAt, challenge.votingOpensAt, challenge.votingClosesAt,
+    JSON.stringify(challenge.starterIdeas), JSON.stringify(challenge.tools),
+  ))
 
   const projects = [
     ['mossy-moon', 'Mossy Moon', 'PixelPanda', '7–9', 'Grow glowing space plants and wake up the moon bugs.', 'https://github.com/', '', 18, 'space', '#b9f44a'],
@@ -141,5 +137,17 @@ export async function seedDatabase(db: ClubDatabase) {
     ) VALUES (?, 'tiny-worlds', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')
   `).bind(...project))
 
-  await db.batch([challenge, ...projects])
+  await db.batch([...challenges, ...projects])
+  const now = new Date().toISOString()
+  await db.prepare(`
+    UPDATE challenges SET status = CASE
+      WHEN id = (
+        SELECT id FROM challenges
+        WHERE opens_at <= ? AND voting_closes_at > ?
+        ORDER BY opens_at DESC LIMIT 1
+      ) THEN 'active'
+      WHEN opens_at > ? THEN 'upcoming'
+      ELSE 'closed'
+    END
+  `).bind(now, now, now).run()
 }

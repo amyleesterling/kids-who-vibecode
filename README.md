@@ -51,7 +51,9 @@ The four illustrated projects included at launch are clearly marked clubhouse sa
 
 Open **[Clubhouse Admin](https://vibecodekids.com/clubhouse-admin)** to review the private queues. The temporary admin password is stored locally in the ignored `.env.local` file; it is never committed to GitHub. Production stores `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` as secret environment values.
 
-Approving a project publishes its kid-safe fields and approved image into the gallery. If a family did not include an image, a club grown-up can add one from the submission card; existing images can also be replaced. Rejecting a project keeps it out of the gallery. The dashboard also supports selecting or archiving challenge ideas and activating or unsubscribing grown-up newsletter addresses.
+Approving a project marks its kid-safe fields and approved image as ready for that challenge’s scheduled voting gallery; it does not appear early. If a family did not include an image, a club grown-up can add one from the submission card; existing images can also be replaced. Rejecting a project keeps it out of the gallery. The dashboard also supports selecting or archiving challenge ideas and activating or unsubscribing grown-up newsletter addresses.
+
+The Challenges tab shows the active build window, delayed voting window, and next automatic launch. Eight summer challenges are scheduled for Monday at 9:00 a.m. Eastern; submissions close Sunday at midnight, and the previous challenge’s gallery opens when the new prompt launches. Upcoming challenge copy and dates can be edited before launch.
 
 ## Weekly email delivery
 

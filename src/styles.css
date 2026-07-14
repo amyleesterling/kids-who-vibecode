@@ -183,6 +183,7 @@ h1, h2, h3, p { margin-top: 0; }
 .project-links a:hover { color: var(--coral); }
 .sample-link { display: flex; align-items: center; gap: 6px; color: var(--ink-soft); font-size: 10px; font-weight: 700; }
 .gallery-footnote { display: flex; justify-content: center; align-items: center; gap: 8px; margin: 38px 0 0; font-family: 'DM Mono'; font-size: 9px; color: var(--ink-soft); }
+.gallery-waiting { min-height: 230px; display: grid; place-items: center; align-content: center; gap: 8px; border: 1.5px dashed var(--ink); border-radius: 14px; background: var(--paper-deep); text-align: center; }.gallery-waiting h3 { margin: 5px 0 0; font-size: 24px; }.gallery-waiting p { margin: 0; color: var(--ink-soft); font-size: 11px; }
 
 .how-section { background: var(--paper-deep); padding-block: 100px; border-block: 1px solid var(--line); }
 .section-heading.compact { margin-bottom: 45px; }

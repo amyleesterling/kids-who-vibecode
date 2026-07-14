@@ -14,7 +14,10 @@ function getVoterId() {
 function demoSnapshot(): CommunitySnapshot {
   const stored = localStorage.getItem(`vibe-club-vote:${activeChallenge.id}`)
   const counts = JSON.parse(localStorage.getItem('vibe-club-counts') || '{}') as Record<string, number>
-  return { challenge: activeChallenge, projects: seedProjects, voteCounts: counts, myVote: stored, source: 'demo' }
+  return {
+    challenge: activeChallenge, projects: seedProjects, voteCounts: counts, myVote: stored,
+    galleryChallenge: null, votingOpen: false, acceptingSubmissions: true, upcomingChallenges: [], source: 'demo',
+  }
 }
 
 export async function loadCommunity(): Promise<CommunitySnapshot> {

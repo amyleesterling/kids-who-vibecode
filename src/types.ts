@@ -5,7 +5,10 @@ export type Challenge = {
   eyebrow: string
   prompt: string
   brief: string
+  opensAt: string
   closesAt: string
+  votingOpensAt: string
+  votingClosesAt: string
   status: 'active' | 'upcoming' | 'closed'
   starterIdeas: string[]
   tools: string[]
@@ -56,5 +59,9 @@ export type CommunitySnapshot = {
   projects: Project[]
   voteCounts: Record<string, number>
   myVote: string | null
+  galleryChallenge: Pick<Challenge, 'id' | 'weekLabel' | 'title' | 'votingOpensAt' | 'votingClosesAt'> | null
+  votingOpen: boolean
+  acceptingSubmissions: boolean
+  upcomingChallenges: Array<Pick<Challenge, 'id' | 'weekLabel' | 'title' | 'eyebrow' | 'prompt' | 'opensAt' | 'closesAt'>>
   source: 'database' | 'demo'
 }

@@ -4,7 +4,6 @@ import {
   ArrowRight, CalendarDays, Check, ChevronDown, Code2, ExternalLink, Github, Heart, Lightbulb,
   ImagePlus, LockKeyhole, Mail, Menu, MousePointer2, ShieldCheck, Sparkles, Trophy, X,
 } from 'lucide-react'
-import { upcomingChallenges } from './data'
 import { loadCommunity, saveVote, subscribeWeeklyChallenge, submitChallengeIdea, submitProject } from './lib/community'
 import { prepareProjectImage } from './lib/projectImage'
 import type { Challenge, ChallengeIdeaInput, CommunitySnapshot, Project, SubmissionInput } from './types'
@@ -333,10 +332,11 @@ function App() {
 
   async function vote(project: Project) {
     if (!community || voting) return
+    if (!community.votingOpen || !community.galleryChallenge) { setNotice('Voting opens with the gallery next Monday!'); return }
     if (community.myVote === project.id) { setNotice('That build already has your favorite vote!'); return }
     setVoting(project.id)
     try {
-      await saveVote(community.challenge.id, project.id, community.myVote)
+      await saveVote(community.galleryChallenge.id, project.id, community.myVote)
       setCommunity((current) => {
         if (!current) return current
         const counts = { ...current.voteCounts }
@@ -347,6 +347,15 @@ function App() {
       setNotice(`Your favorite is now “${project.title}”!`)
     } catch { setNotice('Voting took a tumble. Please try again.') }
     finally { setVoting(''); window.setTimeout(() => setNotice(''), 3200) }
+  }
+
+  function openSubmission() {
+    if (!community?.acceptingSubmissions) {
+      setNotice('This build window is closed. The next challenge launches Monday morning!')
+      window.setTimeout(() => setNotice(''), 3200)
+      return
+    }
+    setShowSubmit(true)
   }
 
   if (!community) return <main className="loading-screen"><Logo /><div className="loader"><span /><span /><span /></div><p>Opening the clubhouse…</p></main>
@@ -363,7 +372,7 @@ function App() {
           <a href="#subscribe" onClick={() => setMobileNav(false)}>Weekly email</a>
           <a href="#grownups" onClick={() => setMobileNav(false)}>For grown-ups</a>
         </nav>
-        <button className="button button-small button-dark header-submit" onClick={() => setShowSubmit(true)}>Submit a build <ArrowRight size={16} /></button>
+        <button className="button button-small button-dark header-submit" onClick={openSubmission}>{community.acceptingSubmissions ? 'Submit a build' : 'Build window closed'} <ArrowRight size={16} /></button>
       </header>
 
       <main>
@@ -372,7 +381,7 @@ function App() {
             <div className="eyebrow-pill"><Sparkles size={14} /> A creative coding club for curious kids</div>
             <h1>Make weird.<br />Make wonderful.<br /><span>Make it yours.</span></h1>
             <p className="hero-lede">A new creative coding adventure every week. Build it your way, share it with the club, and cheer on other young makers.</p>
-            <div className="hero-actions"><a className="button button-coral" href="#challenge">See this week’s challenge <ArrowRight size={19} /></a><button className="text-link" onClick={() => setShowSubmit(true)}>I made something! <span>↗</span></button></div>
+            <div className="hero-actions"><a className="button button-coral" href="#challenge">See this week’s challenge <ArrowRight size={19} /></a><button className="text-link" onClick={openSubmission}>I made something! <span>↗</span></button></div>
             <div className="trust-note"><span className="avatar-stack"><i>🐯</i><i>🦊</i><i>🐸</i></span><p><b>Built for kids. Guided by grown-ups.</b><br />Nicknames only · Parent-approved sharing</p></div>
           </div>
           <ChallengePreview challenge={community.challenge} />
@@ -386,7 +395,7 @@ function App() {
               <h2>{community.challenge.title}</h2>
               <p className="challenge-prompt">“{community.challenge.prompt}”</p>
               <p>{community.challenge.brief}</p>
-              <button className="button button-light" onClick={() => setShowSubmit(true)}>Share your tiny world <ArrowRight size={18} /></button>
+              <button className="button button-light" onClick={openSubmission}>{community.acceptingSubmissions ? 'Share your tiny world' : 'Submissions are closed'} <ArrowRight size={18} /></button>
             </div>
             <div className="idea-board">
               <span className="tape" />
@@ -400,10 +409,10 @@ function App() {
 
         <section id="gallery" className="gallery-section page-shell">
           <div className="section-heading">
-            <div><span className="kicker">Fresh from the clubhouse</span><h2>The weekly showcase</h2></div>
-            <p>Each challenge gets its own full week in the gallery. Explore the approved builds, then choose one favorite before Sunday night.</p>
+            <div><span className="kicker">{community.votingOpen ? `Voting now · ${community.galleryChallenge?.weekLabel}` : 'Voting opens next Monday'}</span><h2>{community.votingOpen ? `${community.galleryChallenge?.title} showcase` : 'The weekly showcase'}</h2></div>
+            <p>{community.votingOpen ? 'Explore last week’s approved builds, then choose one favorite before voting closes.' : 'Kids can submit all week. Approved builds stay tucked away until everyone gets the same full voting window.'}</p>
           </div>
-          <div className="sample-banner"><Sparkles size={19} /><p><b>These four are clubhouse samples.</b> They’re make-believe examples, not real kids’ projects. Approved submissions will have working project links and can receive votes.</p></div>
+          {community.projects.some((project) => project.isSample) && <div className="sample-banner"><Sparkles size={19} /><p><b>These four are clubhouse samples.</b> They’re make-believe examples while the first real gallery waits for voting week.</p></div>}
           <div className="gallery-grid">
             {sortedProjects.map((project, index) => {
               const votes = project.isSample ? 0 : project.baseVotes + (community.voteCounts[project.id] || 0)
@@ -419,6 +428,7 @@ function App() {
               )
             })}
           </div>
+          {!community.projects.length && <div className="gallery-waiting"><Sparkles size={30} /><h3>The gallery is getting ready.</h3><p>Approved projects will appear here for their full voting week.</p></div>}
           <p className="gallery-footnote"><ShieldCheck size={16} /> Every project and link is checked by a club grown-up before appearing here.</p>
         </section>
 
@@ -438,7 +448,7 @@ function App() {
         <section className="up-next page-shell">
           <div className="up-next-title"><span>Coming soon</span><h2>Next on the idea machine</h2></div>
           <div>
-            <div className="challenge-list">{upcomingChallenges.map((item) => <article key={item.number}><span className="up-number" style={{ background: item.color }}>{item.number}</span><div><h3>{item.title}</h3><p>{item.hint}</p></div><span className="locked"><LockKeyhole size={15} /> Locked</span></article>)}</div>
+            <div className="challenge-list">{community.upcomingChallenges.map((item, index) => <article key={item.id}><span className="up-number" style={{ background: ['#65d9ff', '#ffb3c7', '#b9f44a'][index % 3] }}>{item.weekLabel.match(/\d+/)?.[0]?.padStart(2, '0') || String(index + 2).padStart(2, '0')}</span><div><h3>{item.title}</h3><p>{item.eyebrow}</p></div><span className="locked"><LockKeyhole size={15} /> {new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(item.opensAt))}</span></article>)}</div>
             <div className="pitch-challenge"><span><Lightbulb size={24} /></span><div><h3>Got a wildly good idea?</h3><p>Kids and grown-ups can pitch a future weekly mission.</p></div><button className="button button-dark" onClick={() => setShowIdea(true)}>Pitch a challenge <ArrowRight size={17} /></button></div>
           </div>
         </section>
@@ -448,7 +458,7 @@ function App() {
         <section id="grownups" className="grownups-section">
           <div className="page-shell grownups-layout">
             <div className="safety-art"><ShieldCheck size={66} /><span className="safety-star">✦</span><span className="safety-code">{'{ safe + silly }'}</span></div>
-            <div><span className="kicker">Grown-ups stay in the loop</span><h2>Big creativity.<br />Small digital footprint.</h2><p>Kids use nicknames and age groups—never full names. A parent or guardian approves every submission, and our club grown-ups check each project and link before it goes public.</p><ul><li><Check size={17} /> No direct messages or public comments</li><li><Check size={17} /> Parent contact details are never public</li><li><Check size={17} /> One favorite vote per browser each week</li></ul><button className="button button-dark" onClick={() => setShowSubmit(true)}>Read the grown-up checklist <ArrowRight size={17} /></button></div>
+            <div><span className="kicker">Grown-ups stay in the loop</span><h2>Big creativity.<br />Small digital footprint.</h2><p>Kids use nicknames and age groups—never full names. A parent or guardian approves every submission, and our club grown-ups check each project and link before it goes public.</p><ul><li><Check size={17} /> No direct messages or public comments</li><li><Check size={17} /> Parent contact details are never public</li><li><Check size={17} /> One favorite vote per browser each week</li></ul><button className="button button-dark" onClick={openSubmission}>Read the grown-up checklist <ArrowRight size={17} /></button></div>
           </div>
         </section>
       </main>
@@ -456,7 +466,7 @@ function App() {
       <footer><div className="page-shell footer-layout"><Logo /><p>Made for small coders with big ideas.</p><div><a href="#subscribe">Weekly email</a><a href="#grownups">Safety</a><a href="mailto:hello@vibecodekids.com">Contact</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING WEIRD</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
       {community.source === 'demo' && <div className="demo-badge" title="The community database could not be reached">Offline demo <ChevronDown size={13} /></div>}
       {notice && <div className="toast" role="status"><Heart size={17} fill="currentColor" /> {notice}</div>}
-      {showSubmit && <SubmissionModal challenge={community.challenge} onClose={() => setShowSubmit(false)} />}
+      {showSubmit && community.acceptingSubmissions && <SubmissionModal challenge={community.challenge} onClose={() => setShowSubmit(false)} />}
       {showIdea && <ChallengeIdeaModal onClose={() => setShowIdea(false)} />}
     </div>
   )
