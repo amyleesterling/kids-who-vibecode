@@ -5,11 +5,11 @@ A playful, parent-supervised community for young creative coders. Every week bri
 ## What is included
 
 - A responsive weekly challenge landing page
-- Project gallery with one favorite vote per anonymous Firebase account/device
+- Project gallery with one favorite vote per browser and shared weekly totals
 - Parent-supervised submission form with a moderation queue
 - Kid-safety defaults: nicknames, age bands, no comments or direct messages
-- Firebase Auth + Firestore integration with security rules
-- Local demo mode when Firebase is not configured
+- Hosted D1 database for challenges, approved projects, votes, and private submissions
+- Offline demo fallback when the community API cannot be reached
 
 ## Run locally
 
@@ -18,16 +18,16 @@ npm install
 npm run dev
 ```
 
-The app uses demo projects and local storage until Firebase variables are supplied.
+The Cloudflare development adapter provides the same Worker API used in production. The hosted Sites deployment provisions the D1 binding declared in `.openai/hosting.json`.
 
-## Connect Firebase
+## Data and moderation
 
-1. Create a Firebase web app and enable **Firestore** and **Anonymous Authentication**.
-2. Copy `.env.example` to `.env.local` and fill in the six `VITE_FIREBASE_*` values.
-3. Deploy the included rules and indexes with `firebase deploy --only firestore`.
-4. Add an active document to `challenges` and approved documents to `projects`. If these collections are empty, the designed sample content remains visible.
+- `challenges` contains the active and upcoming weekly prompts.
+- `projects` contains public gallery entries; only rows with `status: approved` are returned.
+- `votes` stores one project choice per browser identifier and challenge.
+- `submissions` is a private moderation queue containing parent contact details and consent records.
 
-Submissions arrive in the private `submissions` collection with `status: pending`. Public gallery entries belong in `projects` with `status: approved`; parent names and emails should never be copied there.
+The API never returns the submissions table publicly. Approving a submission means reviewing its links, copying only the public child nickname, age band, description, and project links into `projects`, and leaving parent details private.
 
 ## Build
 
@@ -36,4 +36,4 @@ npm run lint
 npm run build
 ```
 
-The `firebase.json` file is ready to host the production `dist` folder after a build.
+The build produces a Cloudflare Worker entrypoint, static client assets, hosting metadata, and the checked-in D1 migration.

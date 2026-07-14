@@ -43,5 +43,5 @@ export type CommunitySnapshot = {
   projects: Project[]
   voteCounts: Record<string, number>
   myVote: string | null
-  source: 'firebase' | 'demo'
+  source: 'database' | 'demo'
 }

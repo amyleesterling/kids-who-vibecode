@@ -5,7 +5,7 @@ import {
   LockKeyhole, Menu, MousePointer2, ShieldCheck, Sparkles, X,
 } from 'lucide-react'
 import { upcomingChallenges } from './data'
-import { firebaseReady, loadCommunity, saveVote, submitProject } from './lib/community'
+import { loadCommunity, saveVote, submitProject } from './lib/community'
 import type { Challenge, CommunitySnapshot, Project, SubmissionInput } from './types'
 
 const emptySubmission: SubmissionInput = {
@@ -282,13 +282,13 @@ function App() {
         <section id="grownups" className="grownups-section">
           <div className="page-shell grownups-layout">
             <div className="safety-art"><ShieldCheck size={66} /><span className="safety-star">✦</span><span className="safety-code">{'{ safe + silly }'}</span></div>
-            <div><span className="kicker">Grown-ups stay in the loop</span><h2>Big creativity.<br />Small digital footprint.</h2><p>Kids use nicknames and age groups—never full names. A parent or guardian approves every submission, and our club grown-ups check each project and link before it goes public.</p><ul><li><Check size={17} /> No direct messages or public comments</li><li><Check size={17} /> Parent contact details are never public</li><li><Check size={17} /> One favorite vote per account each week</li></ul><button className="button button-dark" onClick={() => setShowSubmit(true)}>Read the grown-up checklist <ArrowRight size={17} /></button></div>
+            <div><span className="kicker">Grown-ups stay in the loop</span><h2>Big creativity.<br />Small digital footprint.</h2><p>Kids use nicknames and age groups—never full names. A parent or guardian approves every submission, and our club grown-ups check each project and link before it goes public.</p><ul><li><Check size={17} /> No direct messages or public comments</li><li><Check size={17} /> Parent contact details are never public</li><li><Check size={17} /> One favorite vote per browser each week</li></ul><button className="button button-dark" onClick={() => setShowSubmit(true)}>Read the grown-up checklist <ArrowRight size={17} /></button></div>
           </div>
         </section>
       </main>
 
       <footer><div className="page-shell footer-layout"><Logo /><p>Made for small coders with big ideas.</p><div><a href="#grownups">Safety</a><a href="mailto:hello@vibecode.club">Contact</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING WEIRD</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
-      {community.source === 'demo' && <div className="demo-badge" title={firebaseReady ? 'Firebase could not be reached' : 'Add Firebase environment variables to connect live data'}>Demo clubhouse <ChevronDown size={13} /></div>}
+      {community.source === 'demo' && <div className="demo-badge" title="The community database could not be reached">Offline demo <ChevronDown size={13} /></div>}
       {notice && <div className="toast" role="status"><Heart size={17} fill="currentColor" /> {notice}</div>}
       {showSubmit && <SubmissionModal challenge={community.challenge} onClose={() => setShowSubmit(false)} />}
     </div>

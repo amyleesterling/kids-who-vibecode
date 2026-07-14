@@ -1,0 +1,96 @@
+import type { ClubDatabase } from '../worker/index'
+
+export const schemaStatements = [
+  `CREATE TABLE IF NOT EXISTS challenges (
+    id TEXT PRIMARY KEY,
+    week_label TEXT NOT NULL,
+    title TEXT NOT NULL,
+    eyebrow TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    brief TEXT NOT NULL,
+    closes_at TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('active', 'upcoming', 'closed')),
+    starter_ideas TEXT NOT NULL,
+    tools TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS projects (
+    id TEXT PRIMARY KEY,
+    challenge_id TEXT NOT NULL REFERENCES challenges(id),
+    title TEXT NOT NULL,
+    builder TEXT NOT NULL,
+    age_band TEXT NOT NULL,
+    description TEXT NOT NULL,
+    repo_url TEXT,
+    demo_url TEXT,
+    base_votes INTEGER NOT NULL DEFAULT 0,
+    scene TEXT NOT NULL,
+    accent TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('approved', 'hidden'))
+  )`,
+  `CREATE TABLE IF NOT EXISTS votes (
+    challenge_id TEXT NOT NULL REFERENCES challenges(id),
+    voter_id TEXT NOT NULL,
+    project_id TEXT NOT NULL REFERENCES projects(id),
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (challenge_id, voter_id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS submissions (
+    id TEXT PRIMARY KEY,
+    challenge_id TEXT NOT NULL REFERENCES challenges(id),
+    child_nickname TEXT NOT NULL,
+    age_band TEXT NOT NULL,
+    project_title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    repo_url TEXT NOT NULL,
+    demo_url TEXT,
+    parent_name TEXT NOT NULL,
+    parent_email TEXT NOT NULL,
+    consent INTEGER NOT NULL CHECK (consent = 1),
+    public_sharing INTEGER NOT NULL CHECK (public_sharing = 1),
+    status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
+    created_at TEXT NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS projects_challenge_status_idx ON projects (challenge_id, status)`,
+  `CREATE INDEX IF NOT EXISTS votes_project_idx ON votes (project_id)`,
+  `CREATE INDEX IF NOT EXISTS submissions_status_created_idx ON submissions (status, created_at)`,
+]
+
+function nextSunday() {
+  const date = new Date()
+  const daysUntilSunday = (7 - date.getUTCDay()) % 7 || 7
+  date.setUTCDate(date.getUTCDate() + daysUntilSunday)
+  date.setUTCHours(23, 59, 0, 0)
+  return date.toISOString()
+}
+
+export async function ensureDatabase(db: ClubDatabase) {
+  await db.batch(schemaStatements.map((statement) => db.prepare(statement)))
+}
+
+export async function seedDatabase(db: ClubDatabase) {
+  const challenge = db.prepare(`
+    INSERT OR IGNORE INTO challenges (
+      id, week_label, title, eyebrow, prompt, brief, closes_at, status, starter_ideas, tools
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)
+  `).bind(
+    'tiny-worlds', 'Challenge 01 · This week', 'Build a tiny world', 'Small screen. Big imagination.',
+    'Create a little place we can visit. Who lives there? What happens when we tap, click, or press a key?',
+    'Make a tiny interactive world with at least one surprise. It can be a website, game, animation, or something nobody has named yet.',
+    nextSunday(), JSON.stringify(['A moon base for cats', 'A garden that sings', 'A city inside a raindrop']),
+    JSON.stringify(['Scratch', 'HTML + CSS', 'Replit', 'Anything you love']),
+  )
+
+  const projects = [
+    ['mossy-moon', 'Mossy Moon', 'PixelPanda', '7–9', 'Grow glowing space plants and wake up the moon bugs.', 'https://github.com/', '', 18, 'space', '#b9f44a'],
+    ['bubble-town', 'Bubble Town', 'RainbowRex', '5–6', 'A whole town where every building can float away.', '', '', 14, 'ocean', '#65d9ff'],
+    ['snack-forest', 'The Snack Forest', 'CodeKoala', '7–9', 'Help a tiny monster find the legendary golden toast.', 'https://github.com/', '', 11, 'garden', '#ffb3c7'],
+    ['monster-disco', 'Monster Disco', 'BugBunny', '5–6', 'Tap the beat and give every monster a silly dance.', '', '', 9, 'monster', '#ffcb45'],
+  ].map((project) => db.prepare(`
+    INSERT OR IGNORE INTO projects (
+      id, challenge_id, title, builder, age_band, description, repo_url, demo_url,
+      base_votes, scene, accent, status
+    ) VALUES (?, 'tiny-worlds', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')
+  `).bind(...project))
+
+  await db.batch([challenge, ...projects])
+}
