@@ -386,7 +386,7 @@ function App() {
             <h1>Make weird.<br />Make wonderful.<br /><span>Make it yours.</span></h1>
             <p className="hero-lede">A new creative coding adventure every week. Build it your way, share it with the club, and cheer on other young makers.</p>
             <div className="hero-actions"><a className="button button-coral" href="#challenge">See this week’s challenge <ArrowRight size={19} /></a><button className="text-link" onClick={openSubmission}>I made something! <span>↗</span></button></div>
-            <div className="trust-note"><span className="avatar-stack"><i>🐯</i><i>🦊</i><i>🐸</i></span><p><b>Built for kids. Guided by grown-ups.</b><br />Nicknames only · Parent-approved sharing</p></div>
+            <div className="trust-note"><span className="avatar-stack"><i>🐯</i><i>🦊</i><i>🐸</i></span><p><b>Built for kids who create. Guided by grown-ups.</b></p></div>
           </div>
           <ChallengePreview challenge={community.challenge} />
         </section>
