@@ -21,6 +21,7 @@ Read the public **[Terms, Safety & Privacy Notice](https://vibecodekids.com/lega
 - A visitor challenge-idea form with a grown-up permission checkpoint
 - A parent-only weekly challenge email signup with one-click unsubscribe
 - A password-protected Clubhouse Admin for reviewing projects, images, links, ideas, and subscribers
+- An optional AI-assisted playthrough that samples playable experiences before a grown-up publishes them
 - Kid-safety defaults: nicknames, age bands, no comments or direct messages
 - A grown-up-only legal acceptance recorded with each new project and challenge idea
 - A public Terms, Safety & Privacy Notice covering supervision, community content, external links, and parent privacy choices
@@ -46,12 +47,21 @@ The Cloudflare development adapter provides the same Worker API used in producti
 - `challenge_ideas` is a private idea queue containing proposed prompts and a grown-up contact email.
 - `subscribers` is the private, deduplicated grown-up newsletter list.
 - `newsletter_deliveries` prevents the same weekly challenge being sent twice to one address.
+- `safety_scans` stores automated playthrough status, findings, coverage flags, and the action log; screenshots are not retained.
 
 The API never returns either private queue publicly. Review happens in the authenticated Clubhouse Admin. Approving a project publishes only the kid-safe nickname, age band, description, project links, and approved image; parent details remain private.
 
 Every new project submission also requires a grown-up to attest that the project was led by the child rather than built for them by an adult. Teaching, brainstorming, AI assistance, and troubleshooting are welcome; the child must make the creative decisions and lead the build.
 
 New project and challenge-idea records store acceptance of the dated legal terms. The public page is written as a practical baseline and should be reviewed by a qualified lawyer for the operator's identity, jurisdiction, and specific COPPA obligations before broader promotion.
+
+## AI safety playthrough runner
+
+Playable submissions can be reviewed in an isolated Playwright browser before publication. The runner samples up to eight states, asks an OpenAI vision-capable model to choose limited safe interactions, checks screenshots and visible text with OpenAI moderation, and reports its findings to the private Clubhouse Admin. Audio, video, embedded frames, text inputs, downloads, external navigation, incomplete coverage, or questionable content always send the project to grown-up review. Repository-only submissions cannot be played automatically.
+
+The AI result is advisory and does not guarantee that an experience is safe. A club grown-up remains responsible for opening the project, reviewing the code and links, and making the final publication decision. The admin records any explicit grown-up override of a non-passing result.
+
+The scheduled runner lives in `.github/workflows/experience-safety-scan.yml`. To enable it, add the same long random `SAFETY_SCAN_SECRET` to both the production site environment and GitHub Actions, then add `OPENAI_API_KEY` to GitHub Actions. `OPENAI_PLAYTHROUGH_MODEL` is optional and defaults to `gpt-5.6-luna`. Until the shared secret exists in production, the dashboard labels the runner as not configured and preserves the normal manual-review flow.
 
 ## Clubhouse Admin
 

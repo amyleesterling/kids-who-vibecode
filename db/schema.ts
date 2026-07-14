@@ -100,6 +100,26 @@ export const schemaStatements = [
     action TEXT NOT NULL,
     created_at TEXT NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS safety_scans (
+    id TEXT PRIMARY KEY,
+    submission_id TEXT NOT NULL UNIQUE REFERENCES submissions(id),
+    target_url TEXT NOT NULL,
+    target_kind TEXT NOT NULL CHECK (target_kind IN ('playable', 'repository')),
+    status TEXT NOT NULL CHECK (status IN ('queued', 'running', 'passed', 'review', 'failed', 'manual')),
+    verdict TEXT,
+    summary TEXT,
+    categories TEXT NOT NULL DEFAULT '[]',
+    actions TEXT NOT NULL DEFAULT '[]',
+    technical_flags TEXT NOT NULL DEFAULT '[]',
+    screenshots_reviewed INTEGER NOT NULL DEFAULT 0,
+    model TEXT,
+    error TEXT,
+    attempt INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    started_at TEXT,
+    completed_at TEXT,
+    updated_at TEXT NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS admin_login_attempts (
     ip_hash TEXT PRIMARY KEY,
     attempts INTEGER NOT NULL,
@@ -111,6 +131,7 @@ export const schemaStatements = [
   `CREATE INDEX IF NOT EXISTS challenge_ideas_status_created_idx ON challenge_ideas (status, created_at)`,
   `CREATE INDEX IF NOT EXISTS subscribers_status_created_idx ON subscribers (status, created_at)`,
   `CREATE INDEX IF NOT EXISTS moderation_events_item_idx ON moderation_events (item_type, item_id, created_at)`,
+  `CREATE INDEX IF NOT EXISTS safety_scans_status_updated_idx ON safety_scans (status, updated_at)`,
   `CREATE INDEX IF NOT EXISTS challenges_schedule_idx ON challenges (opens_at, closes_at, voting_opens_at, voting_closes_at)`,
 ]
 

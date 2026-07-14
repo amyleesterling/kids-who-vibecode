@@ -72,6 +72,20 @@
 .admin-card-copy > p, .idea-list > article > p { color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
 .admin-links { display: flex; flex-wrap: wrap; gap: 17px; margin: 20px 0; }
 .admin-links a { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; text-decoration: underline; }
+.safety-system-banner { display: flex; align-items: flex-start; gap: 14px; margin: -5px 0 26px; padding: 18px 20px; border: 1.5px solid var(--ink); border-radius: 12px; box-shadow: 4px 4px 0 var(--ink); }
+.safety-system-banner.enabled { background: #efffd0; }.safety-system-banner.setup { background: #fff4c7; }
+.safety-system-banner > svg { flex: 0 0 auto; }.safety-system-banner div { display: grid; gap: 4px; }.safety-system-banner b { font-size: 12px; }.safety-system-banner p { margin: 0; color: var(--ink-soft); font-size: 10px; line-height: 1.55; }
+.safety-review { display: grid; gap: 12px; margin: 18px 0; padding: 16px; border: 1.5px solid var(--ink); border-radius: 11px; background: var(--paper); }
+.safety-review.safety-passed { background: #efffd0; box-shadow: 3px 3px 0 #72c877; }.safety-review.safety-review, .safety-review.safety-failed { background: #fff0f0; box-shadow: 3px 3px 0 var(--coral); }.safety-review.safety-running { background: #e8f9ff; }.safety-review.safety-queued { background: #fff8d7; }
+.safety-review-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }.safety-review-heading > span:first-child { display: flex; align-items: center; gap: 8px; font-size: 11px; }.safety-review-heading .admin-status { flex: 0 0 auto; }
+.safety-setup-note, .safety-error { display: flex; align-items: flex-start; gap: 7px; margin: 0; padding: 9px 10px; border-radius: 7px; background: #fff0c2; color: var(--ink-soft); font-size: 9px; line-height: 1.5; }.safety-setup-note svg { flex: 0 0 auto; }
+.safety-error { background: #ffe4e8; color: #9f183b; }
+.safety-summary { margin: 0; color: var(--ink-soft); font-size: 10px; line-height: 1.65; }
+.safety-tags { display: flex; flex-wrap: wrap; gap: 6px; }.safety-tags span { padding: 5px 7px; border: 1px solid var(--ink); border-radius: 99px; background: #ffd7de; font-family: 'DM Mono', monospace; font-size: 7px; font-weight: 800; text-transform: uppercase; }
+.safety-flags { display: grid; gap: 4px; padding: 10px; border-left: 4px solid var(--yellow); background: white; font-size: 8px; }.safety-flags b { font-size: 9px; }.safety-flags span { color: var(--ink-soft); }
+.safety-meta { margin: 0; color: var(--ink-soft); font-family: 'DM Mono', monospace; font-size: 7px; line-height: 1.5; }
+.safety-review details { border-top: 1px solid var(--line); padding-top: 9px; }.safety-review summary { cursor: pointer; font-size: 9px; font-weight: 800; }.safety-review ol { margin: 10px 0 0; padding-left: 23px; }.safety-review li { margin-bottom: 7px; color: var(--ink-soft); font-size: 8px; line-height: 1.45; }.safety-review li b { color: var(--ink); }.safety-review li span { display: block; }
+.safety-run-button { min-height: 36px; width: fit-content; display: inline-flex; align-items: center; gap: 7px; border: 1.5px solid var(--ink); border-radius: 8px; padding: 8px 11px; background: var(--blue); box-shadow: 2px 2px 0 var(--ink); font-size: 9px; font-weight: 800; cursor: pointer; }.safety-run-button:disabled { opacity: .5; cursor: wait; box-shadow: none; }
 .private-contact { display: flex; align-items: center; gap: 10px; padding: 12px; background: #efffd0; border-radius: 9px; font-size: 10px; }
 .private-contact span { display: grid; gap: 2px; }
 .private-contact b { font-size: 8px; text-transform: uppercase; }
@@ -79,7 +93,7 @@
 .admin-card-actions > span { color: var(--ink-soft); font-family: 'DM Mono', monospace; font-size: 8px; }
 .admin-card-actions > div { display: flex; gap: 9px; }
 .admin-card-actions button, .subscriber-row button { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1.5px solid var(--ink); border-radius: 8px; padding: 8px 13px; font-size: 10px; font-weight: 800; cursor: pointer; }
-.admin-reject { background: white; }.admin-approve { background: var(--green); box-shadow: 2px 2px 0 var(--ink); }
+.admin-reject { background: white; }.admin-approve { background: var(--green); box-shadow: 2px 2px 0 var(--ink); }.admin-override { background: var(--yellow); box-shadow: 2px 2px 0 var(--coral); }
 .admin-card-actions button:disabled, .subscriber-row button:disabled { opacity: .5; cursor: wait; }
 .idea-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .idea-list blockquote { margin: 17px 0; padding: 13px 16px; background: var(--yellow); border-left: 4px solid var(--ink); font-size: 11px; }

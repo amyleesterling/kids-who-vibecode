@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ArrowLeft, CalendarDays, Check, Clock3, ExternalLink, Github, Heart, Image as ImageIcon, ImagePlus, Inbox,
-  Lightbulb, LogOut, Mail, RefreshCw, Save, ShieldCheck, Sparkles, X,
+  AlertTriangle, ArrowLeft, Bot, CalendarDays, Check, Clock3, ExternalLink, Github, Heart, Image as ImageIcon,
+  ImagePlus, Inbox, Lightbulb, LogOut, Mail, Play, RefreshCw, Save, ShieldCheck, Sparkles, X,
 } from 'lucide-react'
 import { prepareProjectImage } from './lib/projectImage'
 
@@ -23,6 +23,19 @@ type AdminSubmission = {
   imageUrl?: string
   status: 'pending' | 'approved' | 'rejected'
   createdAt: string
+  safetyScanId?: string
+  safetyStatus?: 'queued' | 'running' | 'passed' | 'review' | 'failed' | 'manual'
+  safetyVerdict?: string
+  safetySummary?: string
+  safetyCategories: string[]
+  safetyActions: Array<{ step?: number; action?: string; target?: string; result?: string }>
+  safetyTechnicalFlags: string[]
+  safetyScreenshotsReviewed: number
+  safetyModel?: string
+  safetyError?: string
+  safetyStartedAt?: string
+  safetyCompletedAt?: string
+  safetyUpdatedAt?: string
 }
 
 type AdminIdea = {
@@ -67,6 +80,7 @@ type Dashboard = {
   ideas: AdminIdea[]
   subscribers: AdminSubscriber[]
   activity: Array<{ id: string; itemType: string; itemId: string; action: string; createdAt: string }>
+  safetyScannerEnabled: boolean
   schedule: {
     now: string
     currentChallenge: AdminChallenge | null
@@ -74,6 +88,38 @@ type Dashboard = {
     nextChallenge: AdminChallenge | null
     challenges: AdminChallenge[]
   }
+}
+
+function SafetyReview({ item, enabled, busy, onQueue }: {
+  item: AdminSubmission
+  enabled: boolean
+  busy: boolean
+  onQueue: (scanId: string) => Promise<void>
+}) {
+  const status = item.safetyStatus || 'manual'
+  const statusCopy = {
+    queued: 'Waiting for AI runner',
+    running: 'AI is playing now',
+    passed: 'AI playthrough passed',
+    review: 'Grown-up review needed',
+    failed: 'Playthrough failed',
+    manual: item.demoUrl ? 'Manual review required' : 'No playable link',
+  }[status]
+
+  return (
+    <section className={`safety-review safety-${status}`} aria-label={`AI safety review: ${statusCopy}`}>
+      <div className="safety-review-heading"><span><Bot size={19} /><b>{statusCopy}</b></span><span className="admin-status">{status}</span></div>
+      {!enabled && <p className="safety-setup-note"><AlertTriangle size={15} /> The review dashboard is ready, but the private AI runner still needs its OpenAI key.</p>}
+      {item.safetySummary && <p className="safety-summary">{item.safetySummary}</p>}
+      {item.safetyError && <p className="safety-error">{item.safetyError}</p>}
+      {!!item.safetyCategories.length && <div className="safety-tags">{item.safetyCategories.map((category) => <span key={category}>{category}</span>)}</div>}
+      {!!item.safetyTechnicalFlags.length && <div className="safety-flags"><b>Coverage limits</b>{item.safetyTechnicalFlags.map((flag) => <span key={flag}>{flag}</span>)}</div>}
+      {(item.safetyScreenshotsReviewed > 0 || item.safetyCompletedAt) && <p className="safety-meta">Reviewed {item.safetyScreenshotsReviewed} screen{item.safetyScreenshotsReviewed === 1 ? '' : 's'}{item.safetyModel ? ` with ${item.safetyModel}` : ''}{item.safetyCompletedAt ? ` · ${dateLabel(item.safetyCompletedAt)}` : ''}</p>}
+      {!!item.safetyActions.length && <details><summary>See what the AI tested ({item.safetyActions.length} steps)</summary><ol>{item.safetyActions.map((action, index) => <li key={`${action.step || index}-${action.action || ''}`}><b>{action.action || 'Observed'}</b>{action.target ? ` · ${action.target}` : ''}{action.result ? <span>{action.result}</span> : null}</li>)}</ol></details>}
+      {item.demoUrl && item.safetyScanId && <button className="safety-run-button" disabled={!enabled || busy || status === 'running' || status === 'queued'} onClick={() => onQueue(item.safetyScanId!)}><Play size={15} /> {busy ? 'Queuing…' : status === 'queued' ? 'Already queued' : 'Run AI playthrough again'}</button>}
+      {!item.demoUrl && <p className="safety-meta">A repository can be checked manually, but an interactive playthrough requires a playable HTTPS link.</p>}
+    </section>
+  )
 }
 
 type AdminTab = 'challenges' | 'submissions' | 'ideas' | 'subscribers'
@@ -196,6 +242,7 @@ function AdminApp() {
     ideas: dashboard?.ideas.filter((item) => item.status === 'pending').length || 0,
     subscribers: dashboard?.subscribers.filter((item) => item.status === 'active').length || 0,
   }), [dashboard])
+  const safetyScannerEnabled = dashboard?.safetyScannerEnabled || false
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -222,7 +269,7 @@ function AdminApp() {
     setDashboard(null)
   }
 
-  async function moderate(type: 'submission' | 'idea' | 'subscriber', id: string, action: string, label: string) {
+  async function moderate(type: 'submission' | 'idea' | 'subscriber', id: string, action: string, label: string, safetyOverride = false) {
     if (!window.confirm(label)) return
     const key = `${type}:${id}`
     setBusy(key)
@@ -230,8 +277,18 @@ function AdminApp() {
     const response = await fetch('/api/admin/moderate', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ type, id, action }),
+      body: JSON.stringify({ type, id, action, safetyOverride }),
     })
+    if (!response.ok) setError(await readError(response))
+    else await loadDashboard().catch((reason) => setError(reason.message))
+    setBusy('')
+  }
+
+  async function queueSafetyScan(scanId: string) {
+    const key = `safety:${scanId}`
+    setBusy(key)
+    setError('')
+    const response = await fetch(`/api/admin/safety-scans/${encodeURIComponent(scanId)}`, { method: 'POST' })
     if (!response.ok) setError(await readError(response))
     else await loadDashboard().catch((reason) => setError(reason.message))
     setBusy('')
@@ -326,9 +383,13 @@ function AdminApp() {
         </section>}
 
         {tab === 'submissions' && <section>
-          <div className="admin-section-heading"><div><span className="kicker">Moderation queue</span><h2>Project submissions</h2></div><p>Open every code and playable link before approving.</p></div>
+          <div className="admin-section-heading"><div><span className="kicker">Human + AI moderation</span><h2>Project submissions</h2></div><p>AI explores each playable experience first. A clubhouse grown-up always makes the final decision.</p></div>
+          <div className={`safety-system-banner ${safetyScannerEnabled ? 'enabled' : 'setup'}`}><Bot size={25} /><div><b>{safetyScannerEnabled ? 'AI playthrough runner connected' : 'AI review dashboard installed'}</b><p>{safetyScannerEnabled ? 'New playable links are queued automatically. Approval waits for a pass or a recorded grown-up override.' : 'Add the private runner secrets to begin automatic playthroughs. Until then, approvals continue as manual grown-up reviews.'}</p></div></div>
           <div className="admin-card-list">
-            {dashboard?.submissions.map((item) => <article className={`admin-card submission-card status-${item.status}`} key={item.id}>
+            {dashboard?.submissions.map((item) => {
+              const waitingForScan = safetyScannerEnabled && ['queued', 'running'].includes(item.safetyStatus || '')
+              const needsOverride = safetyScannerEnabled && !waitingForScan && item.safetyStatus !== 'passed'
+              return <article className={`admin-card submission-card status-${item.status}`} key={item.id}>
               <div className="admin-card-top"><span className="admin-status">{item.status}</span><time>{dateLabel(item.createdAt)}</time></div>
               <div className="submission-review-grid">
                 <div className="admin-image-panel">
@@ -356,11 +417,12 @@ function AdminApp() {
                   <h3>{item.projectTitle}</h3>
                   <p>{item.description}</p>
                   <div className="admin-links"><a href={item.repoUrl} target="_blank" rel="noreferrer"><Github size={16} /> Check the code</a>{item.demoUrl && <a href={item.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Open playable link</a>}</div>
+                  <SafetyReview item={item} enabled={safetyScannerEnabled} busy={busy === `safety:${item.safetyScanId}`} onQueue={queueSafetyScan} />
                   <div className="private-contact"><ShieldCheck size={16} /><span><b>Private grown-up contact</b>{item.parentName} · <a href={`mailto:${item.parentEmail}`}>{item.parentEmail}</a></span></div>
                 </div>
               </div>
-              <div className="admin-card-actions"><span>Challenge: {item.challengeId}</span><div><button disabled={busy === `submission:${item.id}`} className="admin-reject" onClick={() => moderate('submission', item.id, 'reject', `Reject “${item.projectTitle}” and keep it out of the gallery?`)}><X size={16} /> Reject</button><button disabled={busy === `submission:${item.id}`} className="admin-approve" onClick={() => moderate('submission', item.id, 'approve', `Approve “${item.projectTitle}” for its scheduled gallery week?`)}><Check size={16} /> Approve for gallery</button></div></div>
-            </article>)}
+              <div className="admin-card-actions"><span>Challenge: {item.challengeId}</span><div><button disabled={busy === `submission:${item.id}`} className="admin-reject" onClick={() => moderate('submission', item.id, 'reject', `Reject “${item.projectTitle}” and keep it out of the gallery?`)}><X size={16} /> Reject</button><button disabled={busy === `submission:${item.id}` || waitingForScan} className={needsOverride ? 'admin-override' : 'admin-approve'} onClick={() => moderate('submission', item.id, 'approve', needsOverride ? `The AI playthrough did not pass. Approve “${item.projectTitle}” with a recorded grown-up safety override?` : `Approve “${item.projectTitle}” for its scheduled gallery week?`, needsOverride)}>{waitingForScan ? <><Bot size={16} /> Awaiting AI</> : needsOverride ? <><AlertTriangle size={16} /> Override & approve</> : <><Check size={16} /> Approve for gallery</>}</button></div></div>
+            </article>})}
             {!dashboard?.submissions.length && <div className="admin-empty"><Inbox size={35} /><h3>The project inbox is empty.</h3></div>}
           </div>
         </section>}

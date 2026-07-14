@@ -100,6 +100,8 @@ function LegalPage() {
                 <li><b>Basic technical information:</b> a random browser voting identifier stored on the device, server request information used for security and reliability, and an admin session cookie used only for the private clubhouse.</li>
               </ul>
               <p>We use this information to review and display approved projects, operate one-vote-per-browser favorites, communicate with adults, send requested weekly emails, maintain safety, prevent abuse, and operate the service. We do not sell personal information or use behavioral advertising.</p>
+              <h3>Automated safety reviews</h3>
+              <p>Playable project links may be opened by an isolated automated browser. An AI service may receive sampled screenshots, visible page text, project descriptions, and a limited action log to identify potentially inappropriate content and coverage gaps. The automated result is advisory: a clubhouse grown-up makes the final publication decision. Safety-review screenshots are analyzed during the run and are not intentionally retained by Vibe Code Club.</p>
               <h3>Who receives information</h3>
               <p>Approved public fields are visible to anyone. Private information is available only to authorized club administrators and service providers that help us host the site, store data and images, protect the service, or deliver requested email. These providers may process information only to provide those services. External project links have their own privacy practices.</p>
               <h3>How long we keep it</h3>

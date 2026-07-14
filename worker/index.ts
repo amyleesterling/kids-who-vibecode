@@ -31,6 +31,7 @@ type Env = {
   RESEND_API_KEY?: string
   NEWSLETTER_CRON_SECRET?: string
   NEWSLETTER_FROM_EMAIL?: string
+  SAFETY_SCAN_SECRET?: string
 }
 
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), {
@@ -232,7 +233,9 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request) 
   }
 
   try {
-    await db.prepare(`
+    const now = new Date().toISOString()
+    const scanId = crypto.randomUUID()
+    await db.batch([db.prepare(`
       INSERT INTO submissions (
         id, challenge_id, child_nickname, age_band, project_title, description,
         repo_url, demo_url, parent_name, parent_email, consent, public_sharing, child_led,
@@ -243,8 +246,16 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request) 
       id, challengeId, childNickname, ageBand, projectTitle, description,
       repoUrl, demoUrl, parentName, parentEmail, legalTermsVersion, imageKey || null,
       hasImage ? image.name.slice(0, 120) : null, hasImage ? image.type : null,
-      hasImage ? image.size : null, new Date().toISOString(),
-    ).run()
+        hasImage ? image.size : null, now,
+    ), db.prepare(`
+      INSERT INTO safety_scans (
+        id, submission_id, target_url, target_kind, status, categories, actions,
+        technical_flags, screenshots_reviewed, attempt, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, '[]', '[]', '[]', 0, 0, ?, ?)
+    `).bind(
+      scanId, id, demoUrl || repoUrl, demoUrl ? 'playable' : 'repository',
+      demoUrl ? 'queued' : 'manual', now, now,
+    )])
   } catch (error) {
     if (imageKey) await uploads.delete(imageKey).catch(() => undefined)
     throw error
@@ -382,6 +393,82 @@ async function sendWeeklyChallenge(db: ClubDatabase, request: Request, env: Env)
   return json({ ok: failures.length === 0, sent, failed: failures.length, remaining: subscribers.length - sent })
 }
 
+function isSafetyRunner(request: Request, env: Env) {
+  if (!env.SAFETY_SCAN_SECRET) return false
+  const authorization = request.headers.get('authorization') || ''
+  const supplied = authorization.startsWith('Bearer ') ? authorization.slice(7) : ''
+  return Boolean(supplied) && constantTimeEqual(supplied, env.SAFETY_SCAN_SECRET)
+}
+
+function safeJsonArray(value: unknown, maxLength: number) {
+  if (!Array.isArray(value)) return '[]'
+  const serialized = JSON.stringify(value)
+  return serialized.length <= maxLength ? serialized : '[]'
+}
+
+async function claimSafetyScans(db: ClubDatabase, request: Request, env: Env) {
+  if (!env.SAFETY_SCAN_SECRET) return json({ error: 'Safety playthroughs are not configured.' }, 503)
+  if (!isSafetyRunner(request, env)) return json({ error: 'Unauthorized' }, 401)
+
+  const now = new Date().toISOString()
+  const stale = new Date(Date.now() - 45 * 60_000).toISOString()
+  await db.prepare(`
+    UPDATE safety_scans
+    SET status = 'queued', error = 'Previous playthrough timed out and was re-queued.', updated_at = ?
+    WHERE status = 'running' AND updated_at < ?
+  `).bind(now, stale).run()
+
+  const { results } = await db.prepare(`
+    SELECT sc.id, sc.submission_id AS submissionId, sc.target_url AS targetUrl,
+      s.project_title AS projectTitle, s.description
+    FROM safety_scans sc
+    JOIN submissions s ON s.id = sc.submission_id
+    WHERE sc.status = 'queued' AND sc.target_kind = 'playable'
+    ORDER BY sc.updated_at LIMIT 2
+  `).all<Record<string, unknown>>()
+
+  if (results.length) {
+    await db.batch(results.map((scan) => db.prepare(`
+      UPDATE safety_scans
+      SET status = 'running', started_at = ?, completed_at = NULL, updated_at = ?,
+        error = NULL, attempt = attempt + 1
+      WHERE id = ? AND status = 'queued'
+    `).bind(now, now, scan.id)))
+  }
+
+  return json({ scans: results })
+}
+
+async function recordSafetyScanResult(db: ClubDatabase, request: Request, env: Env) {
+  if (!env.SAFETY_SCAN_SECRET) return json({ error: 'Safety playthroughs are not configured.' }, 503)
+  if (!isSafetyRunner(request, env)) return json({ error: 'Unauthorized' }, 401)
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null
+  const id = validText(body?.id, 100)
+  const status = ['passed', 'review', 'failed'].includes(text(body?.status)) ? text(body?.status) : null
+  const verdict = validText(body?.verdict, 40) || null
+  const summary = validText(body?.summary, 2000) || null
+  const model = validText(body?.model, 100) || null
+  const error = validText(body?.error, 1000) || null
+  const screenshots = Number(body?.screenshotsReviewed)
+  if (!id || !status || !Number.isInteger(screenshots) || screenshots < 0 || screenshots > 20) {
+    return json({ error: 'Invalid safety result.' }, 400)
+  }
+  const now = new Date().toISOString()
+  const existing = await db.prepare(`SELECT id FROM safety_scans WHERE id = ?`).bind(id).first<{ id: string }>()
+  if (!existing) return json({ error: 'Safety scan not found.' }, 404)
+
+  await db.prepare(`
+    UPDATE safety_scans SET status = ?, verdict = ?, summary = ?, categories = ?,
+      actions = ?, technical_flags = ?, screenshots_reviewed = ?, model = ?, error = ?,
+      completed_at = ?, updated_at = ? WHERE id = ?
+  `).bind(
+    status, verdict, summary, safeJsonArray(body?.categories, 4000),
+    safeJsonArray(body?.actions, 16_000), safeJsonArray(body?.technicalFlags, 4000),
+    screenshots, model, error, now, now, id,
+  ).run()
+  return json({ ok: true })
+}
+
 async function serveUpload(uploads: ClubUploads, key: string, isPublic = false) {
   const object = await uploads.get(key)
   if (!object) return new Response('Image not found', { status: 404 })
@@ -453,14 +540,22 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
   if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
   const now = new Date().toISOString()
   const { results: submissions } = await db.prepare(`
-    SELECT id, challenge_id AS challengeId, child_nickname AS childNickname,
+    SELECT s.id, challenge_id AS challengeId, child_nickname AS childNickname,
       age_band AS ageBand, project_title AS projectTitle, description, repo_url AS repoUrl,
       demo_url AS demoUrl, parent_name AS parentName, parent_email AS parentEmail,
       child_led AS childLed,
       image_name AS imageName, image_content_type AS imageContentType, image_size AS imageSize,
       CASE WHEN image_key IS NULL OR image_key = '' THEN 0 ELSE 1 END AS hasImage,
-      status, created_at AS createdAt
-    FROM submissions ORDER BY created_at DESC LIMIT 200
+      s.status, s.created_at AS createdAt,
+      sc.id AS safetyScanId, sc.status AS safetyStatus, sc.verdict AS safetyVerdict,
+      sc.summary AS safetySummary, sc.categories AS safetyCategories,
+      sc.actions AS safetyActions, sc.technical_flags AS safetyTechnicalFlags,
+      sc.screenshots_reviewed AS safetyScreenshotsReviewed, sc.model AS safetyModel,
+      sc.error AS safetyError, sc.started_at AS safetyStartedAt,
+      sc.completed_at AS safetyCompletedAt, sc.updated_at AS safetyUpdatedAt
+    FROM submissions s
+    LEFT JOIN safety_scans sc ON sc.submission_id = s.id
+    ORDER BY s.created_at DESC LIMIT 200
   `).all<Record<string, unknown>>()
   const { results: ideas } = await db.prepare(`
     SELECT id, idea_title AS ideaTitle, idea_prompt AS ideaPrompt, starter_spark AS starterSpark,
@@ -494,10 +589,15 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
       childLed: Boolean(item.childLed),
       hasImage: Boolean(item.hasImage),
       imageUrl: item.hasImage ? `/api/admin/submission-images/${item.id}` : null,
+      safetyCategories: JSON.parse(String(item.safetyCategories || '[]')),
+      safetyActions: JSON.parse(String(item.safetyActions || '[]')),
+      safetyTechnicalFlags: JSON.parse(String(item.safetyTechnicalFlags || '[]')),
+      safetyScreenshotsReviewed: Number(item.safetyScreenshotsReviewed || 0),
     })),
     ideas,
     subscribers,
     activity,
+    safetyScannerEnabled: Boolean(env.SAFETY_SCAN_SECRET),
     schedule: {
       now,
       currentChallenge: challenges.find((challenge) => challenge.status === 'active') || null,
@@ -600,12 +700,38 @@ async function adminUpdateChallenge(db: ClubDatabase, request: Request, env: Env
   return json({ ok: true })
 }
 
+async function adminQueueSafetyScan(db: ClubDatabase, request: Request, env: Env) {
+  if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
+  if (!env.SAFETY_SCAN_SECRET) return json({ error: 'Connect the safety runner before starting a playthrough.' }, 503)
+  const scanId = decodeURIComponent(new URL(request.url).pathname.split('/').pop() || '')
+  const scan = await db.prepare(`
+    SELECT sc.id, s.demo_url AS demoUrl
+    FROM safety_scans sc JOIN submissions s ON s.id = sc.submission_id
+    WHERE sc.id = ?
+  `).bind(scanId).first<{ id: string; demoUrl: string | null }>()
+  if (!scan) return json({ error: 'Safety scan not found.' }, 404)
+  if (!scan.demoUrl) return json({ error: 'Add a playable link before requesting an AI playthrough.' }, 409)
+  const now = new Date().toISOString()
+  await db.batch([
+    db.prepare(`
+      UPDATE safety_scans SET target_url = ?, target_kind = 'playable', status = 'queued',
+        verdict = NULL, summary = NULL, categories = '[]', actions = '[]',
+        technical_flags = '[]', screenshots_reviewed = 0, model = NULL, error = NULL,
+        started_at = NULL, completed_at = NULL, updated_at = ? WHERE id = ?
+    `).bind(scan.demoUrl, now, scanId),
+    db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'safety_scan', ?, 'queued', ?)`)
+      .bind(crypto.randomUUID(), scanId, now),
+  ])
+  return json({ ok: true })
+}
+
 async function adminModerate(db: ClubDatabase, request: Request, env: Env) {
   if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
   const body = await request.json().catch(() => null) as Record<string, unknown> | null
   const type = text(body?.type)
   const id = validText(body?.id, 100)
   const action = text(body?.action)
+  const safetyOverride = body?.safetyOverride === true
   if (!id) return json({ error: 'Invalid moderation request' }, 400)
   const now = new Date().toISOString()
 
@@ -620,6 +746,11 @@ async function adminModerate(db: ClubDatabase, request: Request, env: Env) {
       projectTitle: string; description: string; repoUrl: string; demoUrl: string | null; imageKey: string | null;
     }>()
     if (!submission) return json({ error: 'Submission not found' }, 404)
+    const scan = await db.prepare(`SELECT status FROM safety_scans WHERE submission_id = ?`)
+      .bind(id).first<{ status: string }>()
+    if (env.SAFETY_SCAN_SECRET && scan?.status !== 'passed' && !safetyOverride) {
+      return json({ error: 'This project needs a passed AI playthrough or an explicit grown-up safety override.' }, 409)
+    }
     const scenes = ['space', 'ocean', 'garden', 'monster']
     const accents = ['#b9f44a', '#65d9ff', '#ffb3c7', '#ffcb45']
     const variant = Array.from(id).reduce((total, character) => total + character.charCodeAt(0), 0) % scenes.length
@@ -640,8 +771,8 @@ async function adminModerate(db: ClubDatabase, request: Request, env: Env) {
         scenes[variant], accents[variant], submission.imageKey,
       ),
       db.prepare(`UPDATE submissions SET status = 'approved' WHERE id = ?`).bind(id),
-      db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'submission', ?, 'approved', ?)`)
-        .bind(crypto.randomUUID(), id, now),
+      db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'submission', ?, ?, ?)`)
+        .bind(crypto.randomUUID(), id, safetyOverride ? 'approved_safety_override' : 'approved', now),
     ])
     return json({ ok: true })
   }
@@ -694,12 +825,15 @@ export default {
       if (request.method === 'POST' && url.pathname === '/api/subscribers') return subscribe(env.DB, request)
       if (request.method === 'GET' && url.pathname === '/api/unsubscribe') return unsubscribe(env.DB, request)
       if (request.method === 'POST' && url.pathname === '/api/newsletter/send-weekly') return sendWeeklyChallenge(env.DB, request, env)
+      if (request.method === 'GET' && url.pathname === '/api/safety/queue') return claimSafetyScans(env.DB, request, env)
+      if (request.method === 'POST' && url.pathname === '/api/safety/results') return recordSafetyScanResult(env.DB, request, env)
       if (request.method === 'POST' && url.pathname === '/api/admin/login') return adminLogin(env.DB, request, env)
       if (request.method === 'POST' && url.pathname === '/api/admin/logout') return adminLogout()
       if (request.method === 'GET' && url.pathname === '/api/admin/dashboard') return adminDashboard(env.DB, request, env)
       if (request.method === 'GET' && url.pathname.startsWith('/api/admin/submission-images/')) return adminSubmissionImage(env.DB, env.UPLOADS, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/submission-images/')) return adminUploadSubmissionImage(env.DB, env.UPLOADS, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/challenges/')) return adminUpdateChallenge(env.DB, request, env)
+      if (request.method === 'POST' && url.pathname.startsWith('/api/admin/safety-scans/')) return adminQueueSafetyScan(env.DB, request, env)
       if (request.method === 'POST' && url.pathname === '/api/admin/moderate') return adminModerate(env.DB, request, env)
       return json({ error: 'Not found' }, 404)
     } catch (error) {

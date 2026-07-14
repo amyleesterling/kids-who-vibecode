@@ -1,0 +1,45 @@
+name: AI experience safety playthroughs
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: experience-safety-scans
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SAFETY_SITE_URL: https://vibecodekids.com
+      SAFETY_SCAN_SECRET: ${{ secrets.SAFETY_SCAN_SECRET }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_PLAYTHROUGH_MODEL: ${{ vars.OPENAI_PLAYTHROUGH_MODEL || 'gpt-5.6-luna' }}
+    steps:
+      - id: config
+        run: |
+          if [ -n "$SAFETY_SCAN_SECRET" ] && [ -n "$OPENAI_API_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::AI safety playthroughs are waiting for repository secrets."
+          fi
+      - if: steps.config.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        if: steps.config.outputs.enabled == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.config.outputs.enabled == 'true'
+        run: npm ci
+      - if: steps.config.outputs.enabled == 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.config.outputs.enabled == 'true'
+        run: node scripts/run-safety-scans.mjs
