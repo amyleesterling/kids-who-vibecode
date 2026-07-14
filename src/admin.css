@@ -43,6 +43,10 @@
 .admin-image-panel img, .admin-image-empty { width: 100%; aspect-ratio: 16 / 10; border: 1.5px solid var(--ink); border-radius: 10px; object-fit: cover; background: var(--paper); }
 .admin-image-empty { display: grid; place-items: center; align-content: center; gap: 8px; color: var(--ink-soft); font-size: 10px; }
 .admin-image-panel small { color: var(--ink-soft); font-size: 8px; overflow-wrap: anywhere; }
+.admin-image-upload { min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 12px; border: 1.5px solid var(--ink); border-radius: 9px; background: var(--blue); box-shadow: 2px 2px 0 var(--ink); font-size: 10px; font-weight: 800; cursor: pointer; }
+.admin-image-upload:hover { transform: translateY(-1px); }
+.admin-image-upload:has(input:disabled) { opacity: .6; cursor: wait; transform: none; }
+.admin-image-upload input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .admin-card-copy h3, .idea-list h3 { font-family: 'Paytone One', 'Arial Rounded MT Bold', sans-serif; font-size: 28px; font-weight: 400; margin: 10px 0 8px; }
 .admin-card-copy > p, .idea-list > article > p { color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
 .admin-links { display: flex; flex-wrap: wrap; gap: 17px; margin: 20px 0; }

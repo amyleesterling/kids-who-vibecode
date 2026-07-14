@@ -470,6 +470,47 @@ async function adminSubmissionImage(db: ClubDatabase, uploads: ClubUploads, requ
   return serveUpload(uploads, submission.imageKey)
 }
 
+async function adminUploadSubmissionImage(db: ClubDatabase, uploads: ClubUploads, request: Request, env: Env) {
+  if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
+  const id = decodeURIComponent(new URL(request.url).pathname.split('/').pop() || '')
+  const body = await request.formData().catch(() => null)
+  const image = body?.get('image')
+  if (!(image instanceof File) || image.size === 0) return json({ error: 'Choose an image to upload.' }, 400)
+  if (!['image/webp', 'image/jpeg', 'image/png'].includes(image.type) || image.size > 5_000_000) {
+    return json({ error: 'Project images must be a WebP, JPEG, or PNG under 5 MB.' }, 400)
+  }
+
+  const submission = await db.prepare(`SELECT image_key AS imageKey FROM submissions WHERE id = ?`)
+    .bind(id).first<{ imageKey: string | null }>()
+  if (!submission) return json({ error: 'Submission not found' }, 404)
+
+  const extension = { 'image/webp': 'webp', 'image/jpeg': 'jpg', 'image/png': 'png' }[image.type] || 'bin'
+  const imageKey = `submissions/${id}/${crypto.randomUUID()}.${extension}`
+  await uploads.put(imageKey, await image.arrayBuffer(), {
+    httpMetadata: { contentType: image.type },
+    customMetadata: { submissionId: id, originalName: image.name.slice(0, 120), addedBy: 'clubhouse-admin' },
+  })
+
+  try {
+    await db.batch([
+      db.prepare(`
+        UPDATE submissions
+        SET image_key = ?, image_name = ?, image_content_type = ?, image_size = ?
+        WHERE id = ?
+      `).bind(imageKey, image.name.slice(0, 120), image.type, image.size, id),
+      db.prepare(`UPDATE projects SET image_key = ? WHERE id = ?`).bind(imageKey, `community-${id}`),
+      db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'submission', ?, ?, ?)`)
+        .bind(crypto.randomUUID(), id, submission.imageKey ? 'image_replaced' : 'image_added', new Date().toISOString()),
+    ])
+  } catch (error) {
+    await uploads.delete(imageKey).catch(() => undefined)
+    throw error
+  }
+
+  if (submission.imageKey && submission.imageKey !== imageKey) await uploads.delete(submission.imageKey).catch(() => undefined)
+  return json({ ok: true })
+}
+
 async function adminModerate(db: ClubDatabase, request: Request, env: Env) {
   if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
   const body = await request.json().catch(() => null) as Record<string, unknown> | null
@@ -568,6 +609,7 @@ export default {
       if (request.method === 'POST' && url.pathname === '/api/admin/logout') return adminLogout()
       if (request.method === 'GET' && url.pathname === '/api/admin/dashboard') return adminDashboard(env.DB, request, env)
       if (request.method === 'GET' && url.pathname.startsWith('/api/admin/submission-images/')) return adminSubmissionImage(env.DB, env.UPLOADS, request, env)
+      if (request.method === 'POST' && url.pathname.startsWith('/api/admin/submission-images/')) return adminUploadSubmissionImage(env.DB, env.UPLOADS, request, env)
       if (request.method === 'POST' && url.pathname === '/api/admin/moderate') return adminModerate(env.DB, request, env)
       return json({ error: 'Not found' }, 404)
     } catch (error) {

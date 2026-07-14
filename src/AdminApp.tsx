@@ -1,8 +1,9 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ArrowLeft, Check, ExternalLink, Github, Image as ImageIcon, Inbox,
+  ArrowLeft, Check, ExternalLink, Github, Image as ImageIcon, ImagePlus, Inbox,
   Lightbulb, LogOut, Mail, RefreshCw, ShieldCheck, Sparkles, X,
 } from 'lucide-react'
+import { prepareProjectImage } from './lib/projectImage'
 
 type AdminSubmission = {
   id: string
@@ -136,6 +137,24 @@ function AdminApp() {
     setBusy('')
   }
 
+  async function uploadSubmissionImage(id: string, original: File) {
+    const key = `image:${id}`
+    setBusy(key)
+    setError('')
+    try {
+      const image = await prepareProjectImage(original)
+      const body = new FormData()
+      body.set('image', image)
+      const response = await fetch(`/api/admin/submission-images/${encodeURIComponent(id)}`, { method: 'POST', body })
+      if (!response.ok) throw new Error(await readError(response))
+      await loadDashboard()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'We could not add that image.')
+    } finally {
+      setBusy('')
+    }
+  }
+
   if (authenticated === null) {
     return <main className="admin-loading"><span><Sparkles /></span><p>Opening the clubhouse inbox…</p></main>
   }
@@ -185,6 +204,21 @@ function AdminApp() {
                 <div className="admin-image-panel">
                   {item.hasImage && item.imageUrl ? <img src={item.imageUrl} alt={`Submitted preview for ${item.projectTitle}`} /> : <div className="admin-image-empty"><ImageIcon size={32} /><span>No picture submitted</span></div>}
                   {item.hasImage && <small>{item.imageName} · {fileSize(item.imageSize)}</small>}
+                  <label className="admin-image-upload">
+                    <ImagePlus size={16} />
+                    <span>{busy === `image:${item.id}` ? 'Preparing image…' : item.hasImage ? 'Replace image' : 'Add image'}</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      disabled={busy === `image:${item.id}`}
+                      onChange={(event) => {
+                        const input = event.currentTarget
+                        const file = input.files?.[0]
+                        if (file) uploadSubmissionImage(item.id, file).finally(() => { input.value = '' })
+                      }}
+                    />
+                  </label>
+                  <small>JPEG, PNG, or WebP · resized and stripped of photo metadata</small>
                 </div>
                 <div className="admin-card-copy">
                   <span className="builder-tag">by {item.childNickname} · age {item.ageBand}</span>
