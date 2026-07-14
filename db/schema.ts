@@ -37,8 +37,22 @@ export const schemaStatements = [
     challenge_id TEXT NOT NULL REFERENCES challenges(id),
     voter_id TEXT NOT NULL,
     project_id TEXT NOT NULL REFERENCES projects(id),
+    fingerprint_hash TEXT,
+    created_at TEXT,
     updated_at TEXT NOT NULL,
     PRIMARY KEY (challenge_id, voter_id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS vote_alerts (
+    id TEXT PRIMARY KEY,
+    challenge_id TEXT NOT NULL REFERENCES challenges(id),
+    project_id TEXT REFERENCES projects(id),
+    signal TEXT NOT NULL CHECK (signal IN ('shared_fingerprint', 'rapid_project_spike')),
+    signal_key TEXT NOT NULL,
+    observed_count INTEGER NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('open', 'dismissed')),
+    first_seen_at TEXT NOT NULL,
+    last_seen_at TEXT NOT NULL,
+    UNIQUE (challenge_id, signal, signal_key)
   )`,
   `CREATE TABLE IF NOT EXISTS submissions (
     id TEXT PRIMARY KEY,
@@ -140,6 +154,9 @@ export const schemaStatements = [
   )`,
   `CREATE INDEX IF NOT EXISTS projects_challenge_status_idx ON projects (challenge_id, status)`,
   `CREATE INDEX IF NOT EXISTS votes_project_idx ON votes (project_id)`,
+  `CREATE INDEX IF NOT EXISTS votes_fingerprint_idx ON votes (challenge_id, fingerprint_hash)`,
+  `CREATE INDEX IF NOT EXISTS votes_updated_idx ON votes (challenge_id, project_id, updated_at)`,
+  `CREATE INDEX IF NOT EXISTS vote_alerts_status_seen_idx ON vote_alerts (status, last_seen_at)`,
   `CREATE INDEX IF NOT EXISTS submissions_status_created_idx ON submissions (status, created_at)`,
   `CREATE INDEX IF NOT EXISTS challenge_ideas_status_created_idx ON challenge_ideas (status, created_at)`,
   `CREATE INDEX IF NOT EXISTS challenge_drafts_status_updated_idx ON challenge_drafts (status, updated_at)`,

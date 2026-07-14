@@ -59,6 +59,19 @@ type AdminSubscriber = {
   updatedAt: string
 }
 
+type AdminVoteAlert = {
+  id: string
+  challengeId: string
+  challengeTitle: string
+  projectId?: string
+  projectTitle?: string
+  signal: 'shared_fingerprint' | 'rapid_project_spike'
+  observedCount: number
+  status: 'open' | 'dismissed'
+  firstSeenAt: string
+  lastSeenAt: string
+}
+
 type AdminChallenge = {
   id: string
   weekLabel: string
@@ -92,6 +105,7 @@ type Dashboard = {
   submissions: AdminSubmission[]
   ideas: AdminIdea[]
   subscribers: AdminSubscriber[]
+  voteAlerts: AdminVoteAlert[]
   activity: Array<{ id: string; itemType: string; itemId: string; action: string; createdAt: string }>
   safetyScannerEnabled: boolean
   challengeDrafts: AdminChallengeDraft[]
@@ -136,7 +150,7 @@ function SafetyReview({ item, enabled, busy, onQueue }: {
   )
 }
 
-type AdminTab = 'challenges' | 'submissions' | 'ideas' | 'subscribers'
+type AdminTab = 'challenges' | 'submissions' | 'ideas' | 'vote-alerts' | 'subscribers'
 
 function dateLabel(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
@@ -287,6 +301,7 @@ function AdminApp() {
     challenges: dashboard?.schedule.challenges.filter((item) => item.status === 'upcoming').length || 0,
     submissions: dashboard?.submissions.filter((item) => item.status === 'pending').length || 0,
     ideas: dashboard?.ideas.filter((item) => item.status === 'pending').length || 0,
+    voteAlerts: dashboard?.voteAlerts.filter((item) => item.status === 'open').length || 0,
     subscribers: dashboard?.subscribers.filter((item) => item.status === 'active').length || 0,
   }), [dashboard])
   const safetyScannerEnabled = dashboard?.safetyScannerEnabled || false
@@ -316,7 +331,7 @@ function AdminApp() {
     setDashboard(null)
   }
 
-  async function moderate(type: 'submission' | 'idea' | 'subscriber', id: string, action: string, label: string, safetyOverride = false) {
+  async function moderate(type: 'submission' | 'idea' | 'voteAlert' | 'subscriber', id: string, action: string, label: string, safetyOverride = false) {
     if (!window.confirm(label)) return
     const key = `${type}:${id}`
     setBusy(key)
@@ -428,6 +443,7 @@ function AdminApp() {
         <button className={tab === 'challenges' ? 'active' : ''} onClick={() => setTab('challenges')}><CalendarDays size={18} /> Challenges <b>{counts.challenges}</b></button>
         <button className={tab === 'submissions' ? 'active' : ''} onClick={() => setTab('submissions')}><Inbox size={18} /> Projects <b>{counts.submissions}</b></button>
         <button className={tab === 'ideas' ? 'active' : ''} onClick={() => setTab('ideas')}><Lightbulb size={18} /> Challenge ideas <b>{counts.ideas}</b></button>
+        <button className={tab === 'vote-alerts' ? 'active' : ''} onClick={() => setTab('vote-alerts')}><AlertTriangle size={18} /> Vote alerts <b>{counts.voteAlerts}</b></button>
         <button className={tab === 'subscribers' ? 'active' : ''} onClick={() => setTab('subscribers')}><Mail size={18} /> Grown-up emails <b>{counts.subscribers}</b></button>
       </nav>
 
@@ -502,6 +518,22 @@ function AdminApp() {
               <div className="admin-card-actions"><span>Private until selected</span><div><button disabled={busy === `idea:${idea.id}`} className="admin-reject" onClick={() => moderate('idea', idea.id, 'archive', `Archive “${idea.ideaTitle}”?`)}>Archive</button><button disabled={busy === `idea:${idea.id}`} className="admin-approve" onClick={() => moderate('idea', idea.id, 'select', `Mark “${idea.ideaTitle}” as selected?`)}><Check size={16} /> Select idea</button></div></div>
             </article>)}
             {!dashboard?.ideas.length && <div className="admin-empty"><Lightbulb size={35} /><h3>The idea jar is waiting.</h3></div>}
+          </div>
+        </section>}
+
+        {tab === 'vote-alerts' && <section>
+          <div className="admin-section-heading"><div><span className="kicker">Voting integrity</span><h2>Suspicious-vote alerts</h2></div><p>Review unusual patterns without automatically removing votes or identifying visitors.</p></div>
+          <div className="vote-alert-privacy"><ShieldCheck size={22} /><div><b>Privacy-preserving signals only</b><p>The system stores a challenge-specific hash—not a raw IP address—and alerts are advisory. Shared family devices and popular links can create innocent spikes.</p></div></div>
+          <div className="admin-card-list vote-alert-list">
+            {dashboard?.voteAlerts.map((alert) => <article className={`admin-card vote-alert-card status-${alert.status}`} key={alert.id}>
+              <div className="admin-card-top"><span className="admin-status">{alert.status}</span><time>Last seen {dateLabel(alert.lastSeenAt)}</time></div>
+              <span className="vote-alert-icon"><AlertTriangle size={23} /></span>
+              <h3>{alert.signal === 'shared_fingerprint' ? 'Several browser IDs share one signal' : 'Rapid vote burst for one project'}</h3>
+              <p>{alert.signal === 'shared_fingerprint' ? `${alert.observedCount} browser vote IDs used the same privacy-safe network/browser signature during this challenge.` : `${alert.observedCount} votes for this project were updated inside a 10-minute window.`}</p>
+              <div className="vote-alert-context"><b>{alert.projectTitle || 'Unknown project'}</b><span>{alert.challengeTitle} · first noticed {dateLabel(alert.firstSeenAt)}</span></div>
+              <div className="admin-card-actions"><span>No votes were removed automatically.</span><div><button disabled={busy === `voteAlert:${alert.id}`} className={alert.status === 'open' ? 'admin-reject' : 'admin-approve'} onClick={() => moderate('voteAlert', alert.id, alert.status === 'open' ? 'dismiss' : 'reopen', `${alert.status === 'open' ? 'Dismiss' : 'Reopen'} this vote alert?`)}>{alert.status === 'open' ? 'Dismiss alert' : 'Reopen alert'}</button></div></div>
+            </article>)}
+            {!dashboard?.voteAlerts.length && <div className="admin-empty"><ShieldCheck size={35} /><h3>No suspicious vote patterns.</h3><p>The clubhouse will flag unusual activity here.</p></div>}
           </div>
         </section>}
 

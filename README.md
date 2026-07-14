@@ -15,13 +15,14 @@ Read the public **[Terms, Safety & Privacy Notice](https://vibecodekids.com/lega
 ## What is included
 
 - A responsive weekly challenge landing page
-- Project gallery with one favorite vote per browser and shared weekly totals
+- Project gallery with clickable playable previews, one favorite vote per browser, and shared weekly totals
 - A public Clubhouse Favorites page with each finished week’s winner and two runners-up
 - Parent-supervised submission form with a moderation queue
 - Optional project-image upload, resized and re-encoded in the browser to remove photo metadata
 - A visitor challenge-idea form with a grown-up permission checkpoint
 - A parent-only weekly challenge email signup with one-click unsubscribe
 - A password-protected Clubhouse Admin for reviewing projects, images, links, ideas, and subscribers
+- Privacy-preserving suspicious-vote alerts in Clubhouse Admin; alerts never expose raw IP addresses or automatically remove votes
 - An optional AI-assisted playthrough that samples playable experiences before a grown-up publishes them
 - Kid-safety defaults: nicknames, age bands, no comments or direct messages
 - A grown-up-only legal acceptance recorded with each new project and challenge idea
@@ -44,6 +45,7 @@ The Cloudflare development adapter provides the same Worker API used in producti
 - `challenges` contains the active and upcoming weekly prompts.
 - `projects` contains public gallery entries; only rows with `status: approved` are returned.
 - `votes` stores one project choice per browser identifier and challenge.
+- `vote_alerts` stores private, reviewable integrity signals when three browser IDs share one hashed network/browser signature or one project receives at least twelve vote updates in ten minutes.
 - `submissions` is a private moderation queue containing parent contact details and consent records.
 - `challenge_ideas` is a private idea queue containing proposed prompts and a grown-up contact email.
 - `subscribers` is the private, deduplicated grown-up newsletter list.
@@ -75,6 +77,12 @@ The Challenges tab shows the active build window, delayed voting window, and nex
 Every calendar row is clickable. Club grown-ups can view and edit the complete title, tagline, prompt, brief, starter ideas, and tools for any challenge; dates stay editable until that challenge begins. A private idea bank contains ten additional fully written, editable challenge concepts. “Open a secret door” is scheduled for Week 2, and “Make a chain reaction” fills Week 7.
 
 Once voting closes, **[Clubhouse Favorites](https://vibecodekids.com/favorites)** automatically publishes one winner and up to two runners-up for that challenge. No sample winners are shown before the first real result.
+
+Project screenshots and titles open the playable experience in a new tab whenever an approved demo link exists. Vote-integrity alerts are advisory: they appear only in Clubhouse Admin, store challenge-specific hashes rather than raw network addresses, and leave every vote in place until a grown-up reviews the pattern.
+
+## Roadmap
+
+See **[TODO.md](TODO.md)** for launch follow-ups, including verified adult email before voting if public participation grows beyond what browser-only voting can reasonably protect.
 
 ## Weekly email delivery
 

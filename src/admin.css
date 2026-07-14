@@ -27,7 +27,7 @@
 .schedule-card > span { display: flex; align-items: center; gap: 7px; font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 800; text-transform: uppercase; }
 .schedule-card h2 { margin: 22px 0 auto; font-family: 'Paytone One', 'Arial Rounded MT Bold', sans-serif; font-size: 25px; line-height: 1.05; font-weight: 400; }
 .schedule-card b { margin-top: 14px; font-size: 12px; }.schedule-card small { margin-top: 4px; color: var(--ink-soft); font-size: 8px; }
-.admin-tabs { width: min(calc(100% - 48px), 1180px); margin: 22px auto 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.admin-tabs { width: min(calc(100% - 48px), 1180px); margin: 22px auto 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .admin-tabs button { min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid var(--ink); border-radius: 11px; background: var(--paper); font-weight: 800; cursor: pointer; box-shadow: 3px 3px 0 var(--ink); }
 .admin-tabs button.active { background: var(--yellow); transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); }
 .admin-tabs b { min-width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: white; font-size: 10px; }
@@ -63,7 +63,7 @@
 .draft-editor { background: #fbfff2; }
 .admin-card { background: white; border: 1.5px solid var(--ink); border-radius: 15px; box-shadow: 6px 6px 0 var(--ink); padding: 24px; }
 .admin-card.status-approved, .admin-card.status-selected { border-left: 8px solid #68c96e; }
-.admin-card.status-rejected, .admin-card.status-archived { opacity: .72; border-left: 8px solid #bbb; }
+.admin-card.status-rejected, .admin-card.status-archived, .admin-card.status-dismissed { opacity: .72; border-left: 8px solid #bbb; }
 .admin-card-top { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 19px; }
 .admin-card-top time { font-family: 'DM Mono', monospace; color: var(--ink-soft); font-size: 8px; }
 .admin-status { display: inline-flex; width: fit-content; border: 1px solid var(--ink); border-radius: 99px; padding: 5px 9px; background: var(--yellow); font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 800; text-transform: uppercase; }
@@ -116,6 +116,10 @@
 .subscriber-row b { font-size: 12px; }.subscriber-row span { color: var(--ink-soft); font-size: 9px; }
 .subscriber-row > .admin-status { color: var(--ink); }
 .subscriber-row button { background: var(--paper); }
+.vote-alert-privacy { display: flex; align-items: flex-start; gap: 13px; margin: -5px 0 25px; padding: 17px 19px; border: 1.5px solid var(--ink); border-radius: 12px; background: #e8f9ff; box-shadow: 4px 4px 0 var(--blue); }
+.vote-alert-privacy > svg { flex: 0 0 auto; }.vote-alert-privacy div { display: grid; gap: 4px; }.vote-alert-privacy b { font-size: 11px; }.vote-alert-privacy p { margin: 0; color: var(--ink-soft); font-size: 9px; line-height: 1.55; }
+.vote-alert-card { position: relative; border-left: 8px solid var(--coral); }.vote-alert-card.status-open { background: #fff9e8; }.vote-alert-card h3 { margin: 9px 0 8px; font-family: 'Paytone One', 'Arial Rounded MT Bold', sans-serif; font-size: 25px; font-weight: 400; }.vote-alert-card > p { max-width: 740px; color: var(--ink-soft); font-size: 11px; }.vote-alert-icon { width: 42px; height: 42px; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--yellow); box-shadow: 3px 3px 0 var(--ink); }
+.vote-alert-context { display: grid; gap: 4px; margin-top: 18px; padding: 12px 14px; border-radius: 9px; background: white; }.vote-alert-context b { font-size: 11px; }.vote-alert-context span { color: var(--ink-soft); font-family: 'DM Mono', monospace; font-size: 8px; }
 
 @media (max-width: 800px) {
   .admin-header { align-items: flex-start; flex-direction: column; padding-inline: 24px; }

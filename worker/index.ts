@@ -238,12 +238,56 @@ async function vote(db: ClubDatabase, request: Request) {
   `).bind(projectId, challengeId, now, now).first<{ id: string }>()
   if (!project) return json({ error: 'Project not found' }, 404)
 
+  const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || ''
+  const userAgent = (request.headers.get('user-agent') || 'unknown').slice(0, 200)
+  const fingerprintHash = ip ? await sha256Hex(`vote-integrity:${challengeId}:${ip}:${userAgent}`) : null
+  const existingVote = await db.prepare(`
+    SELECT created_at AS createdAt FROM votes WHERE challenge_id = ? AND voter_id = ?
+  `).bind(challengeId, voterId).first<{ createdAt: string | null }>()
+
   await db.prepare(`
-    INSERT INTO votes (challenge_id, voter_id, project_id, updated_at)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO votes (challenge_id, voter_id, project_id, fingerprint_hash, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
     ON CONFLICT(challenge_id, voter_id)
-    DO UPDATE SET project_id = excluded.project_id, updated_at = excluded.updated_at
-  `).bind(challengeId, voterId, projectId, new Date().toISOString()).run()
+    DO UPDATE SET project_id = excluded.project_id, fingerprint_hash = excluded.fingerprint_hash, updated_at = excluded.updated_at
+  `).bind(challengeId, voterId, projectId, fingerprintHash, existingVote?.createdAt || now, now).run()
+
+  const alertStatements: D1Statement[] = []
+  if (fingerprintHash) {
+    const shared = await db.prepare(`
+      SELECT COUNT(*) AS count FROM votes WHERE challenge_id = ? AND fingerprint_hash = ?
+    `).bind(challengeId, fingerprintHash).first<{ count: number }>()
+    const sharedCount = Number(shared?.count || 0)
+    if (sharedCount >= 3) {
+      alertStatements.push(db.prepare(`
+        INSERT INTO vote_alerts (
+          id, challenge_id, project_id, signal, signal_key, observed_count,
+          status, first_seen_at, last_seen_at
+        ) VALUES (?, ?, ?, 'shared_fingerprint', ?, ?, 'open', ?, ?)
+        ON CONFLICT(challenge_id, signal, signal_key) DO UPDATE SET
+          project_id = excluded.project_id, observed_count = excluded.observed_count,
+          status = 'open', last_seen_at = excluded.last_seen_at
+      `).bind(crypto.randomUUID(), challengeId, projectId, fingerprintHash, sharedCount, now, now))
+    }
+  }
+
+  const tenMinutesAgo = new Date(Date.now() - 10 * 60_000).toISOString()
+  const recent = await db.prepare(`
+    SELECT COUNT(*) AS count FROM votes
+    WHERE challenge_id = ? AND project_id = ? AND updated_at >= ?
+  `).bind(challengeId, projectId, tenMinutesAgo).first<{ count: number }>()
+  const recentCount = Number(recent?.count || 0)
+  if (recentCount >= 12) {
+    alertStatements.push(db.prepare(`
+      INSERT INTO vote_alerts (
+        id, challenge_id, project_id, signal, signal_key, observed_count,
+        status, first_seen_at, last_seen_at
+      ) VALUES (?, ?, ?, 'rapid_project_spike', ?, ?, 'open', ?, ?)
+      ON CONFLICT(challenge_id, signal, signal_key) DO UPDATE SET
+        observed_count = excluded.observed_count, status = 'open', last_seen_at = excluded.last_seen_at
+    `).bind(crypto.randomUUID(), challengeId, projectId, projectId, recentCount, now, now))
+  }
+  if (alertStatements.length) await db.batch(alertStatements)
   return json({ ok: true })
 }
 
@@ -628,6 +672,17 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
     SELECT id, item_type AS itemType, item_id AS itemId, action, created_at AS createdAt
     FROM moderation_events ORDER BY created_at DESC LIMIT 50
   `).all<Record<string, unknown>>()
+  const { results: voteAlerts } = await db.prepare(`
+    SELECT va.id, va.challenge_id AS challengeId, c.title AS challengeTitle,
+      va.project_id AS projectId, p.title AS projectTitle, va.signal,
+      va.observed_count AS observedCount, va.status,
+      va.first_seen_at AS firstSeenAt, va.last_seen_at AS lastSeenAt
+    FROM vote_alerts va
+    JOIN challenges c ON c.id = va.challenge_id
+    LEFT JOIN projects p ON p.id = va.project_id
+    ORDER BY CASE va.status WHEN 'open' THEN 0 ELSE 1 END, va.last_seen_at DESC
+    LIMIT 200
+  `).all<Record<string, unknown>>()
   const { results: challengeRows } = await db.prepare(`
     SELECT id, week_label AS weekLabel, title, eyebrow, prompt, brief,
       opens_at AS opensAt, closes_at AS closesAt, voting_opens_at AS votingOpensAt,
@@ -665,6 +720,7 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
     })),
     ideas,
     subscribers,
+    voteAlerts,
     activity,
     challengeDrafts,
     safetyScannerEnabled: Boolean(env.SAFETY_SCAN_SECRET),
@@ -906,6 +962,16 @@ async function adminModerate(db: ClubDatabase, request: Request, env: Env) {
     await db.batch([
       db.prepare(`UPDATE subscribers SET status = ?, updated_at = ? WHERE id = ?`).bind(status, now, id),
       db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'subscriber', ?, ?, ?)`)
+        .bind(crypto.randomUUID(), id, status, now),
+    ])
+    return json({ ok: true })
+  }
+
+  if (type === 'voteAlert' && ['dismiss', 'reopen'].includes(action)) {
+    const status = action === 'dismiss' ? 'dismissed' : 'open'
+    await db.batch([
+      db.prepare(`UPDATE vote_alerts SET status = ?, last_seen_at = ? WHERE id = ?`).bind(status, now, id),
+      db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'vote_alert', ?, ?, ?)`)
         .bind(crypto.randomUUID(), id, status, now),
     ])
     return json({ ok: true })
