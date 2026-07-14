@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import AdminApp from './AdminApp'
 import LegalPage from './LegalPage'
+import FavoritesPage from './FavoritesPage'
 import './styles.css'
 import './admin.css'
 
@@ -18,7 +19,8 @@ if (alternateHosts.has(window.location.hostname)) {
 } else {
   const Page = window.location.pathname.startsWith('/clubhouse-admin')
     ? AdminApp
-    : window.location.pathname.startsWith('/legal') ? LegalPage : App
+    : window.location.pathname.startsWith('/legal') ? LegalPage
+      : window.location.pathname.startsWith('/favorites') ? FavoritesPage : App
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>

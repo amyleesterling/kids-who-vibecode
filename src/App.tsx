@@ -371,6 +371,7 @@ function App() {
         <nav className={mobileNav ? 'open' : ''} aria-label="Main navigation">
           <a href="#challenge" onClick={() => setMobileNav(false)}>This week</a>
           <a href="#gallery" onClick={() => setMobileNav(false)}>The gallery</a>
+          <a href="/favorites">Clubhouse Favorites</a>
           <a href="#how" onClick={() => setMobileNav(false)}>How it works</a>
           <a href="#subscribe" onClick={() => setMobileNav(false)}>Weekly email</a>
           <a href="#grownups" onClick={() => setMobileNav(false)}>For grown-ups</a>
@@ -381,7 +382,7 @@ function App() {
       <main>
         <section className="hero page-shell">
           <div className="hero-copy">
-            <div className="eyebrow-pill"><Sparkles size={14} /> A creative coding club for curious kids</div>
+            <div className="eyebrow-pill"><Sparkles size={14} /> Summer 2026 · 8 challenges through Labor Day</div>
             <h1>Make weird.<br />Make wonderful.<br /><span>Make it yours.</span></h1>
             <p className="hero-lede">A new creative coding adventure every week. Build it your way, share it with the club, and cheer on other young makers.</p>
             <div className="hero-actions"><a className="button button-coral" href="#challenge">See this week’s challenge <ArrowRight size={19} /></a><button className="text-link" onClick={openSubmission}>I made something! <span>↗</span></button></div>
@@ -392,11 +393,11 @@ function App() {
 
         <section id="challenge" className="challenge-section">
           <div className="page-shell challenge-layout">
-            <div className="section-number">01 <span>THIS WEEK’S MISSION</span></div>
+            <div className="section-number">01 <span>THIS WEEK'S MISSION</span></div>
             <div className="challenge-copy">
               <span className="kicker">{community.challenge.eyebrow}</span>
               <h2>{community.challenge.title}</h2>
-              <p className="challenge-prompt">“{community.challenge.prompt}”</p>
+              <p className="challenge-prompt">{community.challenge.prompt}</p>
               <p>{community.challenge.brief}</p>
               <button className="button button-light" onClick={openSubmission}>{community.acceptingSubmissions ? 'Share your tiny world' : 'Submissions are closed'} <ArrowRight size={18} /></button>
             </div>
@@ -413,7 +414,7 @@ function App() {
         <section id="gallery" className="gallery-section page-shell">
           <div className="section-heading">
             <div><span className="kicker">{community.votingOpen ? `Voting now · ${community.galleryChallenge?.weekLabel}` : 'Fresh builds · Voting opens next Monday'}</span><h2>{community.votingOpen ? `${community.galleryChallenge?.title} showcase` : 'The weekly showcase'}</h2></div>
-            <p>{community.votingOpen ? 'Explore last week’s approved builds, then choose one favorite before voting closes.' : 'Approved builds can appear here during build week. Everyone’s heart button unlocks together Monday for the same fair voting window.'}</p>
+            <p>{community.votingOpen ? 'Explore this week’s gallery of approved builds and choose one favorite before Sunday night. Come back Monday to meet the winners and see the next challenge!' : 'Explore this week’s gallery of approved builds. Come back on Monday to vote for your favorite and see the next challenge!'}</p>
           </div>
           <div className="gallery-grid">
             {sortedProjects.map((project, index) => {
@@ -431,7 +432,7 @@ function App() {
             })}
           </div>
           {!community.projects.length && <div className="gallery-waiting"><Sparkles size={30} /><h3>The gallery is getting ready.</h3><p>Approved projects will appear here as clubhouse grown-ups finish reviewing them.</p></div>}
-          <p className="gallery-footnote"><ShieldCheck size={16} /> Every project and link is checked by a club grown-up before appearing here.</p>
+          <div className="gallery-footer-row"><p className="gallery-footnote"><ShieldCheck size={16} /> Every project and link is checked by a club grown-up before appearing here.</p><a className="button button-dark" href="/favorites"><Trophy size={17} /> Meet the Clubhouse Favorites</a></div>
         </section>
 
         <section id="how" className="how-section">
@@ -443,14 +444,14 @@ function App() {
               <article><span className="step-icon green"><Heart /></span><small>03 · NEXT MONDAY</small><h3>The gallery opens</h3><p>A fresh prompt begins while last week’s approved projects get a full, equal week of cheering.</p></article>
               <article><span className="step-icon yellow"><Trophy /></span><small>04 · SUNDAY NIGHT</small><h3>A favorite is crowned</h3><p>Each visitor picks one favorite. The project with the most hearts becomes that challenge’s Clubhouse Favorite.</p></article>
             </div>
-            <div className="season-note"><span><CalendarDays /></span><div><small>THE SUMMER SESSION</small><h3>8 weekly challenges + one big finale</h3><p>We repeat the build-and-vote rhythm for eight weeks. Then all eight Clubhouse Favorites return for an end-of-summer showcase—every maker celebrated, with one final community favorite.</p></div></div>
+            <div className="season-note"><span><CalendarDays /></span><div><small>THE SUMMER SESSION · JULY 13–LABOR DAY</small><h3>8 weekly challenges + one big finale</h3><p>Eight build weeks run from July 13 through Labor Day weekend. The final gallery opens on Labor Day, with voting through September 14—every maker celebrated, with one final community favorite.</p></div></div>
           </div>
         </section>
 
         <section className="up-next page-shell">
-          <div className="up-next-title"><span>Coming soon</span><h2>Next on the idea machine</h2></div>
+          <div className="up-next-title"><span>Top secret until Monday</span><h2>The challenge calendar</h2><p>We’ll share the dates—not the prompts. Every new mission should feel like opening a surprise.</p></div>
           <div>
-            <div className="challenge-list">{community.upcomingChallenges.map((item, index) => <article key={item.id}><span className="up-number" style={{ background: ['#65d9ff', '#ffb3c7', '#b9f44a'][index % 3] }}>{item.weekLabel.match(/\d+/)?.[0]?.padStart(2, '0') || String(index + 2).padStart(2, '0')}</span><div><h3>{item.title}</h3><p>{item.eyebrow}</p></div><span className="locked"><LockKeyhole size={15} /> {new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(item.opensAt))}</span></article>)}</div>
+            <div className="challenge-list">{community.upcomingChallenges.map((item, index) => <article key={item.opensAt}><span className="up-number" style={{ background: ['#65d9ff', '#ffb3c7', '#b9f44a'][index % 3] }}>{item.weekLabel.match(/\d+/)?.[0]?.padStart(2, '0') || String(index + 2).padStart(2, '0')}</span><div><h3>Mystery challenge</h3><p>Prompt revealed when the new build week begins.</p></div><span className="locked"><LockKeyhole size={15} /> {new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(item.opensAt))}</span></article>)}</div>
             <div className="pitch-challenge"><span><Lightbulb size={24} /></span><div><h3>Got a wildly good idea?</h3><p>Kids and grown-ups can pitch a future weekly mission.</p></div><button className="button button-dark" onClick={() => setShowIdea(true)}>Pitch a challenge <ArrowRight size={17} /></button></div>
           </div>
         </section>
@@ -465,7 +466,7 @@ function App() {
         </section>
       </main>
 
-      <footer><div className="page-shell footer-layout"><Logo /><p>Made for small coders with big ideas.</p><div><a href="#subscribe">Weekly email</a><a href="/legal">Terms & Privacy</a><a href="mailto:hello@vibecodekids.com">Contact</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING WEIRD</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
+      <footer><div className="page-shell footer-layout"><Logo /><p>Made for small coders with big ideas.</p><div><a href="/favorites">Clubhouse Favorites</a><a href="#subscribe">Weekly email</a><a href="/legal">Terms & Privacy</a><a href="mailto:hello@vibecodekids.com">Contact</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING WEIRD</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
       {community.source === 'offline' && <div className="offline-badge" title="The community database could not be reached">Offline mode <ChevronDown size={13} /></div>}
       {notice && <div className="toast" role="status"><Heart size={17} fill="currentColor" /> {notice}</div>}
       {showSubmit && community.acceptingSubmissions && <SubmissionModal challenge={community.challenge} onClose={() => setShowSubmit(false)} />}

@@ -1,6 +1,6 @@
 export const scheduledChallenges = [
   {
-    id: 'tiny-worlds', weekLabel: 'Challenge 01 · Jul 13–19', title: 'Build a tiny world', eyebrow: 'Small screen. Big imagination.',
+    id: 'tiny-worlds', weekLabel: 'Challenge 01 · Jul 13–19', title: 'Build a tiny world', eyebrow: 'Small human. Big imagination.',
     prompt: 'Create a little place we can visit. Who lives there? What happens when we tap, click, or press a key?',
     brief: 'Make a tiny interactive world with at least one surprise. It can be a website, game, animation, or something nobody has named yet.',
     opensAt: '2026-07-13T13:00:00.000Z', closesAt: '2026-07-20T04:00:00.000Z', votingOpensAt: '2026-07-20T13:00:00.000Z', votingClosesAt: '2026-07-27T13:00:00.000Z',

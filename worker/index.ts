@@ -141,8 +141,8 @@ async function community(db: ClubDatabase, request: Request) {
     SELECT project_id AS projectId FROM votes WHERE challenge_id = ? AND voter_id = ?
   `).bind(galleryId, voterId).first<{ projectId: string }>() : null
   const { results: upcomingChallenges } = await db.prepare(`
-    SELECT id, week_label AS weekLabel, title, eyebrow, prompt, opens_at AS opensAt,
-      closes_at AS closesAt FROM challenges WHERE opens_at > ? ORDER BY opens_at LIMIT 3
+    SELECT week_label AS weekLabel, opens_at AS opensAt
+    FROM challenges WHERE opens_at > ? ORDER BY opens_at LIMIT 3
   `).bind(now).all<Record<string, unknown>>()
 
   return json({
@@ -163,6 +163,63 @@ async function community(db: ClubDatabase, request: Request) {
     upcomingChallenges,
     source: 'database',
   })
+}
+
+async function favorites(db: ClubDatabase) {
+  const now = new Date().toISOString()
+  const { results } = await db.prepare(`
+    WITH totals AS (
+      SELECT c.id AS challengeId, c.week_label AS weekLabel, c.title AS challengeTitle,
+        c.voting_closes_at AS votingClosedAt, p.id AS projectId, p.title,
+        p.builder, p.age_band AS ageBand, p.description, p.repo_url AS repoUrl,
+        p.demo_url AS demoUrl, p.image_key AS imageKey,
+        p.base_votes + COUNT(v.project_id) AS votes
+      FROM challenges c
+      JOIN projects p ON p.challenge_id = c.id AND p.status = 'approved'
+      LEFT JOIN votes v ON v.project_id = p.id AND v.challenge_id = c.id
+      WHERE c.voting_closes_at <= ?
+      GROUP BY c.id, c.week_label, c.title, c.voting_closes_at, p.id, p.title,
+        p.builder, p.age_band, p.description, p.repo_url, p.demo_url, p.image_key, p.base_votes
+    ), ranked AS (
+      SELECT *, ROW_NUMBER() OVER (
+        PARTITION BY challengeId ORDER BY votes DESC, title COLLATE NOCASE
+      ) AS podiumRank
+      FROM totals WHERE votes > 0
+    )
+    SELECT * FROM ranked WHERE podiumRank <= 3
+    ORDER BY votingClosedAt DESC, podiumRank
+  `).bind(now).all<Record<string, unknown>>()
+  const nextReveal = await db.prepare(`
+    SELECT MIN(voting_closes_at) AS nextRevealAt FROM challenges WHERE voting_closes_at > ?
+  `).bind(now).first<{ nextRevealAt: string | null }>()
+
+  const grouped = new Map<string, Record<string, unknown> & { podium: Record<string, unknown>[] }>()
+  for (const item of results) {
+    const challengeId = String(item.challengeId)
+    if (!grouped.has(challengeId)) {
+      grouped.set(challengeId, {
+        challengeId,
+        weekLabel: item.weekLabel,
+        challengeTitle: item.challengeTitle,
+        votingClosedAt: item.votingClosedAt,
+        podium: [],
+      })
+    }
+    grouped.get(challengeId)!.podium.push({
+      projectId: item.projectId,
+      rank: Number(item.podiumRank),
+      title: item.title,
+      builder: item.builder,
+      ageBand: item.ageBand,
+      description: item.description,
+      repoUrl: item.repoUrl,
+      demoUrl: item.demoUrl,
+      imageUrl: item.imageKey ? `/api/project-images/${item.projectId}` : null,
+      votes: Number(item.votes),
+    })
+  }
+
+  return json({ challenges: [...grouped.values()], nextRevealAt: nextReveal?.nextRevealAt || null })
 }
 
 async function vote(db: ClubDatabase, request: Request) {
@@ -818,6 +875,7 @@ export default {
     try {
       await initialize(env.DB)
       if (request.method === 'GET' && url.pathname === '/api/community') return community(env.DB, request)
+      if (request.method === 'GET' && url.pathname === '/api/favorites') return favorites(env.DB)
       if (request.method === 'GET' && url.pathname.startsWith('/api/project-images/')) return projectImage(env.DB, env.UPLOADS, request)
       if (request.method === 'POST' && url.pathname === '/api/vote') return vote(env.DB, request)
       if (request.method === 'POST' && url.pathname === '/api/submissions') return submit(env.DB, env.UPLOADS, request)

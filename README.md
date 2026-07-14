@@ -16,6 +16,7 @@ Read the public **[Terms, Safety & Privacy Notice](https://vibecodekids.com/lega
 
 - A responsive weekly challenge landing page
 - Project gallery with one favorite vote per browser and shared weekly totals
+- A public Clubhouse Favorites page with each finished week’s winner and two runners-up
 - Parent-supervised submission form with a moderation queue
 - Optional project-image upload, resized and re-encoded in the browser to remove photo metadata
 - A visitor challenge-idea form with a grown-up permission checkpoint
@@ -69,7 +70,9 @@ Open **[Clubhouse Admin](https://vibecodekids.com/clubhouse-admin)** to review t
 
 Approving a project makes its kid-safe fields and approved image visible as a reviewed gallery preview. Favorite buttons remain locked until that challenge’s scheduled voting week. If a family did not include an image, a club grown-up can add one from the submission card; existing images can also be replaced. Rejecting a project keeps it out of the gallery. The dashboard also supports selecting or archiving challenge ideas and activating or unsubscribing grown-up newsletter addresses.
 
-The Challenges tab shows the active build window, delayed voting window, and next automatic launch. Eight summer challenges are scheduled for Monday at 9:00 a.m. Eastern; submissions close Sunday at midnight, and the previous challenge’s gallery opens when the new prompt launches. Upcoming challenge copy and dates can be edited before launch.
+The Challenges tab shows the active build window, delayed voting window, and next automatic launch. Eight summer challenges run from July 13 through Labor Day weekend. New prompts launch Monday at 9:00 a.m. Eastern; submissions close Sunday at midnight, and the previous challenge’s gallery opens when the new prompt launches. Future prompt titles and copy stay private in the public API and are visible only in Clubhouse Admin before launch.
+
+Once voting closes, **[Clubhouse Favorites](https://vibecodekids.com/favorites)** automatically publishes one winner and up to two runners-up for that challenge. No sample winners are shown before the first real result.
 
 ## Weekly email delivery
 

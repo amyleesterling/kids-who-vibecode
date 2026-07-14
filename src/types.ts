@@ -64,6 +64,32 @@ export type CommunitySnapshot = {
   galleryChallenge: Pick<Challenge, 'id' | 'weekLabel' | 'title' | 'votingOpensAt' | 'votingClosesAt'> | null
   votingOpen: boolean
   acceptingSubmissions: boolean
-  upcomingChallenges: Array<Pick<Challenge, 'id' | 'weekLabel' | 'title' | 'eyebrow' | 'prompt' | 'opensAt' | 'closesAt'>>
+  upcomingChallenges: Array<Pick<Challenge, 'weekLabel' | 'opensAt'>>
   source: 'database' | 'offline'
+}
+
+export type FavoriteProject = {
+  projectId: string
+  rank: number
+  title: string
+  builder: string
+  ageBand: string
+  description: string
+  repoUrl?: string
+  demoUrl?: string
+  imageUrl?: string | null
+  votes: number
+}
+
+export type FavoriteChallenge = {
+  challengeId: string
+  weekLabel: string
+  challengeTitle: string
+  votingClosedAt: string
+  podium: FavoriteProject[]
+}
+
+export type FavoritesSnapshot = {
+  challenges: FavoriteChallenge[]
+  nextRevealAt: string | null
 }
