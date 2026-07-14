@@ -10,7 +10,7 @@ Jump straight to **[this week's challenge](https://vibecodekids.com/#challenge)*
 
 Read the public **[Terms, Safety & Privacy Notice](https://vibecodekids.com/legal)**.
 
-New grown-ups can use the **[Getting Started guide](https://vibecodekids.com/getting-started)** for a first 20-minute project, AI-tool introductions, GitHub basics, and a pre-publish safety check.
+New grown-ups can use the **[Parent Guide](https://vibecodekids.com/getting-started)** for a first 20-minute project, AI-tool introductions, GitHub basics, and a pre-publish safety check.
 
 `vibecodekids.com` is the canonical public address. The `www` address and both `vibecodeclub.org` addresses remain connected and send visitors to the primary domain.
 

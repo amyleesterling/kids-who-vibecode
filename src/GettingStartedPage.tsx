@@ -46,7 +46,7 @@ const builders = [
 function GettingStartedPage() {
   useEffect(() => {
     const previousTitle = document.title
-    document.title = 'Getting Started for Grown-ups — Vibe Code Club'
+    document.title = 'Parent Guide — Vibe Code Club'
     return () => { document.title = previousTitle }
   }, [])
 
