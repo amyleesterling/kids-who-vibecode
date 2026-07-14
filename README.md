@@ -45,6 +45,8 @@ The Cloudflare development adapter provides the same Worker API used in producti
 
 The API never returns either private queue publicly. Review happens in the authenticated Clubhouse Admin. Approving a project publishes only the kid-safe nickname, age band, description, project links, and approved image; parent details remain private.
 
+Every new project submission also requires a grown-up to attest that the project was led by the child rather than built for them by an adult. Teaching, brainstorming, AI assistance, and troubleshooting are welcome; the child must make the creative decisions and lead the build.
+
 The four illustrated projects included at launch are clearly marked clubhouse samples. They are not votable and do not link to fictional repositories; real approved submissions receive working project links and voting controls.
 
 ## Clubhouse Admin

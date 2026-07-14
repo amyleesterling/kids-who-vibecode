@@ -68,6 +68,7 @@
 .admin-image-upload:has(input:disabled) { opacity: .6; cursor: wait; transform: none; }
 .admin-image-upload input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .admin-card-copy h3, .idea-list h3 { font-family: 'Paytone One', 'Arial Rounded MT Bold', sans-serif; font-size: 28px; font-weight: 400; margin: 10px 0 8px; }
+.child-led-badge { width: fit-content; display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 7px 10px; border: 1px solid var(--ink); border-radius: 99px; background: #efffd0; font-size: 9px; font-weight: 800; }.child-led-badge.missing { background: #f1f1f1; color: var(--ink-soft); }
 .admin-card-copy > p, .idea-list > article > p { color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
 .admin-links { display: flex; flex-wrap: wrap; gap: 17px; margin: 20px 0; }
 .admin-links a { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; text-decoration: underline; }

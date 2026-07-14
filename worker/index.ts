@@ -214,10 +214,11 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request) 
   const parentEmail = validEmail(body.get('parentEmail'))
   const consent = body.get('consent') === 'true'
   const publicSharing = body.get('publicSharing') === 'true'
+  const childLed = body.get('childLed') === 'true'
   const image = body.get('image')
   const hasImage = image instanceof File && image.size > 0
 
-  if (!challengeId || !childNickname || !ageBand || !projectTitle || !description || !repoUrl || demoUrl === null || !parentName || !parentEmail || !consent || !publicSharing) {
+  if (!challengeId || !childNickname || !ageBand || !projectTitle || !description || !repoUrl || demoUrl === null || !parentName || !parentEmail || !consent || !publicSharing || !childLed) {
     return json({ error: 'Please complete every required field and permission box.' }, 400)
   }
   if (hasImage && (!['image/webp', 'image/jpeg', 'image/png'].includes(image.type) || image.size > 5_000_000)) {
@@ -243,9 +244,9 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request) 
     await db.prepare(`
       INSERT INTO submissions (
         id, challenge_id, child_nickname, age_band, project_title, description,
-        repo_url, demo_url, parent_name, parent_email, consent, public_sharing,
+        repo_url, demo_url, parent_name, parent_email, consent, public_sharing, child_led,
         image_key, image_name, image_content_type, image_size, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?, ?, ?, 'pending', ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 1, ?, ?, ?, ?, 'pending', ?)
     `).bind(
       id, challengeId, childNickname, ageBand, projectTitle, description,
       repoUrl, demoUrl, parentName, parentEmail, imageKey || null,
@@ -462,6 +463,7 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
     SELECT id, challenge_id AS challengeId, child_nickname AS childNickname,
       age_band AS ageBand, project_title AS projectTitle, description, repo_url AS repoUrl,
       demo_url AS demoUrl, parent_name AS parentName, parent_email AS parentEmail,
+      child_led AS childLed,
       image_name AS imageName, image_content_type AS imageContentType, image_size AS imageSize,
       CASE WHEN image_key IS NULL OR image_key = '' THEN 0 ELSE 1 END AS hasImage,
       status, created_at AS createdAt
@@ -496,6 +498,7 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
   return json({
     submissions: submissions.map((item) => ({
       ...item,
+      childLed: Boolean(item.childLed),
       hasImage: Boolean(item.hasImage),
       imageUrl: item.hasImage ? `/api/admin/submission-images/${item.id}` : null,
     })),

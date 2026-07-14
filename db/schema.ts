@@ -52,6 +52,7 @@ export const schemaStatements = [
     parent_email TEXT NOT NULL,
     consent INTEGER NOT NULL CHECK (consent = 1),
     public_sharing INTEGER NOT NULL CHECK (public_sharing = 1),
+    child_led INTEGER NOT NULL CHECK (child_led = 1),
     image_key TEXT,
     image_name TEXT,
     image_content_type TEXT,

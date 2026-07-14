@@ -10,7 +10,7 @@ import type { Challenge, ChallengeIdeaInput, CommunitySnapshot, Project, Submiss
 
 const emptySubmission: SubmissionInput = {
   childNickname: '', ageBand: '', projectTitle: '', description: '', repoUrl: '', demoUrl: '',
-  parentName: '', parentEmail: '', consent: false, publicSharing: false, image: null,
+  parentName: '', parentEmail: '', consent: false, publicSharing: false, childLed: false, image: null,
 }
 
 const emptyChallengeIdea: ChallengeIdeaInput = {
@@ -118,8 +118,8 @@ function SubmissionModal({ challenge, onClose }: { challenge: Challenge; onClose
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
-    if (!form.consent || !form.publicSharing) {
-      setError('A grown-up needs to check both permission boxes before submitting.')
+    if (!form.consent || !form.publicSharing || !form.childLed) {
+      setError('A grown-up needs to check all three permission and project-attestation boxes before submitting.')
       return
     }
     setStep('saving')
@@ -182,6 +182,7 @@ function SubmissionModal({ challenge, onClose }: { challenge: Challenge; onClose
                 </div>
                 <label className="checkbox-row"><input type="checkbox" checked={form.consent} onChange={(e) => update('consent', e.target.checked)} /><span>I’m the child’s parent or legal guardian, or I have their permission to submit this project.</span></label>
                 <label className="checkbox-row"><input type="checkbox" checked={form.publicSharing} onChange={(e) => update('publicSharing', e.target.checked)} /><span>I approve the nickname, age group, project description, and project links being displayed publicly.</span></label>
+                <label className="checkbox-row child-led-check"><input type="checkbox" checked={form.childLed} onChange={(e) => update('childLed', e.target.checked)} /><span><b>I confirm this is a child-led project—not a project built for them by an adult.</b><small>Grown-ups and AI may help teach, brainstorm, and troubleshoot, but the child made the creative decisions and led the build.</small></span></label>
               </fieldset>
               {error && <p className="form-error">{error}</p>}
               <div className="submit-row"><p><ShieldCheck size={17} /> Every submission is reviewed before it goes live.</p><button disabled={step === 'saving' || preparingImage} className="button button-coral" type="submit">{step === 'saving' ? 'Sending…' : 'Send for review'} <ArrowRight size={18} /></button></div>

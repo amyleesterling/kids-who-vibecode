@@ -41,6 +41,7 @@ export type SubmissionInput = {
   parentEmail: string
   consent: boolean
   publicSharing: boolean
+  childLed: boolean
   image: File | null
 }
 

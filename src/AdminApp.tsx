@@ -16,6 +16,7 @@ type AdminSubmission = {
   demoUrl?: string
   parentName: string
   parentEmail: string
+  childLed: boolean
   imageName?: string
   imageSize?: number
   hasImage: boolean
@@ -351,6 +352,7 @@ function AdminApp() {
                 </div>
                 <div className="admin-card-copy">
                   <span className="builder-tag">by {item.childNickname} · age {item.ageBand}</span>
+                  {item.childLed ? <span className="child-led-badge"><ShieldCheck size={15} /> Grown-up attested: child-led project</span> : <span className="child-led-badge missing"><X size={15} /> No child-led attestation on this older submission</span>}
                   <h3>{item.projectTitle}</h3>
                   <p>{item.description}</p>
                   <div className="admin-links"><a href={item.repoUrl} target="_blank" rel="noreferrer"><Github size={16} /> Check the code</a>{item.demoUrl && <a href={item.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Open playable link</a>}</div>
