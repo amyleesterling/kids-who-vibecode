@@ -1,5 +1,5 @@
 import { activeChallenge, seedProjects } from '../data'
-import type { CommunitySnapshot, SubmissionInput } from '../types'
+import type { ChallengeIdeaInput, CommunitySnapshot, SubmissionInput } from '../types'
 
 const deviceKey = 'vibe-club-device-id'
 
@@ -55,5 +55,17 @@ export async function submitProject(input: SubmissionInput, challengeId: string)
   if (!response.ok) {
     const result = await response.json().catch(() => ({ error: 'Submission failed' })) as { error?: string }
     throw new Error(result.error || 'Submission failed')
+  }
+}
+
+export async function submitChallengeIdea(input: ChallengeIdeaInput) {
+  const response = await fetch('/api/challenge-ideas', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ ...input, website: '' }),
+  })
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({ error: 'Idea submission failed' })) as { error?: string }
+    throw new Error(result.error || 'Idea submission failed')
   }
 }

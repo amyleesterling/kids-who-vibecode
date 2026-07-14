@@ -134,6 +134,34 @@ async function submit(db: ClubDatabase, request: Request) {
   return json({ ok: true }, 201)
 }
 
+async function submitChallengeIdea(db: ClubDatabase, request: Request) {
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null
+  if (!body || text(body.website)) return json({ error: 'Invalid submission' }, 400)
+
+  const ideaTitle = validText(body.ideaTitle, 80)
+  const ideaPrompt = validText(body.ideaPrompt, 400, 10)
+  const starterSpark = text(body.starterSpark)
+  const creatorNickname = validText(body.creatorNickname, 24)
+  const creatorGroup = ['5–6', '7–9', '10–12', '13–15', 'Grown-up'].includes(text(body.creatorGroup)) ? text(body.creatorGroup) : null
+  const grownupEmail = validText(body.grownupEmail, 160)
+  const consent = body.consent === true
+
+  if (!ideaTitle || !ideaPrompt || starterSpark.length > 180 || !creatorNickname || !creatorGroup || !grownupEmail || !grownupEmail.includes('@') || !consent) {
+    return json({ error: 'Please complete every required field and the grown-up permission box.' }, 400)
+  }
+
+  await db.prepare(`
+    INSERT INTO challenge_ideas (
+      id, idea_title, idea_prompt, starter_spark, creator_nickname,
+      creator_group, grownup_email, consent, status, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'pending', ?)
+  `).bind(
+    crypto.randomUUID(), ideaTitle, ideaPrompt, starterSpark, creatorNickname,
+    creatorGroup, grownupEmail.toLowerCase(), new Date().toISOString(),
+  ).run()
+  return json({ ok: true }, 201)
+}
+
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url)
@@ -144,6 +172,7 @@ export default {
       if (request.method === 'GET' && url.pathname === '/api/community') return community(env.DB, request)
       if (request.method === 'POST' && url.pathname === '/api/vote') return vote(env.DB, request)
       if (request.method === 'POST' && url.pathname === '/api/submissions') return submit(env.DB, request)
+      if (request.method === 'POST' && url.pathname === '/api/challenge-ideas') return submitChallengeIdea(env.DB, request)
       return json({ error: 'Not found' }, 404)
     } catch (error) {
       console.error('Community API error', error)

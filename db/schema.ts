@@ -50,9 +50,22 @@ export const schemaStatements = [
     status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
     created_at TEXT NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS challenge_ideas (
+    id TEXT PRIMARY KEY,
+    idea_title TEXT NOT NULL,
+    idea_prompt TEXT NOT NULL,
+    starter_spark TEXT,
+    creator_nickname TEXT NOT NULL,
+    creator_group TEXT NOT NULL,
+    grownup_email TEXT NOT NULL,
+    consent INTEGER NOT NULL CHECK (consent = 1),
+    status TEXT NOT NULL CHECK (status IN ('pending', 'selected', 'archived')),
+    created_at TEXT NOT NULL
+  )`,
   `CREATE INDEX IF NOT EXISTS projects_challenge_status_idx ON projects (challenge_id, status)`,
   `CREATE INDEX IF NOT EXISTS votes_project_idx ON votes (project_id)`,
   `CREATE INDEX IF NOT EXISTS submissions_status_created_idx ON submissions (status, created_at)`,
+  `CREATE INDEX IF NOT EXISTS challenge_ideas_status_created_idx ON challenge_ideas (status, created_at)`,
 ]
 
 function nextSunday() {

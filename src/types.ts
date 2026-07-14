@@ -39,6 +39,16 @@ export type SubmissionInput = {
   publicSharing: boolean
 }
 
+export type ChallengeIdeaInput = {
+  ideaTitle: string
+  ideaPrompt: string
+  starterSpark: string
+  creatorNickname: string
+  creatorGroup: string
+  grownupEmail: string
+  consent: boolean
+}
+
 export type CommunitySnapshot = {
   challenge: Challenge
   projects: Project[]

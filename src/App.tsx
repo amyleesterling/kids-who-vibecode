@@ -1,16 +1,21 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
-  ArrowRight, Check, ChevronDown, Code2, ExternalLink, Github, Heart,
+  ArrowRight, Check, ChevronDown, Code2, ExternalLink, Github, Heart, Lightbulb,
   LockKeyhole, Menu, MousePointer2, ShieldCheck, Sparkles, X,
 } from 'lucide-react'
 import { upcomingChallenges } from './data'
-import { loadCommunity, saveVote, submitProject } from './lib/community'
-import type { Challenge, CommunitySnapshot, Project, SubmissionInput } from './types'
+import { loadCommunity, saveVote, submitChallengeIdea, submitProject } from './lib/community'
+import type { Challenge, ChallengeIdeaInput, CommunitySnapshot, Project, SubmissionInput } from './types'
 
 const emptySubmission: SubmissionInput = {
   childNickname: '', ageBand: '', projectTitle: '', description: '', repoUrl: '', demoUrl: '',
   parentName: '', parentEmail: '', consent: false, publicSharing: false,
+}
+
+const emptyChallengeIdea: ChallengeIdeaInput = {
+  ideaTitle: '', ideaPrompt: '', starterSpark: '', creatorNickname: '', creatorGroup: '',
+  grownupEmail: '', consent: false,
 }
 
 function timeLeft(iso: string) {
@@ -153,21 +158,93 @@ function SubmissionModal({ challenge, onClose }: { challenge: Challenge; onClose
   )
 }
 
+function ChallengeIdeaModal({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState(emptyChallengeIdea)
+  const [step, setStep] = useState<'form' | 'saving' | 'done'>('form')
+  const [error, setError] = useState('')
+
+  const update = (name: keyof ChallengeIdeaInput, value: string | boolean) => setForm((current) => ({ ...current, [name]: value }))
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError('')
+    if (!form.consent) {
+      setError('A grown-up needs to check the permission box before submitting.')
+      return
+    }
+    setStep('saving')
+    try {
+      await submitChallengeIdea(form)
+      setStep('done')
+    } catch {
+      setError('That idea did not go through. Please check the form and try again.')
+      setStep('form')
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className="submission-modal idea-modal" role="dialog" aria-modal="true" aria-labelledby="idea-title">
+        <button className="modal-close" onClick={onClose} aria-label="Close challenge idea form"><X size={20} /></button>
+        {step === 'done' ? (
+          <div className="success-state">
+            <span className="success-burst idea-success"><Lightbulb size={34} strokeWidth={2.5} /></span>
+            <span className="kicker">Idea received!</span>
+            <h2 id="idea-title">It’s in the clubhouse idea jar.</h2>
+            <p>A club grown-up will review it privately. If we want to turn it into a future challenge, we’ll email the grown-up who submitted it.</p>
+            <button className="button button-dark" onClick={onClose}>Back to the clubhouse</button>
+          </div>
+        ) : (
+          <>
+            <div className="modal-intro">
+              <span className="kicker">Your turn to inspire the club</span>
+              <h2 id="idea-title">Pitch a weekly challenge</h2>
+              <p>Kids and grown-ups can dream up the next mission together. We’ll keep the contact email private.</p>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <fieldset>
+                <legend><span>1</span> The big idea</legend>
+                <label>Challenge name<input required maxLength={80} value={form.ideaTitle} onChange={(e) => update('ideaTitle', e.target.value)} placeholder="Make a creature that loves bad jokes" /></label>
+                <label>What should everyone make?<textarea required minLength={10} maxLength={400} value={form.ideaPrompt} onChange={(e) => update('ideaPrompt', e.target.value)} placeholder="Describe the mission, the fun part, and what players might click, tap, or discover." /></label>
+                <label>One starter spark <small>Optional</small><input maxLength={180} value={form.starterSpark} onChange={(e) => update('starterSpark', e.target.value)} placeholder="Maybe it tells a new joke every time you tap its hat…" /></label>
+              </fieldset>
+              <fieldset className="grownup-fieldset">
+                <legend><span>2</span> Who dreamed it up?</legend>
+                <div className="form-grid">
+                  <label>Creator nickname <small>No full names</small><input required maxLength={24} value={form.creatorNickname} onChange={(e) => update('creatorNickname', e.target.value)} placeholder="CosmicCapybara" /></label>
+                  <label>Creator group<select required value={form.creatorGroup} onChange={(e) => update('creatorGroup', e.target.value)}><option value="">Choose one</option><option>5–6</option><option>7–9</option><option>10–12</option><option>13–15</option><option>Grown-up</option></select></label>
+                </div>
+                <label>Grown-up email <small>Never public</small><input required type="email" maxLength={160} value={form.grownupEmail} onChange={(e) => update('grownupEmail', e.target.value)} placeholder="grownup@example.com" /></label>
+                <label className="checkbox-row"><input type="checkbox" checked={form.consent} onChange={(e) => update('consent', e.target.checked)} /><span>I’m an adult submitting my own idea, or I’m the child’s parent/legal guardian and approve this idea being reviewed for a future public challenge.</span></label>
+              </fieldset>
+              {error && <p className="form-error">{error}</p>}
+              <div className="submit-row"><p><ShieldCheck size={17} /> Ideas and contact details stay private while we review them.</p><button disabled={step === 'saving'} className="button button-coral" type="submit">{step === 'saving' ? 'Sending…' : 'Put it in the idea jar'} <ArrowRight size={18} /></button></div>
+            </form>
+          </>
+        )}
+      </section>
+    </div>
+  )
+}
+
 function App() {
   const [community, setCommunity] = useState<CommunitySnapshot | null>(null)
   const [showSubmit, setShowSubmit] = useState(false)
+  const [showIdea, setShowIdea] = useState(false)
   const [mobileNav, setMobileNav] = useState(false)
   const [notice, setNotice] = useState('')
   const [voting, setVoting] = useState('')
 
   useEffect(() => { loadCommunity().then(setCommunity) }, [])
   useEffect(() => {
-    if (!showSubmit) return
-    const onKey = (event: KeyboardEvent) => event.key === 'Escape' && setShowSubmit(false)
+    if (!showSubmit && !showIdea) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setShowSubmit(false); setShowIdea(false) }
+    }
     document.body.classList.add('modal-open')
     window.addEventListener('keydown', onKey)
     return () => { document.body.classList.remove('modal-open'); window.removeEventListener('keydown', onKey) }
-  }, [showSubmit])
+  }, [showSubmit, showIdea])
 
   const sortedProjects = useMemo(() => {
     if (!community) return []
@@ -278,7 +355,10 @@ function App() {
 
         <section className="up-next page-shell">
           <div className="up-next-title"><span>Coming soon</span><h2>Next on the idea machine</h2></div>
-          <div className="challenge-list">{upcomingChallenges.map((item) => <article key={item.number}><span className="up-number" style={{ background: item.color }}>{item.number}</span><div><h3>{item.title}</h3><p>{item.hint}</p></div><span className="locked"><LockKeyhole size={15} /> Locked</span></article>)}</div>
+          <div>
+            <div className="challenge-list">{upcomingChallenges.map((item) => <article key={item.number}><span className="up-number" style={{ background: item.color }}>{item.number}</span><div><h3>{item.title}</h3><p>{item.hint}</p></div><span className="locked"><LockKeyhole size={15} /> Locked</span></article>)}</div>
+            <div className="pitch-challenge"><span><Lightbulb size={24} /></span><div><h3>Got a wildly good idea?</h3><p>Kids and grown-ups can pitch a future weekly mission.</p></div><button className="button button-dark" onClick={() => setShowIdea(true)}>Pitch a challenge <ArrowRight size={17} /></button></div>
+          </div>
         </section>
 
         <section id="grownups" className="grownups-section">
@@ -293,6 +373,7 @@ function App() {
       {community.source === 'demo' && <div className="demo-badge" title="The community database could not be reached">Offline demo <ChevronDown size={13} /></div>}
       {notice && <div className="toast" role="status"><Heart size={17} fill="currentColor" /> {notice}</div>}
       {showSubmit && <SubmissionModal challenge={community.challenge} onClose={() => setShowSubmit(false)} />}
+      {showIdea && <ChallengeIdeaModal onClose={() => setShowIdea(false)} />}
     </div>
   )
 }
