@@ -50,7 +50,8 @@ async function community(db: ClubDatabase, request: Request) {
   const { results: projects } = await db.prepare(`
     SELECT id, challenge_id AS challengeId, title, builder, age_band AS ageBand,
       description, repo_url AS repoUrl, demo_url AS demoUrl, base_votes AS baseVotes,
-      scene, accent
+      scene, accent,
+      CASE WHEN id IN ('mossy-moon', 'bubble-town', 'snack-forest', 'monster-disco') THEN 1 ELSE 0 END AS isSample
     FROM projects WHERE challenge_id = ? AND status = 'approved'
   `).bind(challenge.id).all<Record<string, unknown>>()
   const { results: counts } = await db.prepare(`
@@ -67,7 +68,7 @@ async function community(db: ClubDatabase, request: Request) {
       starterIdeas: JSON.parse(String(challenge.starterIdeas || '[]')),
       tools: JSON.parse(String(challenge.tools || '[]')),
     },
-    projects,
+    projects: projects.map((project) => ({ ...project, isSample: Boolean(project.isSample) })),
     voteCounts: Object.fromEntries(counts.map((item) => [item.projectId, Number(item.count)])),
     myVote: currentVote?.projectId || null,
     source: 'database',
@@ -82,7 +83,9 @@ async function vote(db: ClubDatabase, request: Request) {
   if (!challengeId || !projectId || !voterId) return json({ error: 'Invalid vote' }, 400)
 
   const project = await db.prepare(`
-    SELECT id FROM projects WHERE id = ? AND challenge_id = ? AND status = 'approved'
+    SELECT id FROM projects
+    WHERE id = ? AND challenge_id = ? AND status = 'approved'
+      AND id NOT IN ('mossy-moon', 'bubble-town', 'snack-forest', 'monster-disco')
   `).bind(projectId, challengeId).first<{ id: string }>()
   if (!project) return json({ error: 'Project not found' }, 404)
 

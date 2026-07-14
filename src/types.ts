@@ -23,6 +23,7 @@ export type Project = {
   baseVotes: number
   scene: 'space' | 'garden' | 'ocean' | 'monster'
   accent: string
+  isSample?: boolean
 }
 
 export type SubmissionInput = {

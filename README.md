@@ -35,6 +35,8 @@ The Cloudflare development adapter provides the same Worker API used in producti
 
 The API never returns the submissions table publicly. Approving a submission means reviewing its links, copying only the public child nickname, age band, description, and project links into `projects`, and leaving parent details private.
 
+The four illustrated projects included at launch are clearly marked clubhouse samples. They are not votable and do not link to fictional repositories; real approved submissions receive working project links and voting controls.
+
 ## Build
 
 ```bash

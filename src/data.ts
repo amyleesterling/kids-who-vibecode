@@ -24,19 +24,19 @@ export const activeChallenge: Challenge = {
 export const seedProjects: Project[] = [
   {
     id: 'mossy-moon', challengeId: 'tiny-worlds', title: 'Mossy Moon', builder: 'PixelPanda', ageBand: '7–9',
-    description: 'Grow glowing space plants and wake up the moon bugs.', repoUrl: 'https://github.com/', baseVotes: 18, scene: 'space', accent: '#b9f44a',
+    description: 'Grow glowing space plants and wake up the moon bugs.', baseVotes: 0, scene: 'space', accent: '#b9f44a', isSample: true,
   },
   {
     id: 'bubble-town', challengeId: 'tiny-worlds', title: 'Bubble Town', builder: 'RainbowRex', ageBand: '5–6',
-    description: 'A whole town where every building can float away.', demoUrl: '#', baseVotes: 14, scene: 'ocean', accent: '#65d9ff',
+    description: 'A whole town where every building can float away.', baseVotes: 0, scene: 'ocean', accent: '#65d9ff', isSample: true,
   },
   {
     id: 'snack-forest', challengeId: 'tiny-worlds', title: 'The Snack Forest', builder: 'CodeKoala', ageBand: '7–9',
-    description: 'Help a tiny monster find the legendary golden toast.', repoUrl: 'https://github.com/', baseVotes: 11, scene: 'garden', accent: '#ffb3c7',
+    description: 'Help a tiny monster find the legendary golden toast.', baseVotes: 0, scene: 'garden', accent: '#ffb3c7', isSample: true,
   },
   {
     id: 'monster-disco', challengeId: 'tiny-worlds', title: 'Monster Disco', builder: 'BugBunny', ageBand: '5–6',
-    description: 'Tap the beat and give every monster a silly dance.', demoUrl: '#', baseVotes: 9, scene: 'monster', accent: '#ffcb45',
+    description: 'Tap the beat and give every monster a silly dance.', baseVotes: 0, scene: 'monster', accent: '#ffcb45', isSample: true,
   },
 ]
 

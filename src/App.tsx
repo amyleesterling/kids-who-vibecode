@@ -171,7 +171,8 @@ function App() {
 
   const sortedProjects = useMemo(() => {
     if (!community) return []
-    return [...community.projects].sort((a, b) => (b.baseVotes + (community.voteCounts[b.id] || 0)) - (a.baseVotes + (community.voteCounts[a.id] || 0)))
+    const score = (project: Project) => project.isSample ? -1 : project.baseVotes + (community.voteCounts[project.id] || 0)
+    return [...community.projects].sort((a, b) => score(b) - score(a))
   }, [community])
 
   async function vote(project: Project) {
@@ -245,17 +246,18 @@ function App() {
             <div><span className="kicker">Fresh from the clubhouse</span><h2>This week’s tiny worlds</h2></div>
             <p>Explore what other young makers dreamed up, then tap the heart on your favorite. One favorite per person each week.</p>
           </div>
+          <div className="sample-banner"><Sparkles size={19} /><p><b>These four are clubhouse samples.</b> They’re make-believe examples, not real kids’ projects. Approved submissions will have working project links and can receive votes.</p></div>
           <div className="gallery-grid">
             {sortedProjects.map((project, index) => {
-              const votes = project.baseVotes + (community.voteCounts[project.id] || 0)
+              const votes = project.isSample ? 0 : project.baseVotes + (community.voteCounts[project.id] || 0)
               const selected = community.myVote === project.id
               return (
                 <article className="project-card" key={project.id} style={{ '--accent': project.accent } as CSSProperties}>
                   <div className="project-browser"><div className="window-bar"><span /><span /><span /><small>{project.builder.toLowerCase()}.world</small></div><ProjectScene project={project} /></div>
-                  <div className="project-meta"><div><div className="project-rank">#{index + 1} this week</div><h3>{project.title}</h3><p>{project.description}</p><span className="builder-tag">by {project.builder} · age {project.ageBand}</span></div>
-                    <button className={`vote-button ${selected ? 'selected' : ''}`} onClick={() => vote(project)} aria-pressed={selected} aria-label={`Vote for ${project.title}`}><Heart size={22} fill={selected ? 'currentColor' : 'none'} /><b>{votes}</b><small>{selected ? 'Your fave' : 'Favorite'}</small></button>
+                  <div className="project-meta"><div><div className={`project-rank ${project.isSample ? 'sample-rank' : ''}`}>{project.isSample ? 'Clubhouse sample' : `#${index + 1} this week`}</div><h3>{project.title}</h3><p>{project.description}</p><span className="builder-tag">by {project.builder} · age {project.ageBand}</span></div>
+                    {project.isSample ? <div className="sample-vote" aria-label="Sample project—not open for voting"><Sparkles size={22} /><small>Example</small></div> : <button className={`vote-button ${selected ? 'selected' : ''}`} onClick={() => vote(project)} aria-pressed={selected} aria-label={`Vote for ${project.title}`}><Heart size={22} fill={selected ? 'currentColor' : 'none'} /><b>{votes}</b><small>{selected ? 'Your fave' : 'Favorite'}</small></button>}
                   </div>
-                  <div className="project-links">{project.repoUrl && <a href={project.repoUrl} target="_blank" rel="noreferrer"><Github size={16} /> See the code</a>}{project.demoUrl && project.demoUrl !== '#' && <a href={project.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Try it</a>}</div>
+                  <div className="project-links">{project.isSample ? <span className="sample-link"><Sparkles size={16} /> No live project—just an idea spark</span> : <>{project.repoUrl && <a href={project.repoUrl} target="_blank" rel="noreferrer"><Github size={16} /> See the code</a>}{project.demoUrl && <a href={project.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Try it</a>}</>}</div>
                 </article>
               )
             })}
