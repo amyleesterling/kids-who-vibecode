@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   AlertTriangle, ArrowLeft, Bot, CalendarDays, Check, Clock3, ExternalLink, Github, Heart, Image as ImageIcon,
-  BookOpen, ImagePlus, Inbox, Lightbulb, LogOut, Mail, Pencil, Play, RefreshCw, Save, ShieldCheck, Sparkles, X,
+  BookOpen, Copy, ImagePlus, Inbox, Lightbulb, LogOut, Mail, Pencil, Play, RefreshCw, Save, ShieldCheck, Sparkles, UserPlus, Users, X,
 } from 'lucide-react'
 import { prepareProjectImage } from './lib/projectImage'
 
@@ -36,6 +36,7 @@ type AdminSubmission = {
   safetyStartedAt?: string
   safetyCompletedAt?: string
   safetyUpdatedAt?: string
+  reviewerReviews: Array<{ reviewerLabel: string; verdict: 'ready' | 'concern'; note?: string; updatedAt: string }>
 }
 
 type AdminIdea = {
@@ -72,6 +73,15 @@ type AdminVoteAlert = {
   lastSeenAt: string
 }
 
+type AdminReviewerInvite = {
+  id: string
+  label: string
+  createdAt: string
+  expiresAt: string
+  revokedAt?: string | null
+  lastUsedAt?: string | null
+}
+
 type AdminChallenge = {
   id: string
   weekLabel: string
@@ -106,6 +116,7 @@ type Dashboard = {
   ideas: AdminIdea[]
   subscribers: AdminSubscriber[]
   voteAlerts: AdminVoteAlert[]
+  reviewerInvites: AdminReviewerInvite[]
   activity: Array<{ id: string; itemType: string; itemId: string; action: string; createdAt: string }>
   safetyScannerEnabled: boolean
   challengeDrafts: AdminChallengeDraft[]
@@ -150,7 +161,7 @@ function SafetyReview({ item, enabled, busy, onQueue }: {
   )
 }
 
-type AdminTab = 'challenges' | 'submissions' | 'ideas' | 'vote-alerts' | 'subscribers'
+type AdminTab = 'challenges' | 'submissions' | 'ideas' | 'reviewers' | 'vote-alerts' | 'subscribers'
 
 function dateLabel(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
@@ -277,6 +288,9 @@ function AdminApp() {
   const [clock, setClock] = useState(Date.now())
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null)
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null)
+  const [reviewerLabel, setReviewerLabel] = useState('')
+  const [reviewerInviteUrl, setReviewerInviteUrl] = useState('')
+  const [inviteCopied, setInviteCopied] = useState(false)
 
   const loadDashboard = useCallback(async () => {
     setError('')
@@ -301,9 +315,10 @@ function AdminApp() {
     challenges: dashboard?.schedule.challenges.filter((item) => item.status === 'upcoming').length || 0,
     submissions: dashboard?.submissions.filter((item) => item.status === 'pending').length || 0,
     ideas: dashboard?.ideas.filter((item) => item.status === 'pending').length || 0,
+    reviewers: dashboard?.reviewerInvites.filter((item) => !item.revokedAt && new Date(item.expiresAt).getTime() > clock).length || 0,
     voteAlerts: dashboard?.voteAlerts.filter((item) => item.status === 'open').length || 0,
     subscribers: dashboard?.subscribers.filter((item) => item.status === 'active').length || 0,
-  }), [dashboard])
+  }), [clock, dashboard])
   const safetyScannerEnabled = dashboard?.safetyScannerEnabled || false
 
   async function login(event: FormEvent<HTMLFormElement>) {
@@ -402,6 +417,38 @@ function AdminApp() {
     setBusy('')
   }
 
+  async function createReviewerInvite(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setBusy('reviewer-invite')
+    setError('')
+    setReviewerInviteUrl('')
+    setInviteCopied(false)
+    const response = await fetch('/api/admin/reviewer-invites', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ label: reviewerLabel }),
+    })
+    if (!response.ok) setError(await readError(response))
+    else {
+      const result = await response.json() as { inviteUrl: string }
+      setReviewerInviteUrl(result.inviteUrl)
+      setReviewerLabel('')
+      await loadDashboard().catch((reason) => setError(reason.message))
+    }
+    setBusy('')
+  }
+
+  async function revokeReviewerInvite(invite: AdminReviewerInvite) {
+    if (!window.confirm(`Revoke ${invite.label}’s reviewer link? It will stop working immediately.`)) return
+    const key = `reviewer:${invite.id}`
+    setBusy(key)
+    setError('')
+    const response = await fetch(`/api/admin/reviewer-invites/${encodeURIComponent(invite.id)}`, { method: 'POST' })
+    if (!response.ok) setError(await readError(response))
+    else await loadDashboard().catch((reason) => setError(reason.message))
+    setBusy('')
+  }
+
   if (authenticated === null) {
     return <main className="admin-loading"><span><Sparkles /></span><p>Opening the clubhouse inbox…</p></main>
   }
@@ -443,6 +490,7 @@ function AdminApp() {
         <button className={tab === 'challenges' ? 'active' : ''} onClick={() => setTab('challenges')}><CalendarDays size={18} /> Challenges <b>{counts.challenges}</b></button>
         <button className={tab === 'submissions' ? 'active' : ''} onClick={() => setTab('submissions')}><Inbox size={18} /> Projects <b>{counts.submissions}</b></button>
         <button className={tab === 'ideas' ? 'active' : ''} onClick={() => setTab('ideas')}><Lightbulb size={18} /> Challenge ideas <b>{counts.ideas}</b></button>
+        <button className={tab === 'reviewers' ? 'active' : ''} onClick={() => setTab('reviewers')}><Users size={18} /> Parent reviewers <b>{counts.reviewers}</b></button>
         <button className={tab === 'vote-alerts' ? 'active' : ''} onClick={() => setTab('vote-alerts')}><AlertTriangle size={18} /> Vote alerts <b>{counts.voteAlerts}</b></button>
         <button className={tab === 'subscribers' ? 'active' : ''} onClick={() => setTab('subscribers')}><Mail size={18} /> Grown-up emails <b>{counts.subscribers}</b></button>
       </nav>
@@ -458,7 +506,7 @@ function AdminApp() {
           </div>
           {selectedChallengeId && dashboard?.schedule.challenges.find((challenge) => challenge.id === selectedChallengeId) && <ChallengeEditor key={selectedChallengeId} challenge={dashboard.schedule.challenges.find((challenge) => challenge.id === selectedChallengeId)!} busy={busy === `challenge:${selectedChallengeId}`} onSave={saveChallenge} onClose={() => setSelectedChallengeId(null)} />}
 
-          <div className="challenge-bank-heading"><div><span className="kicker">Private idea bank</span><h3>Challenge ideas</h3></div><p>These stay inside the clubhouse until you decide to schedule one. Click any card to edit its full text.</p></div>
+          <div className="challenge-bank-heading"><div><span className="kicker">Private future shelf</span><h3>Future challenges</h3></div><p>Six possibilities for later in the year—including a holiday challenge saved for December. Click any card to edit its full text.</p></div>
           <div className="challenge-bank">{dashboard?.challengeDrafts.map((draft) => <button type="button" key={draft.id} className={`challenge-draft-card ${selectedDraftId === draft.id ? 'selected' : ''}`} aria-expanded={selectedDraftId === draft.id} onClick={() => { setSelectedDraftId((current) => current === draft.id ? null : draft.id); setSelectedChallengeId(null) }}><span><BookOpen size={17} /><b>{draft.status}</b></span><h4>{draft.title}</h4><p>{draft.eyebrow}</p><Pencil size={15} /></button>)}</div>
           {selectedDraftId && dashboard?.challengeDrafts.find((draft) => draft.id === selectedDraftId) && <ChallengeDraftEditor key={selectedDraftId} draft={dashboard.challengeDrafts.find((draft) => draft.id === selectedDraftId)!} busy={busy === `challenge-draft:${selectedDraftId}`} onSave={saveChallengeDraft} onClose={() => setSelectedDraftId(null)} />}
         </section>}
@@ -499,6 +547,7 @@ function AdminApp() {
                   <p>{item.description}</p>
                   <div className="admin-links"><a href={item.repoUrl} target="_blank" rel="noreferrer"><Github size={16} /> Check the code</a>{item.demoUrl && <a href={item.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Open playable link</a>}</div>
                   <SafetyReview item={item} enabled={safetyScannerEnabled} busy={busy === `safety:${item.safetyScanId}`} onQueue={queueSafetyScan} />
+                  {!!item.reviewerReviews.length && <div className="reviewer-recommendations"><b>Parent reviewer notes</b>{item.reviewerReviews.map((review) => <div className={`reviewer-recommendation ${review.verdict}`} key={`${review.reviewerLabel}-${review.updatedAt}`}><span>{review.verdict === 'ready' ? <Check size={15} /> : <AlertTriangle size={15} />}{review.reviewerLabel}: {review.verdict === 'ready' ? 'Looks ready' : 'Needs attention'}</span>{review.note && <p>{review.note}</p>}<small>{dateLabel(review.updatedAt)}</small></div>)}</div>}
                   <div className="private-contact"><ShieldCheck size={16} /><span><b>Private grown-up contact</b>{item.parentName} · <a href={`mailto:${item.parentEmail}`}>{item.parentEmail}</a></span></div>
                 </div>
               </div>
@@ -518,6 +567,21 @@ function AdminApp() {
               <div className="admin-card-actions"><span>Private until selected</span><div><button disabled={busy === `idea:${idea.id}`} className="admin-reject" onClick={() => moderate('idea', idea.id, 'archive', `Archive “${idea.ideaTitle}”?`)}>Archive</button><button disabled={busy === `idea:${idea.id}`} className="admin-approve" onClick={() => moderate('idea', idea.id, 'select', `Mark “${idea.ideaTitle}” as selected?`)}><Check size={16} /> Select idea</button></div></div>
             </article>)}
             {!dashboard?.ideas.length && <div className="admin-empty"><Lightbulb size={35} /><h3>The idea jar is waiting.</h3></div>}
+          </div>
+        </section>}
+
+        {tab === 'reviewers' && <section>
+          <div className="admin-section-heading"><div><span className="kicker">Scoped grown-up help</span><h2>Parent reviewers</h2></div><p>Create a private link for each helper. They see pending projects only and leave recommendations; only you can publish or reject.</p></div>
+          <form className="reviewer-invite-form" onSubmit={createReviewerInvite}>
+            <span><UserPlus size={25} /></span><div><label htmlFor="reviewer-label">Reviewer name or label</label><input id="reviewer-label" required minLength={2} maxLength={60} value={reviewerLabel} onChange={(event) => setReviewerLabel(event.target.value)} placeholder="For example: Maya’s dad" /></div><button className="button button-dark" disabled={busy === 'reviewer-invite'} type="submit">{busy === 'reviewer-invite' ? 'Creating…' : 'Create invite link'}</button>
+          </form>
+          {reviewerInviteUrl && <div className="reviewer-invite-result"><div><b>Share this private link</b><p>The secret stays after the #, so it is not sent in ordinary page requests. The link expires in 30 days and can be revoked below.</p></div><input readOnly value={reviewerInviteUrl} aria-label="Reviewer invite link" /><button type="button" onClick={async () => { await navigator.clipboard.writeText(reviewerInviteUrl); setInviteCopied(true) }}><Copy size={16} /> {inviteCopied ? 'Copied!' : 'Copy link'}</button></div>}
+          <div className="reviewer-invite-list">
+            {dashboard?.reviewerInvites.map((invite) => {
+              const active = !invite.revokedAt && new Date(invite.expiresAt).getTime() > clock
+              return <article key={invite.id}><div><b>{invite.label}</b><span>Created {dateLabel(invite.createdAt)} · expires {dateLabel(invite.expiresAt)}</span>{invite.lastUsedAt && <small>Last opened {dateLabel(invite.lastUsedAt)}</small>}</div><span className={`admin-status status-${active ? 'active' : 'revoked'}`}>{active ? 'active' : invite.revokedAt ? 'revoked' : 'expired'}</span>{active && <button disabled={busy === `reviewer:${invite.id}`} onClick={() => revokeReviewerInvite(invite)}>Revoke</button>}</article>
+            })}
+            {!dashboard?.reviewerInvites.length && <div className="admin-empty"><Users size={35} /><h3>No parent reviewers yet.</h3><p>Create one private link per helper.</p></div>}
           </div>
         </section>}
 

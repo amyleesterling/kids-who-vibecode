@@ -10,6 +10,8 @@
 
 ## Launch follow-ups
 
+- [x] Add scoped, expiring parent-reviewer links that hide challenges, subscriber data, and submitting grown-up contact details.
+- [ ] Invite one trusted parent and test the complete recommendation and revocation flow before sharing reviewer links more broadly.
 - [ ] Have the Terms, Safety & Privacy Notice reviewed by a qualified lawyer before broad promotion.
 - [ ] Connect and test weekly challenge email delivery after the sending domain is verified.
 - [ ] Run a full mobile submission, moderation, gallery, voting, and winner-reveal test before the first public voting week.

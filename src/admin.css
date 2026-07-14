@@ -27,7 +27,7 @@
 .schedule-card > span { display: flex; align-items: center; gap: 7px; font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 800; text-transform: uppercase; }
 .schedule-card h2 { margin: 22px 0 auto; font-family: 'Paytone One', 'Arial Rounded MT Bold', sans-serif; font-size: 25px; line-height: 1.05; font-weight: 400; }
 .schedule-card b { margin-top: 14px; font-size: 12px; }.schedule-card small { margin-top: 4px; color: var(--ink-soft); font-size: 8px; }
-.admin-tabs { width: min(calc(100% - 48px), 1180px); margin: 22px auto 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.admin-tabs { width: min(calc(100% - 48px), 1180px); margin: 22px auto 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
 .admin-tabs button { min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid var(--ink); border-radius: 11px; background: var(--paper); font-weight: 800; cursor: pointer; box-shadow: 3px 3px 0 var(--ink); }
 .admin-tabs button.active { background: var(--yellow); transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); }
 .admin-tabs b { min-width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: white; font-size: 10px; }
@@ -116,6 +116,10 @@
 .subscriber-row b { font-size: 12px; }.subscriber-row span { color: var(--ink-soft); font-size: 9px; }
 .subscriber-row > .admin-status { color: var(--ink); }
 .subscriber-row button { background: var(--paper); }
+.reviewer-recommendations { display: grid; gap: 9px; margin: 18px 0; padding: 15px; border: 1.5px solid var(--ink); border-radius: 10px; background: #f4f1ff; }.reviewer-recommendations > b { font-size: 11px; }.reviewer-recommendation { display: grid; gap: 5px; padding: 10px; border-radius: 8px; background: white; }.reviewer-recommendation > span { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; }.reviewer-recommendation.ready > span { color: #26723d; }.reviewer-recommendation.concern > span { color: #a43a24; }.reviewer-recommendation p { margin: 0; color: var(--ink-soft); font-size: 10px; line-height: 1.5; }.reviewer-recommendation small { color: var(--ink-soft); font-family: 'DM Mono', monospace; font-size: 8px; }
+.reviewer-invite-form { display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: 16px; padding: 22px; border: 1.5px solid var(--ink); border-radius: 14px; background: white; box-shadow: 5px 5px 0 var(--blue); }.reviewer-invite-form > span { width: 52px; height: 52px; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 12px; background: var(--green); }.reviewer-invite-form > div { display: grid; gap: 7px; }.reviewer-invite-form label { font-size: 12px; font-weight: 800; }.reviewer-invite-form input, .reviewer-invite-result input { width: 100%; border: 1.5px solid var(--ink); border-radius: 9px; padding: 12px 13px; background: var(--paper); font: inherit; font-size: 13px; }
+.reviewer-invite-result { display: grid; grid-template-columns: 1fr minmax(280px, 1.3fr) auto; align-items: center; gap: 15px; margin-top: 20px; padding: 18px 20px; border: 1.5px solid var(--ink); border-radius: 12px; background: #efffd0; }.reviewer-invite-result b { font-size: 12px; }.reviewer-invite-result p { margin: 4px 0 0; color: var(--ink-soft); font-size: 10px; line-height: 1.5; }.reviewer-invite-result button, .reviewer-invite-list button { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1.5px solid var(--ink); border-radius: 8px; padding: 9px 13px; background: white; font-weight: 800; cursor: pointer; }
+.reviewer-invite-list { display: grid; gap: 11px; margin-top: 28px; }.reviewer-invite-list article { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 18px; padding: 18px 20px; border: 1.5px solid var(--ink); border-radius: 12px; background: white; }.reviewer-invite-list article > div { display: grid; gap: 4px; }.reviewer-invite-list article b { font-size: 14px; }.reviewer-invite-list article span, .reviewer-invite-list article small { color: var(--ink-soft); font-size: 11px; }.reviewer-invite-list .status-revoked { background: #ddd; }
 .vote-alert-privacy { display: flex; align-items: flex-start; gap: 13px; margin: -5px 0 25px; padding: 17px 19px; border: 1.5px solid var(--ink); border-radius: 12px; background: #e8f9ff; box-shadow: 4px 4px 0 var(--blue); }
 .vote-alert-privacy > svg { flex: 0 0 auto; }.vote-alert-privacy div { display: grid; gap: 4px; }.vote-alert-privacy b { font-size: 11px; }.vote-alert-privacy p { margin: 0; color: var(--ink-soft); font-size: 9px; line-height: 1.55; }
 .vote-alert-card { position: relative; border-left: 8px solid var(--coral); }.vote-alert-card.status-open { background: #fff9e8; }.vote-alert-card h3 { margin: 9px 0 8px; font-family: 'Paytone One', 'Arial Rounded MT Bold', sans-serif; font-size: 25px; font-weight: 400; }.vote-alert-card > p { max-width: 740px; color: var(--ink-soft); font-size: 11px; }.vote-alert-icon { width: 42px; height: 42px; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--yellow); box-shadow: 3px 3px 0 var(--ink); }
@@ -136,6 +140,7 @@
   .admin-card-actions button { flex: 1; }
   .subscriber-row { grid-template-columns: 1fr auto; }
   .subscriber-row button { grid-column: 1 / -1; }
+  .reviewer-invite-form, .reviewer-invite-result { grid-template-columns: 1fr; align-items: stretch; }.reviewer-invite-form > span { display: none; }.reviewer-invite-list article { grid-template-columns: 1fr auto; }.reviewer-invite-list article button { grid-column: 1 / -1; }
 }
 
 @media (max-width: 520px) {
@@ -149,3 +154,14 @@
   .admin-card-actions > div { flex-direction: column; }
   .admin-links { flex-direction: column; }
 }
+
+/* Clubhouse copy should be comfortable to read at a glance. */
+.admin-header p { font-size: 15px; }
+.schedule-card > span { font-size: 11px; }.schedule-card h2 { font-size: 28px; }.schedule-card b { font-size: 14px; }.schedule-card small { font-size: 11px; line-height: 1.45; }
+.admin-tabs button { font-size: 13px; }
+.admin-section-heading > p, .challenge-bank-heading p { font-size: 14px; line-height: 1.55; }
+.season-row { padding-block: 20px; }.season-row > div > span { font-size: 10px; }.season-row b { font-size: 15px; }.season-row small { font-size: 11px; }
+.admin-status { font-size: 10px; }
+.challenge-draft-card h4 { font-size: 25px; }.challenge-draft-card p { font-size: 13px; line-height: 1.5; }
+.challenge-editor-intro p { font-size: 13px; }.challenge-form-grid label > span { font-size: 10px; }.challenge-form-grid input, .challenge-form-grid textarea { font-size: 14px; }
+.admin-card-top time, .admin-card-actions > span { font-size: 10px; }.admin-card-copy > p, .idea-list > article > p { font-size: 14px; }.builder-tag { font-size: 10px; }

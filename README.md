@@ -22,6 +22,7 @@ Read the public **[Terms, Safety & Privacy Notice](https://vibecodekids.com/lega
 - A visitor challenge-idea form with a grown-up permission checkpoint
 - A parent-only weekly challenge email signup with one-click unsubscribe
 - A password-protected Clubhouse Admin for reviewing projects, images, links, ideas, and subscribers
+- Scoped, revocable parent-reviewer invite links that expose only pending project material and collect advisory recommendations
 - Privacy-preserving suspicious-vote alerts in Clubhouse Admin; alerts never expose raw IP addresses or automatically remove votes
 - An optional AI-assisted playthrough that samples playable experiences before a grown-up publishes them
 - Kid-safety defaults: nicknames, age bands, no comments or direct messages
@@ -51,6 +52,8 @@ The Cloudflare development adapter provides the same Worker API used in producti
 - `subscribers` is the private, deduplicated grown-up newsletter list.
 - `newsletter_deliveries` prevents the same weekly challenge being sent twice to one address.
 - `safety_scans` stores automated playthrough status, findings, coverage flags, and the action log; screenshots are not retained.
+- `reviewer_invites` stores expiring reviewer-link hashes and revocation state; plaintext invite secrets are returned only when a link is created.
+- `reviewer_reviews` stores each invited parent’s “looks ready” or “needs attention” recommendation and optional note.
 
 The API never returns either private queue publicly. Review happens in the authenticated Clubhouse Admin. Approving a project publishes only the kid-safe nickname, age band, description, project links, and approved image; parent details remain private.
 
@@ -72,9 +75,11 @@ Open **[Clubhouse Admin](https://vibecodekids.com/clubhouse-admin)** to review t
 
 Approving a project makes its kid-safe fields and approved image visible as a reviewed gallery preview. Favorite buttons remain locked until that challenge’s scheduled voting week. If a family did not include an image, a club grown-up can add one from the submission card; existing images can also be replaced. Rejecting a project keeps it out of the gallery. The dashboard also supports selecting or archiving challenge ideas and activating or unsubscribing grown-up newsletter addresses.
 
+The Parent Reviewers tab creates one 30-day, revocable link per helper. Reviewers use **[/review](https://vibecodekids.com/review)** through the secret-bearing link, see only pending project content and safety summaries, and can recommend “looks ready” or “needs attention.” They cannot publish or reject, edit or view the challenge calendar, see subscribers, or access submitting grown-up contact details. Invite secrets are carried in the URL fragment, exchanged only through authorization headers, and stored by the server only as hashes.
+
 The Challenges tab shows the active build window, delayed voting window, and next automatic launch. Eight summer challenges run from July 13 through Labor Day weekend. New prompts launch Monday at 9:00 a.m. Eastern; submissions close Sunday at midnight, and the previous challenge’s gallery opens when the new prompt launches. Future prompt titles and copy stay private in the public API and are visible only in Clubhouse Admin before launch.
 
-Every calendar row is clickable. Club grown-ups can view and edit the complete title, tagline, prompt, brief, starter ideas, and tools for any challenge; dates stay editable until that challenge begins. A private idea bank contains ten additional fully written, editable challenge concepts. “Open a secret door” is scheduled for Week 2, and “Make a chain reaction” fills Week 7.
+Every calendar row is clickable. Club grown-ups can view and edit the complete title, tagline, prompt, brief, starter ideas, and tools for any challenge; dates stay editable until that challenge begins. The Future Challenges section contains six fully written, editable possibilities: Invent a new holiday, Build a page for an alien planet, Invent a creature, Build the world’s smallest theme park, Rescue a snack, and Create a new snack. The holiday idea is intentionally held for December. “Open a secret door” is scheduled for Week 2, “Make someone smile” for Week 3, and “Make a chain reaction” for Week 7.
 
 Once voting closes, **[Clubhouse Favorites](https://vibecodekids.com/favorites)** automatically publishes one winner and up to two runners-up for that challenge. No sample winners are shown before the first real result.
 

@@ -4,8 +4,10 @@ import App from './App'
 import AdminApp from './AdminApp'
 import LegalPage from './LegalPage'
 import FavoritesPage from './FavoritesPage'
+import ReviewerApp from './ReviewerApp'
 import './styles.css'
 import './admin.css'
+import './reviewer.css'
 
 const primaryHost = 'vibecodekids.com'
 const alternateHosts = new Set(['www.vibecodekids.com', 'vibecodeclub.org', 'www.vibecodeclub.org'])
@@ -19,7 +21,8 @@ if (alternateHosts.has(window.location.hostname)) {
 } else {
   const Page = window.location.pathname.startsWith('/clubhouse-admin')
     ? AdminApp
-    : window.location.pathname.startsWith('/legal') ? LegalPage
+    : window.location.pathname.startsWith('/review') ? ReviewerApp
+      : window.location.pathname.startsWith('/legal') ? LegalPage
       : window.location.pathname.startsWith('/favorites') ? FavoritesPage : App
 
   createRoot(document.getElementById('root')!).render(

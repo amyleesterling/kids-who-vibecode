@@ -102,6 +102,25 @@ async function isAdmin(request: Request, env: Env) {
   return constantTimeEqual(actual, expected)
 }
 
+function bearerToken(request: Request) {
+  const authorization = request.headers.get('authorization') || ''
+  return authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : ''
+}
+
+async function reviewerAccess(db: ClubDatabase, request: Request, touch = true) {
+  const token = bearerToken(request)
+  if (token.length < 40 || token.length > 160) return null
+  const tokenHash = await sha256Hex(token)
+  const now = new Date().toISOString()
+  const invite = await db.prepare(`
+    SELECT id, label, expires_at AS expiresAt
+    FROM reviewer_invites
+    WHERE token_hash = ? AND revoked_at IS NULL AND expires_at > ?
+  `).bind(tokenHash, now).first<{ id: string; label: string; expiresAt: string }>()
+  if (invite && touch) await db.prepare(`UPDATE reviewer_invites SET last_used_at = ? WHERE id = ?`).bind(now, invite.id).run()
+  return invite
+}
+
 async function initialize(db: ClubDatabase) {
   await ensureDatabase(db)
   await seedDatabase(db)
@@ -637,6 +656,105 @@ function adminLogout() {
   })
 }
 
+async function adminCreateReviewerInvite(db: ClubDatabase, request: Request, env: Env) {
+  if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null
+  const label = validText(body?.label, 60, 2)
+  if (!label) return json({ error: 'Add a short name for this reviewer.' }, 400)
+  const token = `${crypto.randomUUID().replaceAll('-', '')}${crypto.randomUUID().replaceAll('-', '')}`
+  const tokenHash = await sha256Hex(token)
+  const id = crypto.randomUUID()
+  const now = new Date()
+  const expiresAt = new Date(now.getTime() + 30 * 86_400_000).toISOString()
+  await db.batch([
+    db.prepare(`
+      INSERT INTO reviewer_invites (id, label, token_hash, created_at, expires_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(id, label, tokenHash, now.toISOString(), expiresAt),
+    db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'reviewer_invite', ?, 'created', ?)`)
+      .bind(crypto.randomUUID(), id, now.toISOString()),
+  ])
+  const inviteUrl = `${new URL(request.url).origin}/review#invite=${encodeURIComponent(token)}`
+  return json({ invite: { id, label, createdAt: now.toISOString(), expiresAt, revokedAt: null, lastUsedAt: null }, inviteUrl }, 201)
+}
+
+async function adminRevokeReviewerInvite(db: ClubDatabase, request: Request, env: Env) {
+  if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
+  const id = decodeURIComponent(new URL(request.url).pathname.split('/').pop() || '')
+  if (!id) return json({ error: 'Invite not found.' }, 404)
+  const now = new Date().toISOString()
+  await db.batch([
+    db.prepare(`UPDATE reviewer_invites SET revoked_at = ? WHERE id = ?`).bind(now, id),
+    db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'reviewer_invite', ?, 'revoked', ?)`)
+      .bind(crypto.randomUUID(), id, now),
+  ])
+  return json({ ok: true })
+}
+
+async function reviewerSubmissions(db: ClubDatabase, request: Request) {
+  const invite = await reviewerAccess(db, request)
+  if (!invite) return json({ error: 'This reviewer invite is missing, expired, or revoked.' }, 401)
+  const { results } = await db.prepare(`
+    SELECT s.id, s.child_nickname AS childNickname, s.age_band AS ageBand,
+      s.project_title AS projectTitle, s.description, s.repo_url AS repoUrl,
+      s.demo_url AS demoUrl,
+      CASE WHEN s.image_key IS NULL OR s.image_key = '' THEN 0 ELSE 1 END AS hasImage,
+      sc.status AS safetyStatus, sc.summary AS safetySummary,
+      sc.technical_flags AS safetyTechnicalFlags,
+      rr.verdict AS myVerdict, rr.note AS myNote, rr.updated_at AS myReviewedAt
+    FROM submissions s
+    LEFT JOIN safety_scans sc ON sc.submission_id = s.id
+    LEFT JOIN reviewer_reviews rr ON rr.submission_id = s.id AND rr.invite_id = ?
+    WHERE s.status = 'pending'
+    ORDER BY s.created_at
+    LIMIT 200
+  `).bind(invite.id).all<Record<string, unknown>>()
+  return json({
+    reviewerLabel: invite.label,
+    expiresAt: invite.expiresAt,
+    submissions: results.map((item) => ({
+      ...item,
+      hasImage: Boolean(item.hasImage),
+      safetyTechnicalFlags: JSON.parse(String(item.safetyTechnicalFlags || '[]')),
+    })),
+  })
+}
+
+async function reviewerSubmissionImage(db: ClubDatabase, uploads: ClubUploads, request: Request) {
+  const invite = await reviewerAccess(db, request, false)
+  if (!invite) return new Response('Unauthorized', { status: 401 })
+  const id = decodeURIComponent(new URL(request.url).pathname.split('/').pop() || '')
+  const submission = await db.prepare(`SELECT image_key AS imageKey FROM submissions WHERE id = ? AND status = 'pending'`)
+    .bind(id).first<{ imageKey: string | null }>()
+  if (!submission?.imageKey) return new Response('Image not found', { status: 404 })
+  return serveUpload(uploads, submission.imageKey)
+}
+
+async function reviewerReview(db: ClubDatabase, request: Request) {
+  const invite = await reviewerAccess(db, request)
+  if (!invite) return json({ error: 'This reviewer invite is missing, expired, or revoked.' }, 401)
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null
+  const submissionId = validText(body?.submissionId, 100)
+  const verdict = text(body?.verdict)
+  const note = text(body?.note)
+  if (!submissionId || !['ready', 'concern'].includes(verdict) || note.length > 500) return json({ error: 'Invalid review.' }, 400)
+  const submission = await db.prepare(`SELECT id FROM submissions WHERE id = ? AND status = 'pending'`)
+    .bind(submissionId).first<{ id: string }>()
+  if (!submission) return json({ error: 'This submission is no longer waiting for review.' }, 409)
+  const now = new Date().toISOString()
+  await db.batch([
+    db.prepare(`
+      INSERT INTO reviewer_reviews (submission_id, invite_id, verdict, note, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(submission_id, invite_id) DO UPDATE SET
+        verdict = excluded.verdict, note = excluded.note, updated_at = excluded.updated_at
+    `).bind(submissionId, invite.id, verdict, note || null, now, now),
+    db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'reviewer_review', ?, ?, ?)`)
+      .bind(crypto.randomUUID(), submissionId, verdict, now),
+  ])
+  return json({ ok: true })
+}
+
 async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
   if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
   const now = new Date().toISOString()
@@ -683,6 +801,25 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
     ORDER BY CASE va.status WHEN 'open' THEN 0 ELSE 1 END, va.last_seen_at DESC
     LIMIT 200
   `).all<Record<string, unknown>>()
+  const { results: reviewerInvites } = await db.prepare(`
+    SELECT id, label, created_at AS createdAt, expires_at AS expiresAt,
+      revoked_at AS revokedAt, last_used_at AS lastUsedAt
+    FROM reviewer_invites ORDER BY created_at DESC LIMIT 200
+  `).all<Record<string, unknown>>()
+  const { results: reviewerReviewRows } = await db.prepare(`
+    SELECT rr.submission_id AS submissionId, ri.label AS reviewerLabel,
+      rr.verdict, rr.note, rr.updated_at AS updatedAt
+    FROM reviewer_reviews rr
+    JOIN reviewer_invites ri ON ri.id = rr.invite_id
+    ORDER BY rr.updated_at DESC
+  `).all<Record<string, unknown>>()
+  const reviewsBySubmission = new Map<string, Record<string, unknown>[]>()
+  for (const review of reviewerReviewRows) {
+    const submissionId = String(review.submissionId)
+    const list = reviewsBySubmission.get(submissionId) || []
+    list.push(review)
+    reviewsBySubmission.set(submissionId, list)
+  }
   const { results: challengeRows } = await db.prepare(`
     SELECT id, week_label AS weekLabel, title, eyebrow, prompt, brief,
       opens_at AS opensAt, closes_at AS closesAt, voting_opens_at AS votingOpensAt,
@@ -717,10 +854,12 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
       safetyActions: JSON.parse(String(item.safetyActions || '[]')),
       safetyTechnicalFlags: JSON.parse(String(item.safetyTechnicalFlags || '[]')),
       safetyScreenshotsReviewed: Number(item.safetyScreenshotsReviewed || 0),
+      reviewerReviews: reviewsBySubmission.get(String(item.id)) || [],
     })),
     ideas,
     subscribers,
     voteAlerts,
+    reviewerInvites,
     activity,
     challengeDrafts,
     safetyScannerEnabled: Boolean(env.SAFETY_SCAN_SECRET),
@@ -1001,12 +1140,17 @@ export default {
       if (request.method === 'POST' && url.pathname === '/api/admin/login') return adminLogin(env.DB, request, env)
       if (request.method === 'POST' && url.pathname === '/api/admin/logout') return adminLogout()
       if (request.method === 'GET' && url.pathname === '/api/admin/dashboard') return adminDashboard(env.DB, request, env)
+      if (request.method === 'POST' && url.pathname === '/api/admin/reviewer-invites') return adminCreateReviewerInvite(env.DB, request, env)
+      if (request.method === 'POST' && url.pathname.startsWith('/api/admin/reviewer-invites/')) return adminRevokeReviewerInvite(env.DB, request, env)
       if (request.method === 'GET' && url.pathname.startsWith('/api/admin/submission-images/')) return adminSubmissionImage(env.DB, env.UPLOADS, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/submission-images/')) return adminUploadSubmissionImage(env.DB, env.UPLOADS, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/challenge-drafts/')) return adminUpdateChallengeDraft(env.DB, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/challenges/')) return adminUpdateChallenge(env.DB, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/safety-scans/')) return adminQueueSafetyScan(env.DB, request, env)
       if (request.method === 'POST' && url.pathname === '/api/admin/moderate') return adminModerate(env.DB, request, env)
+      if (request.method === 'GET' && url.pathname === '/api/reviewer/submissions') return reviewerSubmissions(env.DB, request)
+      if (request.method === 'GET' && url.pathname.startsWith('/api/reviewer/submission-images/')) return reviewerSubmissionImage(env.DB, env.UPLOADS, request)
+      if (request.method === 'POST' && url.pathname === '/api/reviewer/reviews') return reviewerReview(env.DB, request)
       return json({ error: 'Not found' }, 404)
     } catch (error) {
       console.error('Community API error', error)

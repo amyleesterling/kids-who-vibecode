@@ -14,11 +14,11 @@ export const scheduledChallenges = [
     starterIdeas: ['A door inside a sandwich', 'A portal to dinosaur school', 'The world’s smallest escape room'], tools: ['Scratch', 'Twine', 'HTML + JS', 'Anything you love'],
   },
   {
-    id: 'invent-a-creature', weekLabel: 'Challenge 03 · Jul 27–Aug 2', title: 'Invent a creature', eyebrow: 'Odd talents encouraged.',
-    prompt: 'Invent a creature with a home, a personality, and one very surprising talent.',
-    brief: 'Introduce us to your creature through a game, interactive profile, animation, or tiny world. Let us do something that reveals who they are.',
+    id: 'invent-a-creature', weekLabel: 'Challenge 03 · Jul 27–Aug 2', title: 'Make someone smile', eyebrow: 'Code can be a tiny gift.',
+    prompt: 'Create a playful digital surprise designed to make somebody’s day a little brighter.',
+    brief: 'It could tell jokes, celebrate a person, make cheerful art, or deliver a kindness mission. Build it for someone specific or for everyone.',
     opensAt: '2026-07-27T13:00:00.000Z', closesAt: '2026-08-03T04:00:00.000Z', votingOpensAt: '2026-08-03T13:00:00.000Z', votingClosesAt: '2026-08-10T13:00:00.000Z',
-    starterIdeas: ['A shy cloud dragon', 'A sock-eating moon mouse', 'A jellyfish who tells jokes'], tools: ['Scratch', 'p5.js', 'Replit', 'Anything you love'],
+    starterIdeas: ['A compliment confetti cannon', 'A joke-telling potato', 'A kindness quest'], tools: ['Scratch', 'Canva Code', 'HTML + CSS', 'Anything you love'],
   },
   {
     id: 'helpful-little-robot', weekLabel: 'Challenge 04 · Aug 3–9', title: 'Helpful little robot', eyebrow: 'Tiny robot. Mighty mission.',
