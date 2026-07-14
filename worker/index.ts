@@ -253,7 +253,7 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request) 
 
   const challengeId = validText(body.get('challengeId'), 80)
   const childNickname = validText(body.get('childNickname'), 24)
-  const ageBand = ['5–6', '7–9', '10–12', '13–15'].includes(text(body.get('ageBand'))) ? text(body.get('ageBand')) : null
+  const ageBand = ['5–6', '7–9', '10–12', '13–15', '16–18'].includes(text(body.get('ageBand'))) ? text(body.get('ageBand')) : null
   const projectTitle = validText(body.get('projectTitle'), 60)
   const description = validText(body.get('description'), 280, 10)
   const repoUrl = validUrl(body.get('repoUrl'))
@@ -328,7 +328,7 @@ async function submitChallengeIdea(db: ClubDatabase, request: Request) {
   const ideaPrompt = validText(body.ideaPrompt, 400, 10)
   const starterSpark = text(body.starterSpark)
   const creatorNickname = validText(body.creatorNickname, 24)
-  const creatorGroup = ['5–6', '7–9', '10–12', '13–15', 'Grown-up'].includes(text(body.creatorGroup)) ? text(body.creatorGroup) : null
+  const creatorGroup = ['5–6', '7–9', '10–12', '13–15', '16–18', 'Grown-up'].includes(text(body.creatorGroup)) ? text(body.creatorGroup) : null
   const grownupEmail = validText(body.grownupEmail, 160)
   const consent = body.consent === true
   const termsAccepted = body.termsAccepted === true

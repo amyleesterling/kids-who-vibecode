@@ -156,7 +156,7 @@ function SubmissionModal({ challenge, onClose }: { challenge: Challenge; onClose
                 <legend><span>1</span> About the builder</legend>
                 <div className="form-grid">
                   <label>Creator nickname <small>Public — no full names</small><input required maxLength={24} value={form.childNickname} onChange={(e) => update('childNickname', e.target.value)} placeholder="Your club nickname" /></label>
-                  <label>Age group <small>Public</small><select required value={form.ageBand} onChange={(e) => update('ageBand', e.target.value)}><option value="">Choose one</option><option>5–6</option><option>7–9</option><option>10–12</option><option>13–15</option></select></label>
+                  <label>Age group <small>Public</small><select required value={form.ageBand} onChange={(e) => update('ageBand', e.target.value)}><option value="">Choose one</option><option>5–6</option><option>7–9</option><option>10–12</option><option>13–15</option><option>16–18</option></select></label>
                 </div>
               </fieldset>
               <fieldset>
@@ -249,7 +249,7 @@ function ChallengeIdeaModal({ onClose }: { onClose: () => void }) {
                 <legend><span>2</span> Who dreamed it up?</legend>
                 <div className="form-grid">
                   <label>Creator nickname <small>No full names</small><input required maxLength={24} value={form.creatorNickname} onChange={(e) => update('creatorNickname', e.target.value)} placeholder="Your club nickname" /></label>
-                  <label>Creator group<select required value={form.creatorGroup} onChange={(e) => update('creatorGroup', e.target.value)}><option value="">Choose one</option><option>5–6</option><option>7–9</option><option>10–12</option><option>13–15</option><option>Grown-up</option></select></label>
+                  <label>Creator group<select required value={form.creatorGroup} onChange={(e) => update('creatorGroup', e.target.value)}><option value="">Choose one</option><option>5–6</option><option>7–9</option><option>10–12</option><option>13–15</option><option>16–18</option><option>Grown-up</option></select></label>
                 </div>
                 <label>Grown-up email <small>Never public</small><input required type="email" maxLength={160} value={form.grownupEmail} onChange={(e) => update('grownupEmail', e.target.value)} placeholder="grownup@example.com" /></label>
                 <label className="checkbox-row"><input type="checkbox" checked={form.consent} onChange={(e) => update('consent', e.target.checked)} /><span>I’m an adult submitting my own idea, or I’m the child’s parent/legal guardian and approve this idea being reviewed for a future public challenge.</span></label>
