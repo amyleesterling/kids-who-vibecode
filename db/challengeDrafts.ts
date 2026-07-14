@@ -7,11 +7,25 @@ export const challengeDraftSeeds = [
     tools: ['Scratch', 'HTML + JS', 'p5.js', 'Anything you love'], status: 'scheduled',
   },
   {
-    id: 'tiny-museum', title: 'Build a tiny museum', eyebrow: 'Every exhibit has a secret.',
-    prompt: 'Create a museum with at least three strange exhibits visitors can explore.',
-    brief: 'Give each object something to reveal when it is tapped, clicked, or questioned. Your museum can celebrate real discoveries or things that could never exist.',
+    id: 'tiny-museum', title: 'Build a museum', eyebrow: 'Every exhibit has a secret.',
+    prompt: 'Create a museum with at least three exhibits visitors can explore.',
+    brief: 'Give each object something to reveal when it is tapped, clicked, or questioned. Your museum can celebrate real discoveries, favorite things, family stories, or things that could never exist.',
     starterIdeas: ['The museum of lost socks', 'Famous snacks through history', 'Artifacts from the year 3000'],
+    tools: ['Scratch', 'Canva Code', 'HTML + CSS', 'Anything you love'], status: 'scheduled',
+  },
+  {
+    id: 'make-someone-smile', title: 'Make someone smile', eyebrow: 'Code can be a tiny gift.',
+    prompt: 'Create a playful digital surprise designed to make somebody’s day a little brighter.',
+    brief: 'It could tell jokes, celebrate a person, make cheerful art, or deliver a kindness mission. Build it for someone specific or for everyone.',
+    starterIdeas: ['A compliment confetti cannon', 'A joke-telling potato', 'A kindness quest'],
     tools: ['Scratch', 'Canva Code', 'HTML + CSS', 'Anything you love'], status: 'idea',
+  },
+  {
+    id: 'space-postcard', title: 'Build a space postcard', eyebrow: 'Real space. Your imagination.',
+    prompt: 'Use a real NASA space image or fact to build an interactive postcard from somewhere beyond Earth.',
+    brief: 'Choose a planet, moon, nebula, astronaut photo, or mission. Let visitors reveal a fact, hear a message, move through space, or add something imaginary—and credit the real source.',
+    starterIdeas: ['A postcard from Mars', 'A tour of a colorful nebula', 'A moon mission scrapbook'],
+    tools: ['NASA Image Library', 'HTML + JS', 'Canva Code', 'Anything you love'], status: 'idea',
   },
   {
     id: 'creature-translator', title: 'Invent a creature translator', eyebrow: 'Beep. Squawk. Translation, please.',
