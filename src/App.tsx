@@ -423,7 +423,7 @@ function App() {
               return (
                 <article className="project-card" key={project.id} style={{ '--accent': project.accent } as CSSProperties}>
                   <div className="project-browser"><div className="window-bar"><span /><span /><span /><small>{project.builder.toLowerCase()}.world</small></div><ProjectScene project={project} /></div>
-                  <div className="project-meta"><div><div className="project-rank">{community.votingOpen ? `#${index + 1} this week` : 'Ready for Monday’s gallery'}</div><h3>{project.title}</h3><p>{project.description}</p><span className="builder-tag">by {project.builder} · age {project.ageBand}</span></div>
+                  <div className="project-meta"><div><div className="project-rank">{community.votingOpen ? `#${index + 1} this week` : 'Ready for Monday’s vote'}</div><h3>{project.title}</h3><p>{project.description}</p><span className="builder-tag">by {project.builder} · age {project.ageBand}</span></div>
                     {community.votingOpen ? <button className={`vote-button ${selected ? 'selected' : ''}`} onClick={() => vote(project)} aria-pressed={selected} aria-label={`Vote for ${project.title}`}><Heart size={22} fill={selected ? 'currentColor' : 'none'} /><b>{votes}</b><small>{selected ? 'Your fave' : 'Favorite'}</small></button> : <div className="vote-locked" aria-label="Voting opens Monday"><LockKeyhole size={21} /><small>Voting Monday</small></div>}
                   </div>
                   <div className="project-links">{project.repoUrl && <a href={project.repoUrl} target="_blank" rel="noreferrer"><Github size={16} /> See the code</a>}{project.demoUrl && <a href={project.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Try it</a>}</div>
@@ -441,7 +441,7 @@ function App() {
             <div className="steps-grid">
               <article><span className="step-icon coral"><MousePointer2 /></span><small>01 · MONDAY</small><h3>A new prompt drops</h3><p>We reveal a playful mission. Use any tool, language, or creative shortcut you like.</p></article>
               <article><span className="step-icon blue"><Code2 /></span><small>02 · ALL WEEK</small><h3>Build and submit</h3><p>Vibe at your own pace. A grown-up can submit your project any time before Sunday night.</p></article>
-              <article><span className="step-icon green"><Heart /></span><small>03 · NEXT MONDAY</small><h3>The gallery opens</h3><p>A fresh prompt begins while last week’s approved projects get a full, equal week of cheering.</p></article>
+              <article><span className="step-icon green"><Heart /></span><small>03 · NEXT MONDAY</small><h3>Voting opens</h3><p>A fresh prompt begins while last week’s approved gallery gets a full, equal week of cheering.</p></article>
               <article><span className="step-icon yellow"><Trophy /></span><small>04 · SUNDAY NIGHT</small><h3>A favorite is crowned</h3><p>Each visitor picks one favorite. The project with the most hearts becomes that challenge’s Clubhouse Favorite.</p></article>
             </div>
             <div className="season-note"><span><CalendarDays /></span><div><small>THE SUMMER SESSION · JULY 13–LABOR DAY</small><h3>8 weekly challenges + one big finale</h3><p>Eight build weeks run from July 13 through Labor Day weekend. The final gallery opens on Labor Day, with voting through September 14—every maker celebrated, with one final community favorite.</p></div></div>
