@@ -1,8 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
-  ArrowRight, Check, ChevronDown, Code2, ExternalLink, Github, Heart, Lightbulb,
-  ImagePlus, LockKeyhole, Mail, Menu, MousePointer2, ShieldCheck, Sparkles, X,
+  ArrowRight, CalendarDays, Check, ChevronDown, Code2, ExternalLink, Github, Heart, Lightbulb,
+  ImagePlus, LockKeyhole, Mail, Menu, MousePointer2, ShieldCheck, Sparkles, Trophy, X,
 } from 'lucide-react'
 import { upcomingChallenges } from './data'
 import { loadCommunity, saveVote, subscribeWeeklyChallenge, submitChallengeIdea, submitProject } from './lib/community'
@@ -416,8 +416,8 @@ function App() {
 
         <section id="gallery" className="gallery-section page-shell">
           <div className="section-heading">
-            <div><span className="kicker">Fresh from the clubhouse</span><h2>This week’s tiny worlds</h2></div>
-            <p>Explore what other young makers dreamed up, then tap the heart on your favorite. One favorite per person each week.</p>
+            <div><span className="kicker">Fresh from the clubhouse</span><h2>The weekly showcase</h2></div>
+            <p>Each challenge gets its own full week in the gallery. Explore the approved builds, then choose one favorite before Sunday night.</p>
           </div>
           <div className="sample-banner"><Sparkles size={19} /><p><b>These four are clubhouse samples.</b> They’re make-believe examples, not real kids’ projects. Approved submissions will have working project links and can receive votes.</p></div>
           <div className="gallery-grid">
@@ -440,12 +440,14 @@ function App() {
 
         <section id="how" className="how-section">
           <div className="page-shell">
-            <div className="section-heading compact"><div><span className="kicker">Zero pressure. Maximum curiosity.</span><h2>How the club works</h2></div></div>
+            <div className="section-heading compact"><div><span className="kicker">Zero pressure. Maximum curiosity.</span><h2>How the club works</h2></div><p>Every Monday starts two adventures: a brand-new challenge to build and a gallery from last week to cheer on.</p></div>
             <div className="steps-grid">
-              <article><span className="step-icon coral"><MousePointer2 /></span><small>01 · MONDAY</small><h3>Pick up the prompt</h3><p>We reveal a playful new mission. Use any tool, language, or creative shortcut you like.</p></article>
-              <article><span className="step-icon blue"><Code2 /></span><small>02 · YOUR TIME</small><h3>Vibe, tinker, make</h3><p>Follow your curiosity. Ask a grown-up or an AI for help. Bugs and weird detours are welcome.</p></article>
-              <article><span className="step-icon green"><Heart /></span><small>03 · SUNDAY</small><h3>Share and cheer</h3><p>A grown-up submits your build. The club explores, votes, and celebrates a weekly favorite.</p></article>
+              <article><span className="step-icon coral"><MousePointer2 /></span><small>01 · MONDAY</small><h3>A new prompt drops</h3><p>We reveal a playful mission. Use any tool, language, or creative shortcut you like.</p></article>
+              <article><span className="step-icon blue"><Code2 /></span><small>02 · ALL WEEK</small><h3>Build and submit</h3><p>Vibe at your own pace. A grown-up can submit your project any time before Sunday night.</p></article>
+              <article><span className="step-icon green"><Heart /></span><small>03 · NEXT MONDAY</small><h3>The gallery opens</h3><p>A fresh prompt begins while last week’s approved projects get a full, equal week of cheering.</p></article>
+              <article><span className="step-icon yellow"><Trophy /></span><small>04 · SUNDAY NIGHT</small><h3>A favorite is crowned</h3><p>Each visitor picks one favorite. The project with the most hearts becomes that challenge’s Clubhouse Favorite.</p></article>
             </div>
+            <div className="season-note"><span><CalendarDays /></span><div><small>THE SUMMER SESSION</small><h3>8 weekly challenges + one big finale</h3><p>We repeat the build-and-vote rhythm for eight weeks. Then all eight Clubhouse Favorites return for an end-of-summer showcase—every maker celebrated, with one final community favorite.</p></div></div>
           </div>
         </section>
 
