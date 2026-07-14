@@ -437,7 +437,7 @@ function App() {
 
         <section id="how" className="how-section">
           <div className="page-shell">
-            <div className="section-heading compact"><div><span className="kicker">Zero pressure. Maximum curiosity.</span><h2>How the club works</h2></div><p>Every Monday starts two adventures: a brand-new challenge to build and a gallery from last week to cheer on.</p></div>
+            <div className="section-heading compact"><div><span className="kicker">Zero pressure. Maximum curiosity.</span><h2>How the club works</h2></div><p>Every Monday brings two adventures: a brand-new build challenge and a chance to vote for last week’s Clubhouse Favorite.</p></div>
             <div className="steps-grid">
               <article><span className="step-icon coral"><MousePointer2 /></span><small>01 · MONDAY</small><h3>A new prompt drops</h3><p>We reveal a playful mission. Use any tool, language, or creative shortcut you like.</p></article>
               <article><span className="step-icon blue"><Code2 /></span><small>02 · ALL WEEK</small><h3>Build and submit</h3><p>Vibe at your own pace. A grown-up can submit your project any time before Sunday night.</p></article>
