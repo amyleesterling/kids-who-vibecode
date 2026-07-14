@@ -63,6 +63,7 @@ export async function submitProject(input: SubmissionInput, challengeId: string)
   body.set('consent', String(input.consent))
   body.set('publicSharing', String(input.publicSharing))
   body.set('childLed', String(input.childLed))
+  body.set('termsAccepted', String(input.termsAccepted))
   body.set('website', '')
   if (input.image) body.set('image', input.image)
   const response = await fetch('/api/submissions', {

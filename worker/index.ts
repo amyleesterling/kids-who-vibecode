@@ -63,6 +63,7 @@ const escapeHtml = (value: unknown) => String(value ?? '')
   .replaceAll("'", '&#039;')
 
 const adminCookieName = 'clubhouse_admin'
+const legalTermsVersion = '2026-07-14'
 const encoder = new TextEncoder()
 
 async function sha256Hex(value: string) {
@@ -204,10 +205,11 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request) 
   const consent = body.get('consent') === 'true'
   const publicSharing = body.get('publicSharing') === 'true'
   const childLed = body.get('childLed') === 'true'
+  const termsAccepted = body.get('termsAccepted') === 'true'
   const image = body.get('image')
   const hasImage = image instanceof File && image.size > 0
 
-  if (!challengeId || !childNickname || !ageBand || !projectTitle || !description || !repoUrl || demoUrl === null || !parentName || !parentEmail || !consent || !publicSharing || !childLed) {
+  if (!challengeId || !childNickname || !ageBand || !projectTitle || !description || !repoUrl || demoUrl === null || !parentName || !parentEmail || !consent || !publicSharing || !childLed || !termsAccepted) {
     return json({ error: 'Please complete every required field and permission box.' }, 400)
   }
   if (hasImage && (!['image/webp', 'image/jpeg', 'image/png'].includes(image.type) || image.size > 5_000_000)) {
@@ -234,11 +236,12 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request) 
       INSERT INTO submissions (
         id, challenge_id, child_nickname, age_band, project_title, description,
         repo_url, demo_url, parent_name, parent_email, consent, public_sharing, child_led,
+        terms_accepted, terms_version,
         image_key, image_name, image_content_type, image_size, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 1, ?, ?, ?, ?, 'pending', ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 1, 1, ?, ?, ?, ?, ?, 'pending', ?)
     `).bind(
       id, challengeId, childNickname, ageBand, projectTitle, description,
-      repoUrl, demoUrl, parentName, parentEmail, imageKey || null,
+      repoUrl, demoUrl, parentName, parentEmail, legalTermsVersion, imageKey || null,
       hasImage ? image.name.slice(0, 120) : null, hasImage ? image.type : null,
       hasImage ? image.size : null, new Date().toISOString(),
     ).run()
@@ -260,19 +263,20 @@ async function submitChallengeIdea(db: ClubDatabase, request: Request) {
   const creatorGroup = ['5–6', '7–9', '10–12', '13–15', 'Grown-up'].includes(text(body.creatorGroup)) ? text(body.creatorGroup) : null
   const grownupEmail = validText(body.grownupEmail, 160)
   const consent = body.consent === true
+  const termsAccepted = body.termsAccepted === true
 
-  if (!ideaTitle || !ideaPrompt || starterSpark.length > 180 || !creatorNickname || !creatorGroup || !grownupEmail || !grownupEmail.includes('@') || !consent) {
-    return json({ error: 'Please complete every required field and the grown-up permission box.' }, 400)
+  if (!ideaTitle || !ideaPrompt || starterSpark.length > 180 || !creatorNickname || !creatorGroup || !grownupEmail || !grownupEmail.includes('@') || !consent || !termsAccepted) {
+    return json({ error: 'Please complete every required field, permission box, and terms box.' }, 400)
   }
 
   await db.prepare(`
     INSERT INTO challenge_ideas (
       id, idea_title, idea_prompt, starter_spark, creator_nickname,
-      creator_group, grownup_email, consent, status, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'pending', ?)
+      creator_group, grownup_email, consent, terms_accepted, terms_version, status, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, ?, 'pending', ?)
   `).bind(
     crypto.randomUUID(), ideaTitle, ideaPrompt, starterSpark, creatorNickname,
-    creatorGroup, grownupEmail.toLowerCase(), new Date().toISOString(),
+    creatorGroup, grownupEmail.toLowerCase(), legalTermsVersion, new Date().toISOString(),
   ).run()
   return json({ ok: true }, 201)
 }

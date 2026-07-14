@@ -10,12 +10,12 @@ import type { Challenge, ChallengeIdeaInput, CommunitySnapshot, Project, Submiss
 
 const emptySubmission: SubmissionInput = {
   childNickname: '', ageBand: '', projectTitle: '', description: '', repoUrl: '', demoUrl: '',
-  parentName: '', parentEmail: '', consent: false, publicSharing: false, childLed: false, image: null,
+  parentName: '', parentEmail: '', consent: false, publicSharing: false, childLed: false, termsAccepted: false, image: null,
 }
 
 const emptyChallengeIdea: ChallengeIdeaInput = {
   ideaTitle: '', ideaPrompt: '', starterSpark: '', creatorNickname: '', creatorGroup: '',
-  grownupEmail: '', consent: false,
+  grownupEmail: '', consent: false, termsAccepted: false,
 }
 
 function timeLeft(iso: string) {
@@ -118,8 +118,8 @@ function SubmissionModal({ challenge, onClose }: { challenge: Challenge; onClose
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
-    if (!form.consent || !form.publicSharing || !form.childLed) {
-      setError('A grown-up needs to check all three permission and project-attestation boxes before submitting.')
+    if (!form.consent || !form.publicSharing || !form.childLed || !form.termsAccepted) {
+      setError('A grown-up needs to check every permission, attestation, and terms box before submitting.')
       return
     }
     setStep('saving')
@@ -169,7 +169,7 @@ function SubmissionModal({ challenge, onClose }: { challenge: Challenge; onClose
                 </div>
                 <label className="image-upload">
                   <span className="image-upload-icon"><ImagePlus size={25} /></span>
-                  <span><b>{preparingImage ? 'Preparing your picture…' : form.image ? 'Project picture ready!' : 'Add a project picture'}</b><small>Optional · JPEG, PNG, or WebP. We resize it and remove photo metadata before upload.</small></span>
+                  <span><b>{preparingImage ? 'Preparing your picture…' : form.image ? 'Project picture ready!' : 'Add a project picture'}</b><small>Optional · Use a screenshot or artwork—no faces or identifying details. We resize it and remove photo metadata.</small></span>
                   <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => chooseImage(event.target.files?.[0])} disabled={preparingImage} />
                   {imagePreview && <img src={imagePreview} alt="Project upload preview" />}
                 </label>
@@ -183,6 +183,7 @@ function SubmissionModal({ challenge, onClose }: { challenge: Challenge; onClose
                 <label className="checkbox-row"><input type="checkbox" checked={form.consent} onChange={(e) => update('consent', e.target.checked)} /><span>I’m the child’s parent or legal guardian, or I have their permission to submit this project.</span></label>
                 <label className="checkbox-row"><input type="checkbox" checked={form.publicSharing} onChange={(e) => update('publicSharing', e.target.checked)} /><span>I approve the nickname, age group, project description, and project links being displayed publicly.</span></label>
                 <label className="checkbox-row child-led-check"><input type="checkbox" checked={form.childLed} onChange={(e) => update('childLed', e.target.checked)} /><span><b>I confirm this is a child-led project—not a project built for them by an adult.</b><small>Grown-ups and AI may help teach, brainstorm, and troubleshoot, but the child made the creative decisions and led the build.</small></span></label>
+                <label className="checkbox-row terms-check"><input type="checkbox" checked={form.termsAccepted} onChange={(e) => update('termsAccepted', e.target.checked)} /><span>I have read and agree to the <a href="/legal" target="_blank" rel="noreferrer">Terms, Safety & Privacy Notice</a> as the responsible adult.</span></label>
               </fieldset>
               {error && <p className="form-error">{error}</p>}
               <div className="submit-row"><p><ShieldCheck size={17} /> Every submission is reviewed before it goes live.</p><button disabled={step === 'saving' || preparingImage} className="button button-coral" type="submit">{step === 'saving' ? 'Sending…' : 'Send for review'} <ArrowRight size={18} /></button></div>
@@ -204,8 +205,8 @@ function ChallengeIdeaModal({ onClose }: { onClose: () => void }) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
-    if (!form.consent) {
-      setError('A grown-up needs to check the permission box before submitting.')
+    if (!form.consent || !form.termsAccepted) {
+      setError('A grown-up needs to check both the permission and terms boxes before submitting.')
       return
     }
     setStep('saving')
@@ -252,6 +253,7 @@ function ChallengeIdeaModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <label>Grown-up email <small>Never public</small><input required type="email" maxLength={160} value={form.grownupEmail} onChange={(e) => update('grownupEmail', e.target.value)} placeholder="grownup@example.com" /></label>
                 <label className="checkbox-row"><input type="checkbox" checked={form.consent} onChange={(e) => update('consent', e.target.checked)} /><span>I’m an adult submitting my own idea, or I’m the child’s parent/legal guardian and approve this idea being reviewed for a future public challenge.</span></label>
+                <label className="checkbox-row terms-check"><input type="checkbox" checked={form.termsAccepted} onChange={(e) => update('termsAccepted', e.target.checked)} /><span>I have read and agree to the <a href="/legal" target="_blank" rel="noreferrer">Terms, Safety & Privacy Notice</a> as the responsible adult.</span></label>
               </fieldset>
               {error && <p className="form-error">{error}</p>}
               <div className="submit-row"><p><ShieldCheck size={17} /> Ideas and contact details stay private while we review them.</p><button disabled={step === 'saving'} className="button button-coral" type="submit">{step === 'saving' ? 'Sending…' : 'Put it in the idea jar'} <ArrowRight size={18} /></button></div>
@@ -297,7 +299,7 @@ function WeeklySignup() {
           <form className="newsletter-form" onSubmit={handleSubmit}>
             <label htmlFor="newsletter-email">Grown-up email</label>
             <div className="newsletter-input-row"><input id="newsletter-email" required type="email" maxLength={160} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="grownup@example.com" /><button className="button button-dark" disabled={status === 'saving'} type="submit">{status === 'saving' ? 'Joining…' : 'Send me the challenge'} <ArrowRight size={17} /></button></div>
-            <label className="newsletter-consent"><input type="checkbox" checked={adultConsent} onChange={(event) => setAdultConsent(event.target.checked)} /><span>I’m 18+ and want Vibe Code Club’s weekly challenge emails.</span></label>
+            <label className="newsletter-consent"><input type="checkbox" checked={adultConsent} onChange={(event) => setAdultConsent(event.target.checked)} /><span>I’m 18+ and want Vibe Code Club’s weekly challenge emails. See our <a href="/legal#privacy" target="_blank" rel="noreferrer">Privacy Notice</a>.</span></label>
             {status === 'error' && <p className="newsletter-error" role="alert">Please add a valid grown-up email and check the permission box.</p>}
           </form>
         )}
@@ -458,12 +460,12 @@ function App() {
         <section id="grownups" className="grownups-section">
           <div className="page-shell grownups-layout">
             <div className="safety-art"><ShieldCheck size={66} /><span className="safety-star">✦</span><span className="safety-code">{'{ safe + silly }'}</span></div>
-            <div><span className="kicker">Grown-ups stay in the loop</span><h2>Big creativity.<br />Small digital footprint.</h2><p>Kids use nicknames and age groups—never full names. A parent or guardian approves every submission, and our club grown-ups check each project and link before it goes public.</p><ul><li><Check size={17} /> No direct messages or public comments</li><li><Check size={17} /> Parent contact details are never public</li><li><Check size={17} /> One favorite vote per browser each week</li></ul><button className="button button-dark" onClick={openSubmission}>Read the grown-up checklist <ArrowRight size={17} /></button></div>
+            <div><span className="kicker">Grown-ups stay in the loop</span><h2>Big creativity.<br />Small digital footprint.</h2><p>Kids use nicknames and age groups—never full names. A parent or guardian approves every submission, and our club grown-ups check each project and link before it goes public.</p><ul><li><Check size={17} /> No direct messages or public comments</li><li><Check size={17} /> Parent contact details are never public</li><li><Check size={17} /> One favorite vote per browser each week</li></ul><a className="button button-dark" href="/legal">Read the grown-up checklist <ArrowRight size={17} /></a></div>
           </div>
         </section>
       </main>
 
-      <footer><div className="page-shell footer-layout"><Logo /><p>Made for small coders with big ideas.</p><div><a href="#subscribe">Weekly email</a><a href="#grownups">Safety</a><a href="mailto:hello@vibecodekids.com">Contact</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING WEIRD</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
+      <footer><div className="page-shell footer-layout"><Logo /><p>Made for small coders with big ideas.</p><div><a href="#subscribe">Weekly email</a><a href="/legal">Terms & Privacy</a><a href="mailto:hello@vibecodekids.com">Contact</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING WEIRD</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
       {community.source === 'offline' && <div className="offline-badge" title="The community database could not be reached">Offline mode <ChevronDown size={13} /></div>}
       {notice && <div className="toast" role="status"><Heart size={17} fill="currentColor" /> {notice}</div>}
       {showSubmit && community.acceptingSubmissions && <SubmissionModal challenge={community.challenge} onClose={() => setShowSubmit(false)} />}

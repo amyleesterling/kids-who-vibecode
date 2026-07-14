@@ -53,6 +53,8 @@ export const schemaStatements = [
     consent INTEGER NOT NULL CHECK (consent = 1),
     public_sharing INTEGER NOT NULL CHECK (public_sharing = 1),
     child_led INTEGER NOT NULL CHECK (child_led = 1),
+    terms_accepted INTEGER NOT NULL CHECK (terms_accepted = 1),
+    terms_version TEXT NOT NULL,
     image_key TEXT,
     image_name TEXT,
     image_content_type TEXT,
@@ -69,6 +71,8 @@ export const schemaStatements = [
     creator_group TEXT NOT NULL,
     grownup_email TEXT NOT NULL,
     consent INTEGER NOT NULL CHECK (consent = 1),
+    terms_accepted INTEGER NOT NULL CHECK (terms_accepted = 1),
+    terms_version TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('pending', 'selected', 'archived')),
     created_at TEXT NOT NULL
   )`,

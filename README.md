@@ -8,6 +8,8 @@ A playful, parent-supervised community for young creative coders. Every week bri
 
 Jump straight to **[this week's challenge](https://vibecodekids.com/#challenge)**.
 
+Read the public **[Terms, Safety & Privacy Notice](https://vibecodekids.com/legal)**.
+
 `vibecodekids.com` is the canonical public address. The `www` address and both `vibecodeclub.org` addresses remain connected and send visitors to the primary domain.
 
 ## What is included
@@ -20,6 +22,8 @@ Jump straight to **[this week's challenge](https://vibecodekids.com/#challenge)*
 - A parent-only weekly challenge email signup with one-click unsubscribe
 - A password-protected Clubhouse Admin for reviewing projects, images, links, ideas, and subscribers
 - Kid-safety defaults: nicknames, age bands, no comments or direct messages
+- A grown-up-only legal acceptance recorded with each new project and challenge idea
+- A public Terms, Safety & Privacy Notice covering supervision, community content, external links, and parent privacy choices
 - Hosted D1 database for challenges, approved projects, votes, and private submissions
 - Hosted R2 object storage for private submission images and approved gallery images
 - Empty offline fallback when the community API cannot be reached
@@ -46,6 +50,8 @@ The Cloudflare development adapter provides the same Worker API used in producti
 The API never returns either private queue publicly. Review happens in the authenticated Clubhouse Admin. Approving a project publishes only the kid-safe nickname, age band, description, project links, and approved image; parent details remain private.
 
 Every new project submission also requires a grown-up to attest that the project was led by the child rather than built for them by an adult. Teaching, brainstorming, AI assistance, and troubleshooting are welcome; the child must make the creative decisions and lead the build.
+
+New project and challenge-idea records store acceptance of the dated legal terms. The public page is written as a practical baseline and should be reviewed by a qualified lawyer for the operator's identity, jurisdiction, and specific COPPA obligations before broader promotion.
 
 ## Clubhouse Admin
 

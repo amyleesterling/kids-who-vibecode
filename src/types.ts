@@ -41,6 +41,7 @@ export type SubmissionInput = {
   consent: boolean
   publicSharing: boolean
   childLed: boolean
+  termsAccepted: boolean
   image: File | null
 }
 
@@ -52,6 +53,7 @@ export type ChallengeIdeaInput = {
   creatorGroup: string
   grownupEmail: string
   consent: boolean
+  termsAccepted: boolean
 }
 
 export type CommunitySnapshot = {
