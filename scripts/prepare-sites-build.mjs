@@ -8,12 +8,14 @@ const adminDirectory = resolve(root, 'dist', 'client', 'clubhouse-admin')
 const legalDirectory = resolve(root, 'dist', 'client', 'legal')
 const favoritesDirectory = resolve(root, 'dist', 'client', 'favorites')
 const reviewerDirectory = resolve(root, 'dist', 'client', 'review')
+const gettingStartedDirectory = resolve(root, 'dist', 'client', 'getting-started')
 
 await mkdir(serverDirectory, { recursive: true })
 await mkdir(adminDirectory, { recursive: true })
 await mkdir(legalDirectory, { recursive: true })
 await mkdir(favoritesDirectory, { recursive: true })
 await mkdir(reviewerDirectory, { recursive: true })
+await mkdir(gettingStartedDirectory, { recursive: true })
 await copyFile(
   resolve(root, 'dist', 'vibe_code_club_kids', 'index.js'),
   resolve(serverDirectory, 'index.js'),
@@ -33,6 +35,10 @@ await copyFile(
 await copyFile(
   resolve(root, 'dist', 'client', 'index.html'),
   resolve(reviewerDirectory, 'index.html'),
+)
+await copyFile(
+  resolve(root, 'dist', 'client', 'index.html'),
+  resolve(gettingStartedDirectory, 'index.html'),
 )
 
 await rm(resolve(root, 'dist', 'vibe_code_club_kids', '.dev.vars'), { force: true })

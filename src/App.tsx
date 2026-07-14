@@ -374,7 +374,7 @@ function App() {
           <a href="/favorites">Clubhouse Favorites</a>
           <a href="#how" onClick={() => setMobileNav(false)}>How it works</a>
           <a href="#subscribe" onClick={() => setMobileNav(false)}>Weekly email</a>
-          <a href="#grownups" onClick={() => setMobileNav(false)}>For grown-ups</a>
+          <a href="/getting-started">Start here</a>
         </nav>
         <button className="button button-small button-dark header-submit" onClick={openSubmission}>{community.acceptingSubmissions ? 'Submit a build' : 'Build window closed'} <ArrowRight size={16} /></button>
       </header>
@@ -461,12 +461,12 @@ function App() {
         <section id="grownups" className="grownups-section">
           <div className="page-shell grownups-layout">
             <div className="safety-art"><ShieldCheck size={66} /><span className="safety-star">✦</span><span className="safety-code">{'{ safe + silly }'}</span></div>
-            <div><span className="kicker">Grown-ups stay in the loop</span><h2>Big creativity.<br />Small digital footprint.</h2><p>Kids use nicknames and age groups—never full names. A parent or guardian approves every submission, and our club grown-ups check each project and link before it goes public.</p><ul><li><Check size={17} /> No direct messages or public comments</li><li><Check size={17} /> Parent contact details are never public</li><li><Check size={17} /> One favorite vote per browser each week</li></ul><a className="button button-dark" href="/legal">Read the grown-up checklist <ArrowRight size={17} /></a></div>
+            <div><span className="kicker">Grown-ups stay in the loop</span><h2>Big creativity.<br />Small digital footprint.</h2><p>Kids use nicknames and age groups—never full names. A parent or guardian approves every submission, and our club grown-ups check each project and link before it goes public.</p><ul><li><Check size={17} /> No direct messages or public comments</li><li><Check size={17} /> Parent contact details are never public</li><li><Check size={17} /> One favorite vote per browser each week</li></ul><div className="grownup-actions"><a className="button button-coral" href="/getting-started">New to vibe coding? Start here <ArrowRight size={17} /></a><a className="button button-dark" href="/legal">Safety & privacy <ArrowRight size={17} /></a></div></div>
           </div>
         </section>
       </main>
 
-      <footer><div className="page-shell footer-layout"><Logo /><p>Vibe Code Kids was created by Amy Sterling, whose kids enjoy vibe coding and wanted to see what other kids were creating.</p><div><a href="/favorites">Clubhouse Favorites</a><a href="#subscribe">Weekly email</a><a href="/legal">Terms & Privacy</a><a href="mailto:hello@vibecodekids.com">Email Amy</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING WEIRD</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
+      <footer><div className="page-shell footer-layout"><Logo /><p>Vibe Code Kids was created by Amy Sterling, whose kids enjoy vibe coding and wanted to see what other kids were creating.</p><div><a href="/favorites">Clubhouse Favorites</a><a href="/getting-started">Getting started</a><a href="#subscribe">Weekly email</a><a href="/legal">Terms & Privacy</a><a href="mailto:hello@vibecodekids.com">Email Amy</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING WEIRD</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
       {community.source === 'offline' && <div className="offline-badge" title="The community database could not be reached">Offline mode <ChevronDown size={13} /></div>}
       {notice && <div className="toast" role="status"><Heart size={17} fill="currentColor" /> {notice}</div>}
       {showSubmit && community.acceptingSubmissions && <SubmissionModal challenge={community.challenge} onClose={() => setShowSubmit(false)} />}

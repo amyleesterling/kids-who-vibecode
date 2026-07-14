@@ -5,6 +5,7 @@ import AdminApp from './AdminApp'
 import LegalPage from './LegalPage'
 import FavoritesPage from './FavoritesPage'
 import ReviewerApp from './ReviewerApp'
+import GettingStartedPage from './GettingStartedPage'
 import './styles.css'
 import './admin.css'
 import './reviewer.css'
@@ -21,7 +22,8 @@ if (alternateHosts.has(window.location.hostname)) {
 } else {
   const Page = window.location.pathname.startsWith('/clubhouse-admin')
     ? AdminApp
-    : window.location.pathname.startsWith('/review') ? ReviewerApp
+      : window.location.pathname.startsWith('/review') ? ReviewerApp
+      : window.location.pathname.startsWith('/getting-started') ? GettingStartedPage
       : window.location.pathname.startsWith('/legal') ? LegalPage
       : window.location.pathname.startsWith('/favorites') ? FavoritesPage : App
 
