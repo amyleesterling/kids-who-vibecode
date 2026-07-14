@@ -290,7 +290,7 @@ async function unsubscribe(db: ClubDatabase, request: Request) {
   await db.prepare(`UPDATE subscribers SET status = 'unsubscribed', updated_at = ? WHERE unsubscribe_token = ?`)
     .bind(new Date().toISOString(), token).run()
 
-  return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Unsubscribed · Vibe Code Club</title><body style="font-family:system-ui;background:#fffaf0;color:#211d38;padding:48px"><main style="max-width:620px;margin:auto"><h1>You’re unsubscribed.</h1><p>No more weekly challenge emails will be sent to this address. You can always join again at <a href="https://vibecodeclub.org/#subscribe">vibecodeclub.org</a>.</p></main></body></html>`, {
+  return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Unsubscribed · Vibe Code Club</title><body style="font-family:system-ui;background:#fffaf0;color:#211d38;padding:48px"><main style="max-width:620px;margin:auto"><h1>You’re unsubscribed.</h1><p>No more weekly challenge emails will be sent to this address. You can always join again at <a href="https://vibecodekids.com/#subscribe">vibecodekids.com</a>.</p></main></body></html>`, {
     headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
   })
 }
@@ -324,7 +324,7 @@ async function sendWeeklyChallenge(db: ClubDatabase, request: Request, env: Env)
   for (let offset = 0; offset < subscribers.length; offset += 10) {
     const group = subscribers.slice(offset, offset + 10)
     await Promise.all(group.map(async (subscriber) => {
-      const unsubscribeUrl = `https://vibecodeclub.org/api/unsubscribe?token=${encodeURIComponent(subscriber.unsubscribeToken)}`
+      const unsubscribeUrl = `https://vibecodekids.com/api/unsubscribe?token=${encodeURIComponent(subscriber.unsubscribeToken)}`
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -336,8 +336,8 @@ async function sendWeeklyChallenge(db: ClubDatabase, request: Request, env: Env)
           from: env.NEWSLETTER_FROM_EMAIL,
           to: [subscriber.email],
           subject: `${challenge.title} — this week at Vibe Code Club`,
-          html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#211d38"><p style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#ff5b55">${escapeHtml(challenge.weekLabel)}</p><h1 style="font-size:36px;line-height:1.05">${escapeHtml(challenge.title)}</h1><p style="font-size:19px"><strong>${escapeHtml(challenge.prompt)}</strong></p><p style="font-size:16px;line-height:1.6">${escapeHtml(challenge.brief)}</p><p style="margin:32px 0"><a href="https://vibecodeclub.org/#challenge" style="background:#211d38;color:#fff;padding:14px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Open this week’s challenge →</a></p><hr style="border:0;border-top:1px solid #ddd"><p style="font-size:12px;color:#666">You’re receiving this grown-up newsletter because this address subscribed at Vibe Code Club. <a href="${unsubscribeUrl}">Unsubscribe</a>.</p></div>`,
-          text: `${challenge.title}\n\n${challenge.prompt}\n\n${challenge.brief}\n\nOpen the challenge: https://vibecodeclub.org/#challenge\n\nUnsubscribe: ${unsubscribeUrl}`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#211d38"><p style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#ff5b55">${escapeHtml(challenge.weekLabel)}</p><h1 style="font-size:36px;line-height:1.05">${escapeHtml(challenge.title)}</h1><p style="font-size:19px"><strong>${escapeHtml(challenge.prompt)}</strong></p><p style="font-size:16px;line-height:1.6">${escapeHtml(challenge.brief)}</p><p style="margin:32px 0"><a href="https://vibecodekids.com/#challenge" style="background:#211d38;color:#fff;padding:14px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Open this week’s challenge →</a></p><hr style="border:0;border-top:1px solid #ddd"><p style="font-size:12px;color:#666">You’re receiving this grown-up newsletter because this address subscribed at Vibe Code Club. <a href="${unsubscribeUrl}">Unsubscribe</a>.</p></div>`,
+          text: `${challenge.title}\n\n${challenge.prompt}\n\n${challenge.brief}\n\nOpen the challenge: https://vibecodekids.com/#challenge\n\nUnsubscribe: ${unsubscribeUrl}`,
         }),
       })
       if (!response.ok) {

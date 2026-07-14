@@ -4,11 +4,11 @@ A playful, parent-supervised community for young creative coders. Every week bri
 
 ## Live site
 
-**[Open Vibe Code Club](https://vibecodeclub.org)**
+**[Open Vibe Code Club](https://vibecodekids.com)**
 
-Jump straight to **[this week's challenge](https://vibecodeclub.org/#challenge)**.
+Jump straight to **[this week's challenge](https://vibecodekids.com/#challenge)**.
 
-The site is also available through `vibecodekids.com` and `www.vibecodekids.com`; `vibecodeclub.org` is the canonical public address.
+`vibecodekids.com` is the canonical public address. The `www` address and both `vibecodeclub.org` addresses remain connected and send visitors to the primary domain.
 
 ## What is included
 
@@ -49,7 +49,7 @@ The four illustrated projects included at launch are clearly marked clubhouse sa
 
 ## Clubhouse Admin
 
-Open **[Clubhouse Admin](https://vibecodeclub.org/clubhouse-admin)** to review the private queues. The temporary admin password is stored locally in the ignored `.env.local` file; it is never committed to GitHub. Production stores `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` as secret environment values.
+Open **[Clubhouse Admin](https://vibecodekids.com/clubhouse-admin)** to review the private queues. The temporary admin password is stored locally in the ignored `.env.local` file; it is never committed to GitHub. Production stores `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` as secret environment values.
 
 Approving a project publishes its kid-safe fields and approved image into the gallery. Rejecting it keeps it out of the gallery. The dashboard also supports selecting or archiving challenge ideas and activating or unsubscribing grown-up newsletter addresses.
 
@@ -59,7 +59,7 @@ Signups are stored immediately in D1. The Monday 9:00 a.m. Eastern delivery sche
 
 - `NEWSLETTER_CRON_SECRET` — the same long random secret used by GitHub Actions
 - `RESEND_API_KEY` — a Resend API key for the verified sending domain
-- `NEWSLETTER_FROM_EMAIL` — for example `Vibe Code Club <challenges@updates.vibecodeclub.org>`
+- `NEWSLETTER_FROM_EMAIL` — for example `Vibe Code Club <challenges@updates.vibecodekids.com>`
 
 The sender reads the active challenge directly from D1, uses idempotency protection, and includes a private unsubscribe link in every message.
 

@@ -5,10 +5,21 @@ import AdminApp from './AdminApp'
 import './styles.css'
 import './admin.css'
 
-const Page = window.location.pathname.startsWith('/clubhouse-admin') ? AdminApp : App
+const primaryHost = 'vibecodekids.com'
+const alternateHosts = new Set(['www.vibecodekids.com', 'vibecodeclub.org', 'www.vibecodeclub.org'])
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <Page />
-  </StrictMode>,
-)
+if (alternateHosts.has(window.location.hostname)) {
+  const primaryUrl = new URL(window.location.href)
+  primaryUrl.protocol = 'https:'
+  primaryUrl.hostname = primaryHost
+  primaryUrl.port = ''
+  window.location.replace(primaryUrl)
+} else {
+  const Page = window.location.pathname.startsWith('/clubhouse-admin') ? AdminApp : App
+
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <Page />
+    </StrictMode>,
+  )
+}
