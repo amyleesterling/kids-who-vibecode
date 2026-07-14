@@ -1,4 +1,4 @@
-import { copyFile, mkdir } from 'node:fs/promises'
+import { copyFile, mkdir, rm } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
@@ -10,3 +10,5 @@ await copyFile(
   resolve(root, 'dist', 'vibe_code_club_kids', 'index.js'),
   resolve(serverDirectory, 'index.js'),
 )
+
+await rm(resolve(root, 'dist', 'vibe_code_club_kids', '.dev.vars'), { force: true })

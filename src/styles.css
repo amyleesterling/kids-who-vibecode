@@ -134,6 +134,8 @@ h1, h2, h3, p { margin-top: 0; }
 .project-browser { border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; }
 .project-browser .window-bar { height: 30px; border-bottom-width: 2px; }
 .project-scene { height: 220px; position: relative; overflow: hidden; }
+.project-photo { background: var(--paper-deep); }
+.project-photo img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .project-scene .scene-sky { position: absolute; inset: 0; }
 .scene-label { position: absolute; left: 14px; bottom: 12px; z-index: 8; padding: 6px 9px; background: white; border: 1.5px solid var(--ink); font-family: 'DM Mono'; font-size: 8px; box-shadow: 3px 3px 0 var(--ink); }
 .scene-space .scene-sky { background: radial-gradient(circle at 20% 24%, #fff 0 2px, transparent 3px), radial-gradient(circle at 72% 45%, #fff 0 1px, transparent 2px), #262341; background-size: 60px 60px, 40px 40px; }
@@ -266,6 +268,14 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
 .submission-modal input, .submission-modal textarea, .submission-modal select { width: 100%; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--paper); padding: 11px 12px; outline: none; font-size: 12px; text-transform: none; }
 .submission-modal input:focus, .submission-modal textarea:focus, .submission-modal select:focus { box-shadow: 0 0 0 3px var(--blue); }
 .submission-modal textarea { min-height: 85px; resize: vertical; }
+.image-upload { grid-template-columns: auto 1fr; align-items: center; gap: 13px !important; padding: 14px; border: 1.5px dashed var(--ink); border-radius: 10px; background: var(--paper) !important; cursor: pointer; position: relative; overflow: hidden; text-transform: none !important; letter-spacing: 0 !important; }
+.image-upload:hover { background: #fff8d7 !important; }
+.image-upload-icon { width: 48px; height: 48px; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 11px; background: var(--yellow); box-shadow: 2px 2px 0 var(--ink); }
+.image-upload > span:nth-child(2) { display: grid; gap: 3px; }
+.image-upload b { font-size: 12px; }
+.image-upload small { float: none !important; font-size: 9px; line-height: 1.45; }
+.image-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.image-upload img { grid-column: 1 / -1; width: 100%; max-height: 230px; object-fit: cover; border: 1.5px solid var(--ink); border-radius: 8px; }
 .checkbox-row { grid-template-columns: 22px 1fr !important; align-items: start; text-transform: none !important; letter-spacing: 0 !important; font-weight: 600 !important; line-height: 1.5; }
 .checkbox-row input { width: 18px; height: 18px; accent-color: var(--ink); padding: 0; }
 .submit-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; }

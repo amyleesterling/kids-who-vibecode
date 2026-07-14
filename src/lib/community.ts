@@ -47,10 +47,23 @@ export async function saveVote(challengeId: string, projectId: string, previousV
 }
 
 export async function submitProject(input: SubmissionInput, challengeId: string) {
+  const body = new FormData()
+  body.set('challengeId', challengeId)
+  body.set('childNickname', input.childNickname)
+  body.set('ageBand', input.ageBand)
+  body.set('projectTitle', input.projectTitle)
+  body.set('description', input.description)
+  body.set('repoUrl', input.repoUrl)
+  body.set('demoUrl', input.demoUrl)
+  body.set('parentName', input.parentName)
+  body.set('parentEmail', input.parentEmail)
+  body.set('consent', String(input.consent))
+  body.set('publicSharing', String(input.publicSharing))
+  body.set('website', '')
+  if (input.image) body.set('image', input.image)
   const response = await fetch('/api/submissions', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ ...input, challengeId, website: '' }),
+    body,
   })
   if (!response.ok) {
     const result = await response.json().catch(() => ({ error: 'Submission failed' })) as { error?: string }

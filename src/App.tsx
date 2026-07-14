@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
   ArrowRight, Check, ChevronDown, Code2, ExternalLink, Github, Heart, Lightbulb,
-  LockKeyhole, Mail, Menu, MousePointer2, ShieldCheck, Sparkles, X,
+  ImagePlus, LockKeyhole, Mail, Menu, MousePointer2, ShieldCheck, Sparkles, X,
 } from 'lucide-react'
 import { upcomingChallenges } from './data'
 import { loadCommunity, saveVote, subscribeWeeklyChallenge, submitChallengeIdea, submitProject } from './lib/community'
@@ -10,7 +10,7 @@ import type { Challenge, ChallengeIdeaInput, CommunitySnapshot, Project, Submiss
 
 const emptySubmission: SubmissionInput = {
   childNickname: '', ageBand: '', projectTitle: '', description: '', repoUrl: '', demoUrl: '',
-  parentName: '', parentEmail: '', consent: false, publicSharing: false,
+  parentName: '', parentEmail: '', consent: false, publicSharing: false, image: null,
 }
 
 const emptyChallengeIdea: ChallengeIdeaInput = {
@@ -36,6 +36,14 @@ function Logo() {
 }
 
 function ProjectScene({ project }: { project: Project }) {
+  if (project.imageUrl) {
+    return (
+      <div className="project-scene project-photo">
+        <img src={project.imageUrl} alt={`Screenshot of ${project.title}`} loading="lazy" />
+        <span className="scene-label">{project.title}</span>
+      </div>
+    )
+  }
   return (
     <div className={`project-scene scene-${project.scene}`} aria-label={`Preview of ${project.title}`}>
       <div className="scene-sky" />
@@ -46,6 +54,23 @@ function ProjectScene({ project }: { project: Project }) {
       <span className="scene-label">{project.title}</span>
     </div>
   )
+}
+
+async function prepareSubmissionImage(original: File) {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(original.type)) throw new Error('Choose a JPEG, PNG, or WebP image.')
+  if (original.size > 12_000_000) throw new Error('That image is too large. Choose one under 12 MB.')
+  const bitmap = await createImageBitmap(original)
+  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale))
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+  const context = canvas.getContext('2d')
+  if (!context) { bitmap.close(); throw new Error('We could not prepare that image.') }
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  bitmap.close()
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', 0.86))
+  if (!blob || blob.size > 5_000_000) throw new Error('We could not shrink that image enough. Try a smaller one.')
+  return new File([blob], `project-${Date.now()}.webp`, { type: 'image/webp' })
 }
 
 function ChallengePreview({ challenge }: { challenge: Challenge }) {
@@ -83,8 +108,29 @@ function SubmissionModal({ challenge, onClose }: { challenge: Challenge; onClose
   const [form, setForm] = useState(emptySubmission)
   const [step, setStep] = useState<'form' | 'saving' | 'done'>('form')
   const [error, setError] = useState('')
+  const [imagePreview, setImagePreview] = useState('')
+  const [preparingImage, setPreparingImage] = useState(false)
 
-  const update = (name: keyof SubmissionInput, value: string | boolean) => setForm((current) => ({ ...current, [name]: value }))
+  const update = (name: keyof SubmissionInput, value: string | boolean | File | null) => setForm((current) => ({ ...current, [name]: value }))
+
+  useEffect(() => () => { if (imagePreview) URL.revokeObjectURL(imagePreview) }, [imagePreview])
+
+  async function chooseImage(file?: File) {
+    if (!file) return
+    setPreparingImage(true)
+    setError('')
+    try {
+      const prepared = await prepareSubmissionImage(file)
+      if (imagePreview) URL.revokeObjectURL(imagePreview)
+      setImagePreview(URL.createObjectURL(prepared))
+      update('image', prepared)
+    } catch (reason) {
+      update('image', null)
+      setError(reason instanceof Error ? reason.message : 'We could not prepare that image.')
+    } finally {
+      setPreparingImage(false)
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -138,6 +184,12 @@ function SubmissionModal({ challenge, onClose }: { challenge: Challenge; onClose
                   <label>Code or project link<input required type="url" value={form.repoUrl} onChange={(e) => update('repoUrl', e.target.value)} placeholder="https://github.com/..." /></label>
                   <label>Playable link <small>Optional</small><input type="url" value={form.demoUrl} onChange={(e) => update('demoUrl', e.target.value)} placeholder="https://..." /></label>
                 </div>
+                <label className="image-upload">
+                  <span className="image-upload-icon"><ImagePlus size={25} /></span>
+                  <span><b>{preparingImage ? 'Preparing your picture…' : form.image ? 'Project picture ready!' : 'Add a project picture'}</b><small>Optional · JPEG, PNG, or WebP. We resize it and remove photo metadata before upload.</small></span>
+                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => chooseImage(event.target.files?.[0])} disabled={preparingImage} />
+                  {imagePreview && <img src={imagePreview} alt="Project upload preview" />}
+                </label>
               </fieldset>
               <fieldset className="grownup-fieldset">
                 <legend><span>3</span> Grown-up checkpoint</legend>
@@ -149,7 +201,7 @@ function SubmissionModal({ challenge, onClose }: { challenge: Challenge; onClose
                 <label className="checkbox-row"><input type="checkbox" checked={form.publicSharing} onChange={(e) => update('publicSharing', e.target.checked)} /><span>I approve the nickname, age group, project description, and project links being displayed publicly.</span></label>
               </fieldset>
               {error && <p className="form-error">{error}</p>}
-              <div className="submit-row"><p><ShieldCheck size={17} /> Every submission is reviewed before it goes live.</p><button disabled={step === 'saving'} className="button button-coral" type="submit">{step === 'saving' ? 'Sending…' : 'Send for review'} <ArrowRight size={18} /></button></div>
+              <div className="submit-row"><p><ShieldCheck size={17} /> Every submission is reviewed before it goes live.</p><button disabled={step === 'saving' || preparingImage} className="button button-coral" type="submit">{step === 'saving' ? 'Sending…' : 'Send for review'} <ArrowRight size={18} /></button></div>
             </form>
           </>
         )}

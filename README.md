@@ -15,10 +15,13 @@ The site is also available through `vibecodekids.com` and `www.vibecodekids.com`
 - A responsive weekly challenge landing page
 - Project gallery with one favorite vote per browser and shared weekly totals
 - Parent-supervised submission form with a moderation queue
+- Optional project-image upload, resized and re-encoded in the browser to remove photo metadata
 - A visitor challenge-idea form with a grown-up permission checkpoint
 - A parent-only weekly challenge email signup with one-click unsubscribe
+- A password-protected Clubhouse Admin for reviewing projects, images, links, ideas, and subscribers
 - Kid-safety defaults: nicknames, age bands, no comments or direct messages
 - Hosted D1 database for challenges, approved projects, votes, and private submissions
+- Hosted R2 object storage for private submission images and approved gallery images
 - Offline demo fallback when the community API cannot be reached
 
 ## Run locally
@@ -40,13 +43,19 @@ The Cloudflare development adapter provides the same Worker API used in producti
 - `subscribers` is the private, deduplicated grown-up newsletter list.
 - `newsletter_deliveries` prevents the same weekly challenge being sent twice to one address.
 
-The API never returns either private queue publicly. There is not yet an admin dashboard, so reviewing or approving either queue currently requires direct database access. Approving a project submission means reviewing its links, copying only the public child nickname, age band, description, and project links into `projects`, and leaving parent details private.
+The API never returns either private queue publicly. Review happens in the authenticated Clubhouse Admin. Approving a project publishes only the kid-safe nickname, age band, description, project links, and approved image; parent details remain private.
 
 The four illustrated projects included at launch are clearly marked clubhouse samples. They are not votable and do not link to fictional repositories; real approved submissions receive working project links and voting controls.
 
+## Clubhouse Admin
+
+Open **[Clubhouse Admin](https://vibecodeclub.org/clubhouse-admin)** to review the private queues. The temporary admin password is stored locally in the ignored `.env.local` file; it is never committed to GitHub. Production stores `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` as secret environment values.
+
+Approving a project publishes its kid-safe fields and approved image into the gallery. Rejecting it keeps it out of the gallery. The dashboard also supports selecting or archiving challenge ideas and activating or unsubscribing grown-up newsletter addresses.
+
 ## Weekly email delivery
 
-Signups are stored immediately in D1. Delivery runs every Monday at 9:00 a.m. Eastern during daylight saving time through `.github/workflows/weekly-challenge-email.yml`. The workflow is intentionally dormant until `NEWSLETTER_CRON_SECRET` is added to GitHub. The deployed site also needs these production values:
+Signups are stored immediately in D1. The Monday 9:00 a.m. Eastern delivery schedule is enabled through `.github/workflows/weekly-challenge-email.yml` and authenticated with `NEWSLETTER_CRON_SECRET`. Actual email delivery begins after the sending domain is verified and these production values are added:
 
 - `NEWSLETTER_CRON_SECRET` — the same long random secret used by GitHub Actions
 - `RESEND_API_KEY` — a Resend API key for the verified sending domain

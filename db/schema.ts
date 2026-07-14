@@ -25,6 +25,7 @@ export const schemaStatements = [
     base_votes INTEGER NOT NULL DEFAULT 0,
     scene TEXT NOT NULL,
     accent TEXT NOT NULL,
+    image_key TEXT,
     status TEXT NOT NULL CHECK (status IN ('approved', 'hidden'))
   )`,
   `CREATE TABLE IF NOT EXISTS votes (
@@ -47,6 +48,10 @@ export const schemaStatements = [
     parent_email TEXT NOT NULL,
     consent INTEGER NOT NULL CHECK (consent = 1),
     public_sharing INTEGER NOT NULL CHECK (public_sharing = 1),
+    image_key TEXT,
+    image_name TEXT,
+    image_content_type TEXT,
+    image_size INTEGER,
     status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
     created_at TEXT NOT NULL
   )`,
@@ -79,11 +84,24 @@ export const schemaStatements = [
     sent_at TEXT NOT NULL,
     PRIMARY KEY (challenge_id, email)
   )`,
+  `CREATE TABLE IF NOT EXISTS moderation_events (
+    id TEXT PRIMARY KEY,
+    item_type TEXT NOT NULL,
+    item_id TEXT NOT NULL,
+    action TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS admin_login_attempts (
+    ip_hash TEXT PRIMARY KEY,
+    attempts INTEGER NOT NULL,
+    window_started TEXT NOT NULL
+  )`,
   `CREATE INDEX IF NOT EXISTS projects_challenge_status_idx ON projects (challenge_id, status)`,
   `CREATE INDEX IF NOT EXISTS votes_project_idx ON votes (project_id)`,
   `CREATE INDEX IF NOT EXISTS submissions_status_created_idx ON submissions (status, created_at)`,
   `CREATE INDEX IF NOT EXISTS challenge_ideas_status_created_idx ON challenge_ideas (status, created_at)`,
   `CREATE INDEX IF NOT EXISTS subscribers_status_created_idx ON subscribers (status, created_at)`,
+  `CREATE INDEX IF NOT EXISTS moderation_events_item_idx ON moderation_events (item_type, item_id, created_at)`,
 ]
 
 function nextSunday() {

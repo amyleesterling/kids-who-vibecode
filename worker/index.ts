@@ -12,8 +12,22 @@ export type ClubDatabase = {
   batch(statements: D1Statement[]): Promise<unknown[]>
 }
 
+type R2ObjectBody = {
+  body: ReadableStream
+  httpMetadata?: { contentType?: string }
+}
+
+type ClubUploads = {
+  put(key: string, value: ArrayBuffer, options?: { httpMetadata?: { contentType?: string }; customMetadata?: Record<string, string> }): Promise<unknown>
+  get(key: string): Promise<R2ObjectBody | null>
+  delete(key: string): Promise<void>
+}
+
 type Env = {
   DB: ClubDatabase
+  UPLOADS: ClubUploads
+  ADMIN_PASSWORD?: string
+  ADMIN_SESSION_SECRET?: string
   RESEND_API_KEY?: string
   NEWSLETTER_CRON_SECRET?: string
   NEWSLETTER_FROM_EMAIL?: string
@@ -48,6 +62,44 @@ const escapeHtml = (value: unknown) => String(value ?? '')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;')
 
+const adminCookieName = 'clubhouse_admin'
+const encoder = new TextEncoder()
+
+async function sha256Hex(value: string) {
+  const digest = await crypto.subtle.digest('SHA-256', encoder.encode(value))
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+async function adminSessionValue(secret: string) {
+  const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode('vibe-code-club-admin'))
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+function cookie(request: Request, name: string) {
+  const source = request.headers.get('cookie') || ''
+  for (const part of source.split(';')) {
+    const [key, ...rest] = part.trim().split('=')
+    if (key === name) return rest.join('=')
+  }
+  return ''
+}
+
+function constantTimeEqual(left: string, right: string) {
+  if (left.length !== right.length) return false
+  let mismatch = 0
+  for (let index = 0; index < left.length; index += 1) mismatch |= left.charCodeAt(index) ^ right.charCodeAt(index)
+  return mismatch === 0
+}
+
+async function isAdmin(request: Request, env: Env) {
+  if (!env.ADMIN_SESSION_SECRET) return false
+  const actual = cookie(request, adminCookieName)
+  if (!actual) return false
+  const expected = await adminSessionValue(env.ADMIN_SESSION_SECRET)
+  return constantTimeEqual(actual, expected)
+}
+
 async function initialize(db: ClubDatabase) {
   await ensureDatabase(db)
   await seedDatabase(db)
@@ -65,7 +117,7 @@ async function community(db: ClubDatabase, request: Request) {
   const { results: projects } = await db.prepare(`
     SELECT id, challenge_id AS challengeId, title, builder, age_band AS ageBand,
       description, repo_url AS repoUrl, demo_url AS demoUrl, base_votes AS baseVotes,
-      scene, accent,
+      scene, accent, image_key AS imageKey,
       CASE WHEN id IN ('mossy-moon', 'bubble-town', 'snack-forest', 'monster-disco') THEN 1 ELSE 0 END AS isSample
     FROM projects WHERE challenge_id = ? AND status = 'approved'
   `).bind(challenge.id).all<Record<string, unknown>>()
@@ -83,7 +135,11 @@ async function community(db: ClubDatabase, request: Request) {
       starterIdeas: JSON.parse(String(challenge.starterIdeas || '[]')),
       tools: JSON.parse(String(challenge.tools || '[]')),
     },
-    projects: projects.map((project) => ({ ...project, isSample: Boolean(project.isSample) })),
+    projects: projects.map(({ imageKey, ...project }) => ({
+      ...project,
+      imageUrl: imageKey ? `/api/project-images/${project.id}` : null,
+      isSample: Boolean(project.isSample),
+    })),
     voteCounts: Object.fromEntries(counts.map((item) => [item.projectId, Number(item.count)])),
     myVote: currentVote?.projectId || null,
     source: 'database',
@@ -113,39 +169,61 @@ async function vote(db: ClubDatabase, request: Request) {
   return json({ ok: true })
 }
 
-async function submit(db: ClubDatabase, request: Request) {
-  const body = await request.json().catch(() => null) as Record<string, unknown> | null
-  if (!body || text(body.website)) return json({ error: 'Invalid submission' }, 400)
+async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request) {
+  const body = await request.formData().catch(() => null)
+  if (!body || text(body.get('website'))) return json({ error: 'Invalid submission' }, 400)
 
-  const challengeId = validText(body.challengeId, 80)
-  const childNickname = validText(body.childNickname, 24)
-  const ageBand = ['5–6', '7–9', '10–12', '13–15'].includes(text(body.ageBand)) ? text(body.ageBand) : null
-  const projectTitle = validText(body.projectTitle, 60)
-  const description = validText(body.description, 280, 10)
-  const repoUrl = validUrl(body.repoUrl)
-  const demoUrl = validUrl(body.demoUrl, false)
-  const parentName = validText(body.parentName, 80)
-  const parentEmail = validText(body.parentEmail, 160)
-  const consent = body.consent === true
-  const publicSharing = body.publicSharing === true
+  const challengeId = validText(body.get('challengeId'), 80)
+  const childNickname = validText(body.get('childNickname'), 24)
+  const ageBand = ['5–6', '7–9', '10–12', '13–15'].includes(text(body.get('ageBand'))) ? text(body.get('ageBand')) : null
+  const projectTitle = validText(body.get('projectTitle'), 60)
+  const description = validText(body.get('description'), 280, 10)
+  const repoUrl = validUrl(body.get('repoUrl'))
+  const demoUrl = validUrl(body.get('demoUrl'), false)
+  const parentName = validText(body.get('parentName'), 80)
+  const parentEmail = validEmail(body.get('parentEmail'))
+  const consent = body.get('consent') === 'true'
+  const publicSharing = body.get('publicSharing') === 'true'
+  const image = body.get('image')
+  const hasImage = image instanceof File && image.size > 0
 
-  if (!challengeId || !childNickname || !ageBand || !projectTitle || !description || !repoUrl || demoUrl === null || !parentName || !parentEmail || !consent || !publicSharing || !parentEmail.includes('@')) {
+  if (!challengeId || !childNickname || !ageBand || !projectTitle || !description || !repoUrl || demoUrl === null || !parentName || !parentEmail || !consent || !publicSharing) {
     return json({ error: 'Please complete every required field and permission box.' }, 400)
+  }
+  if (hasImage && (!['image/webp', 'image/jpeg', 'image/png'].includes(image.type) || image.size > 5_000_000)) {
+    return json({ error: 'Project images must be a WebP, JPEG, or PNG under 5 MB.' }, 400)
   }
 
   const challenge = await db.prepare(`SELECT id FROM challenges WHERE id = ? AND status = 'active'`).bind(challengeId).first<{ id: string }>()
   if (!challenge) return json({ error: 'That challenge is no longer accepting submissions.' }, 400)
 
-  await db.prepare(`
-    INSERT INTO submissions (
-      id, challenge_id, child_nickname, age_band, project_title, description,
-      repo_url, demo_url, parent_name, parent_email, consent, public_sharing,
-      status, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 'pending', ?)
-  `).bind(
-    crypto.randomUUID(), challengeId, childNickname, ageBand, projectTitle, description,
-    repoUrl, demoUrl, parentName, parentEmail.toLowerCase(), new Date().toISOString(),
-  ).run()
+  const id = crypto.randomUUID()
+  const extension = hasImage ? ({ 'image/webp': 'webp', 'image/jpeg': 'jpg', 'image/png': 'png' }[image.type] || 'bin') : ''
+  const imageKey = hasImage ? `submissions/${id}/${crypto.randomUUID()}.${extension}` : ''
+  if (hasImage) {
+    await uploads.put(imageKey, await image.arrayBuffer(), {
+      httpMetadata: { contentType: image.type },
+      customMetadata: { submissionId: id, originalName: image.name.slice(0, 120) },
+    })
+  }
+
+  try {
+    await db.prepare(`
+      INSERT INTO submissions (
+        id, challenge_id, child_nickname, age_band, project_title, description,
+        repo_url, demo_url, parent_name, parent_email, consent, public_sharing,
+        image_key, image_name, image_content_type, image_size, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?, ?, ?, 'pending', ?)
+    `).bind(
+      id, challengeId, childNickname, ageBand, projectTitle, description,
+      repoUrl, demoUrl, parentName, parentEmail, imageKey || null,
+      hasImage ? image.name.slice(0, 120) : null, hasImage ? image.type : null,
+      hasImage ? image.size : null, new Date().toISOString(),
+    ).run()
+  } catch (error) {
+    if (imageKey) await uploads.delete(imageKey).catch(() => undefined)
+    throw error
+  }
   return json({ ok: true }, 201)
 }
 
@@ -278,6 +356,199 @@ async function sendWeeklyChallenge(db: ClubDatabase, request: Request, env: Env)
   return json({ ok: failures.length === 0, sent, failed: failures.length, remaining: subscribers.length - sent })
 }
 
+async function serveUpload(uploads: ClubUploads, key: string, isPublic = false) {
+  const object = await uploads.get(key)
+  if (!object) return new Response('Image not found', { status: 404 })
+  return new Response(object.body, {
+    headers: {
+      'content-type': object.httpMetadata?.contentType || 'application/octet-stream',
+      'cache-control': isPublic ? 'public, max-age=3600' : 'private, no-store',
+      'x-content-type-options': 'nosniff',
+    },
+  })
+}
+
+async function projectImage(db: ClubDatabase, uploads: ClubUploads, request: Request) {
+  const id = decodeURIComponent(new URL(request.url).pathname.split('/').pop() || '')
+  const project = await db.prepare(`SELECT image_key AS imageKey FROM projects WHERE id = ? AND status = 'approved'`)
+    .bind(id).first<{ imageKey: string | null }>()
+  if (!project?.imageKey) return new Response('Image not found', { status: 404 })
+  return serveUpload(uploads, project.imageKey, true)
+}
+
+async function adminLogin(db: ClubDatabase, request: Request, env: Env) {
+  if (!env.ADMIN_PASSWORD || !env.ADMIN_SESSION_SECRET) return json({ error: 'Admin access is not configured' }, 503)
+  const body = await request.json().catch(() => null) as { password?: unknown } | null
+  const password = text(body?.password)
+  const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown'
+  const ipHash = await sha256Hex(ip)
+  const now = new Date()
+  const cutoff = now.getTime() - 15 * 60_000
+  const attempt = await db.prepare(`SELECT attempts, window_started AS windowStarted FROM admin_login_attempts WHERE ip_hash = ?`)
+    .bind(ipHash).first<{ attempts: number; windowStarted: string }>()
+  const inWindow = attempt && Date.parse(attempt.windowStarted) >= cutoff
+  if (inWindow && Number(attempt.attempts) >= 10) return json({ error: 'Too many attempts. Try again in 15 minutes.' }, 429)
+
+  const suppliedHash = await sha256Hex(password)
+  const expectedHash = await sha256Hex(env.ADMIN_PASSWORD)
+  if (!password || !constantTimeEqual(suppliedHash, expectedHash)) {
+    const attempts = inWindow ? Number(attempt?.attempts || 0) + 1 : 1
+    const windowStarted = inWindow ? attempt!.windowStarted : now.toISOString()
+    await db.prepare(`
+      INSERT INTO admin_login_attempts (ip_hash, attempts, window_started)
+      VALUES (?, ?, ?)
+      ON CONFLICT(ip_hash) DO UPDATE SET attempts = excluded.attempts, window_started = excluded.window_started
+    `).bind(ipHash, attempts, windowStarted).run()
+    return json({ error: 'That clubhouse password did not match.' }, 401)
+  }
+
+  await db.prepare(`DELETE FROM admin_login_attempts WHERE ip_hash = ?`).bind(ipHash).run()
+  const session = await adminSessionValue(env.ADMIN_SESSION_SECRET)
+  return new Response(JSON.stringify({ ok: true }), {
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      'set-cookie': `${adminCookieName}=${session}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`,
+    },
+  })
+}
+
+function adminLogout() {
+  return new Response(JSON.stringify({ ok: true }), {
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      'set-cookie': `${adminCookieName}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`,
+    },
+  })
+}
+
+async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
+  if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
+  const { results: submissions } = await db.prepare(`
+    SELECT id, challenge_id AS challengeId, child_nickname AS childNickname,
+      age_band AS ageBand, project_title AS projectTitle, description, repo_url AS repoUrl,
+      demo_url AS demoUrl, parent_name AS parentName, parent_email AS parentEmail,
+      image_name AS imageName, image_content_type AS imageContentType, image_size AS imageSize,
+      CASE WHEN image_key IS NULL OR image_key = '' THEN 0 ELSE 1 END AS hasImage,
+      status, created_at AS createdAt
+    FROM submissions ORDER BY created_at DESC LIMIT 200
+  `).all<Record<string, unknown>>()
+  const { results: ideas } = await db.prepare(`
+    SELECT id, idea_title AS ideaTitle, idea_prompt AS ideaPrompt, starter_spark AS starterSpark,
+      creator_nickname AS creatorNickname, creator_group AS creatorGroup,
+      grownup_email AS grownupEmail, status, created_at AS createdAt
+    FROM challenge_ideas ORDER BY created_at DESC LIMIT 200
+  `).all<Record<string, unknown>>()
+  const { results: subscribers } = await db.prepare(`
+    SELECT id, email, status, source, created_at AS createdAt, updated_at AS updatedAt
+    FROM subscribers ORDER BY created_at DESC LIMIT 500
+  `).all<Record<string, unknown>>()
+  const { results: activity } = await db.prepare(`
+    SELECT id, item_type AS itemType, item_id AS itemId, action, created_at AS createdAt
+    FROM moderation_events ORDER BY created_at DESC LIMIT 50
+  `).all<Record<string, unknown>>()
+
+  return json({
+    submissions: submissions.map((item) => ({
+      ...item,
+      hasImage: Boolean(item.hasImage),
+      imageUrl: item.hasImage ? `/api/admin/submission-images/${item.id}` : null,
+    })),
+    ideas,
+    subscribers,
+    activity,
+  })
+}
+
+async function adminSubmissionImage(db: ClubDatabase, uploads: ClubUploads, request: Request, env: Env) {
+  if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
+  const id = decodeURIComponent(new URL(request.url).pathname.split('/').pop() || '')
+  const submission = await db.prepare(`SELECT image_key AS imageKey FROM submissions WHERE id = ?`)
+    .bind(id).first<{ imageKey: string | null }>()
+  if (!submission?.imageKey) return new Response('Image not found', { status: 404 })
+  return serveUpload(uploads, submission.imageKey)
+}
+
+async function adminModerate(db: ClubDatabase, request: Request, env: Env) {
+  if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null
+  const type = text(body?.type)
+  const id = validText(body?.id, 100)
+  const action = text(body?.action)
+  if (!id) return json({ error: 'Invalid moderation request' }, 400)
+  const now = new Date().toISOString()
+
+  if (type === 'submission' && action === 'approve') {
+    const submission = await db.prepare(`
+      SELECT id, challenge_id AS challengeId, child_nickname AS childNickname,
+        age_band AS ageBand, project_title AS projectTitle, description,
+        repo_url AS repoUrl, demo_url AS demoUrl, image_key AS imageKey
+      FROM submissions WHERE id = ?
+    `).bind(id).first<{
+      id: string; challengeId: string; childNickname: string; ageBand: string;
+      projectTitle: string; description: string; repoUrl: string; demoUrl: string | null; imageKey: string | null;
+    }>()
+    if (!submission) return json({ error: 'Submission not found' }, 404)
+    const scenes = ['space', 'ocean', 'garden', 'monster']
+    const accents = ['#b9f44a', '#65d9ff', '#ffb3c7', '#ffcb45']
+    const variant = Array.from(id).reduce((total, character) => total + character.charCodeAt(0), 0) % scenes.length
+    const projectId = `community-${submission.id}`
+    await db.batch([
+      db.prepare(`
+        INSERT INTO projects (
+          id, challenge_id, title, builder, age_band, description, repo_url, demo_url,
+          base_votes, scene, accent, image_key, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, 'approved')
+        ON CONFLICT(id) DO UPDATE SET
+          title = excluded.title, builder = excluded.builder, age_band = excluded.age_band,
+          description = excluded.description, repo_url = excluded.repo_url, demo_url = excluded.demo_url,
+          scene = excluded.scene, accent = excluded.accent, image_key = excluded.image_key, status = 'approved'
+      `).bind(
+        projectId, submission.challengeId, submission.projectTitle, submission.childNickname,
+        submission.ageBand, submission.description, submission.repoUrl, submission.demoUrl || '',
+        scenes[variant], accents[variant], submission.imageKey,
+      ),
+      db.prepare(`UPDATE submissions SET status = 'approved' WHERE id = ?`).bind(id),
+      db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'submission', ?, 'approved', ?)`)
+        .bind(crypto.randomUUID(), id, now),
+    ])
+    return json({ ok: true })
+  }
+
+  if (type === 'submission' && action === 'reject') {
+    await db.batch([
+      db.prepare(`UPDATE submissions SET status = 'rejected' WHERE id = ?`).bind(id),
+      db.prepare(`UPDATE projects SET status = 'hidden' WHERE id = ?`).bind(`community-${id}`),
+      db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'submission', ?, 'rejected', ?)`)
+        .bind(crypto.randomUUID(), id, now),
+    ])
+    return json({ ok: true })
+  }
+
+  if (type === 'idea' && ['select', 'archive'].includes(action)) {
+    const status = action === 'select' ? 'selected' : 'archived'
+    await db.batch([
+      db.prepare(`UPDATE challenge_ideas SET status = ? WHERE id = ?`).bind(status, id),
+      db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'idea', ?, ?, ?)`)
+        .bind(crypto.randomUUID(), id, status, now),
+    ])
+    return json({ ok: true })
+  }
+
+  if (type === 'subscriber' && ['activate', 'unsubscribe'].includes(action)) {
+    const status = action === 'activate' ? 'active' : 'unsubscribed'
+    await db.batch([
+      db.prepare(`UPDATE subscribers SET status = ?, updated_at = ? WHERE id = ?`).bind(status, now, id),
+      db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'subscriber', ?, ?, ?)`)
+        .bind(crypto.randomUUID(), id, status, now),
+    ])
+    return json({ ok: true })
+  }
+
+  return json({ error: 'Unsupported moderation action' }, 400)
+}
+
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url)
@@ -286,12 +557,18 @@ export default {
     try {
       await initialize(env.DB)
       if (request.method === 'GET' && url.pathname === '/api/community') return community(env.DB, request)
+      if (request.method === 'GET' && url.pathname.startsWith('/api/project-images/')) return projectImage(env.DB, env.UPLOADS, request)
       if (request.method === 'POST' && url.pathname === '/api/vote') return vote(env.DB, request)
-      if (request.method === 'POST' && url.pathname === '/api/submissions') return submit(env.DB, request)
+      if (request.method === 'POST' && url.pathname === '/api/submissions') return submit(env.DB, env.UPLOADS, request)
       if (request.method === 'POST' && url.pathname === '/api/challenge-ideas') return submitChallengeIdea(env.DB, request)
       if (request.method === 'POST' && url.pathname === '/api/subscribers') return subscribe(env.DB, request)
       if (request.method === 'GET' && url.pathname === '/api/unsubscribe') return unsubscribe(env.DB, request)
       if (request.method === 'POST' && url.pathname === '/api/newsletter/send-weekly') return sendWeeklyChallenge(env.DB, request, env)
+      if (request.method === 'POST' && url.pathname === '/api/admin/login') return adminLogin(env.DB, request, env)
+      if (request.method === 'POST' && url.pathname === '/api/admin/logout') return adminLogout()
+      if (request.method === 'GET' && url.pathname === '/api/admin/dashboard') return adminDashboard(env.DB, request, env)
+      if (request.method === 'GET' && url.pathname.startsWith('/api/admin/submission-images/')) return adminSubmissionImage(env.DB, env.UPLOADS, request, env)
+      if (request.method === 'POST' && url.pathname === '/api/admin/moderate') return adminModerate(env.DB, request, env)
       return json({ error: 'Not found' }, 404)
     } catch (error) {
       console.error('Community API error', error)

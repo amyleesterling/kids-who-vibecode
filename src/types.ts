@@ -20,6 +20,7 @@ export type Project = {
   description: string
   repoUrl?: string
   demoUrl?: string
+  imageUrl?: string | null
   baseVotes: number
   scene: 'space' | 'garden' | 'ocean' | 'monster'
   accent: string
@@ -37,6 +38,7 @@ export type SubmissionInput = {
   parentEmail: string
   consent: boolean
   publicSharing: boolean
+  image: File | null
 }
 
 export type ChallengeIdeaInput = {
