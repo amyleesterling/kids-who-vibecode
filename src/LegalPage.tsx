@@ -120,7 +120,7 @@ function LegalPage() {
             <section id="contact">
               <span className="legal-number">07</span>
               <h2>Reports, legal notices, and contact</h2>
-              <p>Report unsafe content, a privacy concern, a copyright concern, or a removal request to Amy Sterling at <a href="https://x.com/amyneurons" target="_blank" rel="noreferrer">@amyneurons on X</a>. Use a private message when possible and never post a child’s personal information publicly. Begin with the project title or link and the general nature of the concern so we can arrange a private follow-up if needed.</p>
+              <p>Report unsafe content, a privacy concern, a copyright concern, or a removal request to Amy Sterling at <a href="mailto:hello@vibecodekids.com">hello@vibecodekids.com</a>. Include the project title or link and the general nature of the concern, and never include a child’s personal information unless it is necessary for us to handle the request privately.</p>
               <p>We may update these terms as the club changes. The date at the top shows the current version. Material changes will apply going forward and may require a new adult acceptance for future submissions.</p>
               <a className="legal-ftc-link" href="https://www.ftc.gov/business-guidance/privacy-security/childrens-privacy" target="_blank" rel="noreferrer">U.S. FTC children’s privacy resources <ExternalLink size={15} /></a>
             </section>
