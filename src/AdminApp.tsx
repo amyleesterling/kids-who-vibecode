@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   AlertTriangle, ArrowLeft, Bot, CalendarDays, Check, Clock3, ExternalLink, Github, Heart, Image as ImageIcon,
-  ImagePlus, Inbox, Lightbulb, LogOut, Mail, Play, RefreshCw, Save, ShieldCheck, Sparkles, X,
+  BookOpen, ImagePlus, Inbox, Lightbulb, LogOut, Mail, Pencil, Play, RefreshCw, Save, ShieldCheck, Sparkles, X,
 } from 'lucide-react'
 import { prepareProjectImage } from './lib/projectImage'
 
@@ -75,12 +75,26 @@ type AdminChallenge = {
   tools: string[]
 }
 
+type AdminChallengeDraft = {
+  id: string
+  title: string
+  eyebrow: string
+  prompt: string
+  brief: string
+  starterIdeas: string[]
+  tools: string[]
+  status: 'idea' | 'scheduled' | 'archived'
+  createdAt: string
+  updatedAt: string
+}
+
 type Dashboard = {
   submissions: AdminSubmission[]
   ideas: AdminIdea[]
   subscribers: AdminSubscriber[]
   activity: Array<{ id: string; itemType: string; itemId: string; action: string; createdAt: string }>
   safetyScannerEnabled: boolean
+  challengeDrafts: AdminChallengeDraft[]
   schedule: {
     now: string
     currentChallenge: AdminChallenge | null
@@ -153,10 +167,11 @@ async function readError(response: Response) {
   return body.error || 'Something went wrong.'
 }
 
-function UpcomingChallengeEditor({ challenge, busy, onSave }: {
+function ChallengeEditor({ challenge, busy, onSave, onClose }: {
   challenge: AdminChallenge
   busy: boolean
   onSave: (challenge: AdminChallenge) => Promise<void>
+  onClose: () => void
 }) {
   const [draft, setDraft] = useState(() => ({
     ...challenge,
@@ -189,23 +204,53 @@ function UpcomingChallengeEditor({ challenge, busy, onSave }: {
 
   return (
     <form className="challenge-editor" onSubmit={submit}>
-      <div className="challenge-editor-intro"><span className="kicker">Next scheduled challenge</span><h3>{challenge.title}</h3><p>Saving changes updates the launch schedule immediately. Times use this device’s timezone.</p></div>
+      <div className="challenge-editor-intro"><span className="kicker">{challenge.status} challenge · click-to-edit</span><h3>{challenge.title}</h3><p>{challenge.status === 'upcoming' ? 'Copy and schedule are editable. Times use this device’s timezone.' : 'The challenge text is editable; dates lock after a challenge begins so voting stays fair.'}</p></div>
       <div className="challenge-form-grid">
         <label><span>Week label</span><input required value={draft.weekLabel} onChange={(event) => update('weekLabel', event.target.value)} /></label>
         <label><span>Challenge title</span><input required value={draft.title} onChange={(event) => update('title', event.target.value)} /></label>
         <label className="wide"><span>Short tagline</span><input required value={draft.eyebrow} onChange={(event) => update('eyebrow', event.target.value)} /></label>
         <label className="wide"><span>The prompt</span><textarea required rows={3} value={draft.prompt} onChange={(event) => update('prompt', event.target.value)} /></label>
         <label className="wide"><span>Build brief</span><textarea required rows={4} value={draft.brief} onChange={(event) => update('brief', event.target.value)} /></label>
-        <label><span>Build opens</span><input required type="datetime-local" value={draft.opensAt} onChange={(event) => update('opensAt', event.target.value)} /></label>
-        <label><span>Submissions close</span><input required type="datetime-local" value={draft.closesAt} onChange={(event) => update('closesAt', event.target.value)} /></label>
-        <label><span>Voting opens</span><input required type="datetime-local" value={draft.votingOpensAt} onChange={(event) => update('votingOpensAt', event.target.value)} /></label>
-        <label><span>Voting closes</span><input required type="datetime-local" value={draft.votingClosesAt} onChange={(event) => update('votingClosesAt', event.target.value)} /></label>
+        <label><span>Build opens</span><input disabled={challenge.status !== 'upcoming'} required type="datetime-local" value={draft.opensAt} onChange={(event) => update('opensAt', event.target.value)} /></label>
+        <label><span>Submissions close</span><input disabled={challenge.status !== 'upcoming'} required type="datetime-local" value={draft.closesAt} onChange={(event) => update('closesAt', event.target.value)} /></label>
+        <label><span>Voting opens</span><input disabled={challenge.status !== 'upcoming'} required type="datetime-local" value={draft.votingOpensAt} onChange={(event) => update('votingOpensAt', event.target.value)} /></label>
+        <label><span>Voting closes</span><input disabled={challenge.status !== 'upcoming'} required type="datetime-local" value={draft.votingClosesAt} onChange={(event) => update('votingClosesAt', event.target.value)} /></label>
         <label className="wide"><span>Starter ideas · one per line</span><textarea required rows={3} value={draft.starterIdeas} onChange={(event) => update('starterIdeas', event.target.value)} /></label>
         <label className="wide"><span>Suggested tools · comma separated</span><input required value={draft.tools} onChange={(event) => update('tools', event.target.value)} /></label>
       </div>
-      <button className="admin-save-challenge" disabled={busy} type="submit"><Save size={17} /> {busy ? 'Saving…' : 'Save upcoming challenge'}</button>
+      <div className="challenge-editor-actions"><button className="admin-save-challenge" disabled={busy} type="submit"><Save size={17} /> {busy ? 'Saving…' : 'Save challenge'}</button><button className="admin-close-editor" type="button" onClick={onClose}><X size={16} /> Close</button></div>
     </form>
   )
+}
+
+function ChallengeDraftEditor({ draft, busy, onSave, onClose }: {
+  draft: AdminChallengeDraft
+  busy: boolean
+  onSave: (draft: AdminChallengeDraft) => Promise<void>
+  onClose: () => void
+}) {
+  const [form, setForm] = useState(() => ({ ...draft, starterIdeas: draft.starterIdeas.join('\n'), tools: draft.tools.join(', ') }))
+  const update = (name: string, value: string) => setForm((current) => ({ ...current, [name]: value }))
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    await onSave({
+      ...draft, title: form.title, eyebrow: form.eyebrow, prompt: form.prompt, brief: form.brief,
+      starterIdeas: form.starterIdeas.split('\n').map((item) => item.trim()).filter(Boolean),
+      tools: form.tools.split(',').map((item) => item.trim()).filter(Boolean),
+    })
+  }
+  return <form className="challenge-editor draft-editor" onSubmit={submit}>
+    <div className="challenge-editor-intro"><span className="kicker">Private challenge idea · {draft.status}</span><h3>{draft.title}</h3><p>Edit this idea without changing the live summer calendar.</p></div>
+    <div className="challenge-form-grid">
+      <label><span>Challenge title</span><input required value={form.title} onChange={(event) => update('title', event.target.value)} /></label>
+      <label><span>Short tagline</span><input required value={form.eyebrow} onChange={(event) => update('eyebrow', event.target.value)} /></label>
+      <label className="wide"><span>The prompt</span><textarea required rows={3} value={form.prompt} onChange={(event) => update('prompt', event.target.value)} /></label>
+      <label className="wide"><span>Build brief</span><textarea required rows={4} value={form.brief} onChange={(event) => update('brief', event.target.value)} /></label>
+      <label className="wide"><span>Starter ideas · one per line</span><textarea required rows={3} value={form.starterIdeas} onChange={(event) => update('starterIdeas', event.target.value)} /></label>
+      <label className="wide"><span>Suggested tools · comma separated</span><input required value={form.tools} onChange={(event) => update('tools', event.target.value)} /></label>
+    </div>
+    <div className="challenge-editor-actions"><button className="admin-save-challenge" disabled={busy} type="submit"><Save size={17} /> {busy ? 'Saving…' : 'Save idea'}</button><button className="admin-close-editor" type="button" onClick={onClose}><X size={16} /> Close</button></div>
+  </form>
 }
 
 function AdminApp() {
@@ -216,6 +261,8 @@ function AdminApp() {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [clock, setClock] = useState(Date.now())
+  const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null)
+  const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null)
 
   const loadDashboard = useCallback(async () => {
     setError('')
@@ -326,6 +373,20 @@ function AdminApp() {
     setBusy('')
   }
 
+  async function saveChallengeDraft(draft: AdminChallengeDraft) {
+    const key = `challenge-draft:${draft.id}`
+    setBusy(key)
+    setError('')
+    const response = await fetch(`/api/admin/challenge-drafts/${encodeURIComponent(draft.id)}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(draft),
+    })
+    if (!response.ok) setError(await readError(response))
+    else await loadDashboard().catch((reason) => setError(reason.message))
+    setBusy('')
+  }
+
   if (authenticated === null) {
     return <main className="admin-loading"><span><Sparkles /></span><p>Opening the clubhouse inbox…</p></main>
   }
@@ -374,12 +435,16 @@ function AdminApp() {
 
       <main className="admin-content">
         {tab === 'challenges' && <section>
-          <div className="admin-section-heading"><div><span className="kicker">Automatic weekly rollover</span><h2>Upcoming challenge</h2></div><p>The public site chooses the active prompt and voting gallery from these dates—no Monday-morning button press needed.</p></div>
-          {dashboard?.schedule.nextChallenge ? <UpcomingChallengeEditor key={dashboard.schedule.nextChallenge.id} challenge={dashboard.schedule.nextChallenge} busy={busy === `challenge:${dashboard.schedule.nextChallenge.id}`} onSave={saveChallenge} /> : <div className="admin-empty"><CalendarDays size={35} /><h3>No upcoming challenge is scheduled.</h3></div>}
+          <div className="admin-section-heading"><div><span className="kicker">Automatic weekly rollover</span><h2>Challenge calendar</h2></div><p>Click any challenge to see its full prompt and edit it. Upcoming rows also let you change the schedule.</p></div>
           <div className="season-schedule">
-            <div className="season-schedule-heading"><span className="kicker">The full summer session</span><h3>Challenge calendar</h3></div>
-            {dashboard?.schedule.challenges.map((challenge) => <article key={challenge.id} className={`season-row status-${challenge.status}`}><span className="admin-status">{challenge.status}</span><div><b>{challenge.title}</b><small>{challenge.weekLabel}</small></div><div><span>Build</span><small>{dateLabel(challenge.opensAt)} → {dateLabel(challenge.closesAt)}</small></div><div><span>Vote</span><small>{dateLabel(challenge.votingOpensAt)} → {dateLabel(challenge.votingClosesAt)}</small></div></article>)}
+            <div className="season-schedule-heading"><span className="kicker">The full summer session</span><h3>8 challenges · July 13–Labor Day</h3></div>
+            {dashboard?.schedule.challenges.map((challenge) => <button key={challenge.id} type="button" aria-expanded={selectedChallengeId === challenge.id} className={`season-row status-${challenge.status} ${selectedChallengeId === challenge.id ? 'selected' : ''}`} onClick={() => { setSelectedChallengeId((current) => current === challenge.id ? null : challenge.id); setSelectedDraftId(null) }}><span className="admin-status">{challenge.status}</span><div><b>{challenge.title}</b><small>{challenge.weekLabel}</small></div><div><span>Build</span><small>{dateLabel(challenge.opensAt)} → {dateLabel(challenge.closesAt)}</small></div><div><span>Vote</span><small>{dateLabel(challenge.votingOpensAt)} → {dateLabel(challenge.votingClosesAt)}</small></div><Pencil size={16} /></button>)}
           </div>
+          {selectedChallengeId && dashboard?.schedule.challenges.find((challenge) => challenge.id === selectedChallengeId) && <ChallengeEditor key={selectedChallengeId} challenge={dashboard.schedule.challenges.find((challenge) => challenge.id === selectedChallengeId)!} busy={busy === `challenge:${selectedChallengeId}`} onSave={saveChallenge} onClose={() => setSelectedChallengeId(null)} />}
+
+          <div className="challenge-bank-heading"><div><span className="kicker">Private idea bank</span><h3>10 more challenges</h3></div><p>These stay inside the clubhouse until you decide to schedule one. Click any card to edit its full text.</p></div>
+          <div className="challenge-bank">{dashboard?.challengeDrafts.map((draft) => <button type="button" key={draft.id} className={`challenge-draft-card ${selectedDraftId === draft.id ? 'selected' : ''}`} aria-expanded={selectedDraftId === draft.id} onClick={() => { setSelectedDraftId((current) => current === draft.id ? null : draft.id); setSelectedChallengeId(null) }}><span><BookOpen size={17} /><b>{draft.status}</b></span><h4>{draft.title}</h4><p>{draft.eyebrow}</p><Pencil size={15} /></button>)}</div>
+          {selectedDraftId && dashboard?.challengeDrafts.find((draft) => draft.id === selectedDraftId) && <ChallengeDraftEditor key={selectedDraftId} draft={dashboard.challengeDrafts.find((draft) => draft.id === selectedDraftId)!} busy={busy === `challenge-draft:${selectedDraftId}`} onSave={saveChallengeDraft} onClose={() => setSelectedDraftId(null)} />}
         </section>}
 
         {tab === 'submissions' && <section>

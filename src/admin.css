@@ -44,13 +44,23 @@
 .challenge-form-grid label > span { font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 800; text-transform: uppercase; }
 .challenge-form-grid input, .challenge-form-grid textarea { width: 100%; border: 1.5px solid var(--ink); border-radius: 8px; padding: 11px 12px; background: var(--paper); color: var(--ink); font: inherit; font-size: 11px; outline: none; resize: vertical; }
 .challenge-form-grid input:focus, .challenge-form-grid textarea:focus { box-shadow: 0 0 0 3px var(--blue); }
+.challenge-form-grid input:disabled { opacity: .65; background: #eee; cursor: not-allowed; }
+.challenge-editor-actions { display: flex; align-items: center; gap: 11px; }
 .admin-save-challenge { min-height: 44px; width: fit-content; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1.5px solid var(--ink); border-radius: 9px; padding: 10px 16px; background: var(--green); box-shadow: 3px 3px 0 var(--ink); font-size: 10px; font-weight: 800; cursor: pointer; }
 .admin-save-challenge:disabled { opacity: .55; cursor: wait; }
+.admin-close-editor { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1.5px solid var(--ink); border-radius: 9px; padding: 10px 16px; background: white; font-size: 10px; font-weight: 800; cursor: pointer; }
 .season-schedule { margin-top: 44px; overflow: hidden; border: 1.5px solid var(--ink); border-radius: 15px; background: white; box-shadow: 6px 6px 0 var(--ink); }
 .season-schedule-heading { padding: 22px; border-bottom: 1px solid var(--line); }.season-schedule-heading h3 { margin: 6px 0 0; font-size: 25px; }
-.season-row { display: grid; grid-template-columns: 82px 1fr 1.4fr 1.4fr; align-items: center; gap: 18px; padding: 17px 22px; border-bottom: 1px solid var(--line); }.season-row:last-child { border-bottom: 0; }
+.season-row { width: 100%; display: grid; grid-template-columns: 82px 1fr 1.4fr 1.4fr 24px; align-items: center; gap: 18px; padding: 17px 22px; border: 0; border-bottom: 1px solid var(--line); background: white; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }.season-row:last-child { border-bottom: 0; }
 .season-row > div { display: grid; gap: 3px; }.season-row > div > span { font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 800; text-transform: uppercase; }.season-row b { font-size: 12px; }.season-row small { color: var(--ink-soft); font-size: 8px; line-height: 1.5; }
-.season-row.status-active { background: #fff8d9; }.season-row.status-closed { opacity: .7; }
+.season-row:hover, .season-row.selected { background: #eefbff; }.season-row.selected { box-shadow: inset 5px 0 0 var(--blue); }.season-row.status-active { background: #fff8d9; }.season-row.status-active.selected { box-shadow: inset 5px 0 0 var(--yellow); }.season-row.status-closed { opacity: .7; }
+.season-schedule + .challenge-editor, .challenge-bank + .challenge-editor { margin-top: 24px; }
+.challenge-bank-heading { display: flex; align-items: end; justify-content: space-between; gap: 25px; margin: 72px 0 22px; }.challenge-bank-heading h3 { margin: 7px 0 0; font-size: 34px; }.challenge-bank-heading p { max-width: 430px; margin: 0; color: var(--ink-soft); font-size: 11px; text-align: right; }
+.challenge-bank { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.challenge-draft-card { position: relative; min-height: 145px; padding: 20px; border: 1.5px solid var(--ink); border-radius: 13px; background: white; color: var(--ink); box-shadow: 4px 4px 0 var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.challenge-draft-card:hover, .challenge-draft-card.selected { transform: translateY(-2px); background: #f5ffe3; box-shadow: 6px 6px 0 var(--green); }.challenge-draft-card.selected { outline: 3px solid var(--green); }
+.challenge-draft-card > span { display: flex; align-items: center; gap: 7px; color: var(--ink-soft); }.challenge-draft-card > span b { font-family: 'DM Mono', monospace; font-size: 8px; text-transform: uppercase; }.challenge-draft-card h4 { margin: 18px 0 5px; font-family: 'Paytone One', 'Arial Rounded MT Bold', sans-serif; font-size: 21px; font-weight: 400; }.challenge-draft-card p { max-width: 90%; margin: 0; color: var(--ink-soft); font-size: 10px; }.challenge-draft-card > svg { position: absolute; right: 17px; top: 17px; }
+.draft-editor { background: #fbfff2; }
 .admin-card { background: white; border: 1.5px solid var(--ink); border-radius: 15px; box-shadow: 6px 6px 0 var(--ink); padding: 24px; }
 .admin-card.status-approved, .admin-card.status-selected { border-left: 8px solid #68c96e; }
 .admin-card.status-rejected, .admin-card.status-archived { opacity: .72; border-left: 8px solid #bbb; }
@@ -114,7 +124,8 @@
   .admin-tabs button { justify-content: flex-start; padding-inline: 18px; }
   .admin-tabs b { margin-left: auto; }
   .submission-review-grid, .idea-list { grid-template-columns: 1fr; }
-  .season-row { grid-template-columns: 75px 1fr; }.season-row > div:nth-of-type(n+2) { grid-column: 2; }
+  .season-row { grid-template-columns: 75px 1fr 22px; }.season-row > div:nth-of-type(n+2) { grid-column: 2; }.season-row > svg { grid-column: 3; grid-row: 1; }
+  .challenge-bank { grid-template-columns: 1fr; }.challenge-bank-heading { align-items: flex-start; flex-direction: column; }.challenge-bank-heading p { text-align: left; }
   .admin-section-heading, .admin-card-actions { align-items: flex-start; flex-direction: column; }
   .admin-section-heading > p { text-align: left; }
   .admin-card-actions > div { width: 100%; }
@@ -130,7 +141,7 @@
   .admin-header-actions { width: 100%; flex-wrap: wrap; }
   .admin-header-actions .button { flex: 1; }
   .admin-card { padding: 18px 14px; box-shadow: 4px 4px 0 var(--ink); }
-  .challenge-editor { padding: 20px 14px; }.challenge-form-grid { grid-template-columns: 1fr; }.challenge-form-grid label.wide { grid-column: auto; }.admin-save-challenge { width: 100%; }
+  .challenge-editor { padding: 20px 14px; }.challenge-form-grid { grid-template-columns: 1fr; }.challenge-form-grid label.wide { grid-column: auto; }.challenge-editor-actions { align-items: stretch; flex-direction: column; }.admin-save-challenge, .admin-close-editor { width: 100%; }
   .admin-card-actions > div { flex-direction: column; }
   .admin-links { flex-direction: column; }
 }

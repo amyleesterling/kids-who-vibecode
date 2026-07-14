@@ -7,11 +7,11 @@ export const scheduledChallenges = [
     starterIdeas: ['A moon base for cats', 'A garden that sings', 'A city inside a raindrop'], tools: ['Scratch', 'HTML + CSS', 'Replit', 'Anything you love'],
   },
   {
-    id: 'make-it-musical', weekLabel: 'Challenge 02 · Jul 20–26', title: 'Make it musical', eyebrow: 'Turn curiosity into sound.',
-    prompt: 'Build something that blips, bloops, sings, or stomps when we interact with it.',
-    brief: 'Create a musical toy, tiny instrument, sound-reactive scene, or rhythm game. Give visitors at least two different sounds to discover.',
+    id: 'secret-door', weekLabel: 'Challenge 02 · Jul 20–26', title: 'Open a secret door', eyebrow: 'Every door needs a surprise.',
+    prompt: 'Build a mysterious door and reveal what happens when someone figures out how to open it.',
+    brief: 'Hide a clue, create a tiny puzzle, or make the door react in an unexpected way. What waits on the other side is entirely up to you.',
     opensAt: '2026-07-20T13:00:00.000Z', closesAt: '2026-07-27T04:00:00.000Z', votingOpensAt: '2026-07-27T13:00:00.000Z', votingClosesAt: '2026-08-03T13:00:00.000Z',
-    starterIdeas: ['A keyboard played by frogs', 'A beat-making breakfast', 'Weather that makes music'], tools: ['Scratch', 'Tone.js', 'HTML + JS', 'Anything you love'],
+    starterIdeas: ['A door inside a sandwich', 'A portal to dinosaur school', 'The world’s smallest escape room'], tools: ['Scratch', 'Twine', 'HTML + JS', 'Anything you love'],
   },
   {
     id: 'invent-a-creature', weekLabel: 'Challenge 03 · Jul 27–Aug 2', title: 'Invent a creature', eyebrow: 'Odd talents encouraged.',
@@ -35,18 +35,18 @@ export const scheduledChallenges = [
     starterIdeas: ['Taco Tuesday tornado', 'A rainbow repair shop', 'Clouds that sneeze bubbles'], tools: ['Scratch', 'p5.js', 'HTML + JS', 'Anything you love'],
   },
   {
-    id: 'secret-door', weekLabel: 'Challenge 06 · Aug 17–23', title: 'Open a secret door', eyebrow: 'Every door needs a surprise.',
-    prompt: 'Build a mysterious door and reveal what happens when someone figures out how to open it.',
-    brief: 'Hide a clue, create a tiny puzzle, or make the door react in an unexpected way. What waits on the other side is entirely up to you.',
-    opensAt: '2026-08-17T13:00:00.000Z', closesAt: '2026-08-24T04:00:00.000Z', votingOpensAt: '2026-08-24T13:00:00.000Z', votingClosesAt: '2026-08-31T13:00:00.000Z',
-    starterIdeas: ['A door inside a sandwich', 'A portal to dinosaur school', 'The world’s smallest escape room'], tools: ['Scratch', 'Twine', 'HTML + JS', 'Anything you love'],
-  },
-  {
-    id: 'make-someone-smile', weekLabel: 'Challenge 07 · Aug 24–30', title: 'Make someone smile', eyebrow: 'Code can be a tiny gift.',
+    id: 'make-someone-smile', weekLabel: 'Challenge 06 · Aug 17–23', title: 'Make someone smile', eyebrow: 'Code can be a tiny gift.',
     prompt: 'Create a playful digital surprise designed to make somebody’s day a little brighter.',
     brief: 'It could tell jokes, celebrate a person, make cheerful art, or deliver a kindness mission. Build it for someone specific or for everyone.',
-    opensAt: '2026-08-24T13:00:00.000Z', closesAt: '2026-08-31T04:00:00.000Z', votingOpensAt: '2026-08-31T13:00:00.000Z', votingClosesAt: '2026-09-07T13:00:00.000Z',
+    opensAt: '2026-08-17T13:00:00.000Z', closesAt: '2026-08-24T04:00:00.000Z', votingOpensAt: '2026-08-24T13:00:00.000Z', votingClosesAt: '2026-08-31T13:00:00.000Z',
     starterIdeas: ['A compliment confetti cannon', 'A joke-telling potato', 'A kindness quest'], tools: ['Scratch', 'Canva Code', 'HTML + CSS', 'Anything you love'],
+  },
+  {
+    id: 'chain-reaction', weekLabel: 'Challenge 07 · Aug 24–30', title: 'Make a chain reaction', eyebrow: 'One tiny tap. Total delightful chaos.',
+    prompt: 'Build a world where one small action sets off a surprising chain of events.',
+    brief: 'Let visitors start the action, then watch at least three connected things happen. The chain can be clever, silly, useful, or completely impossible.',
+    opensAt: '2026-08-24T13:00:00.000Z', closesAt: '2026-08-31T04:00:00.000Z', votingOpensAt: '2026-08-31T13:00:00.000Z', votingClosesAt: '2026-09-07T13:00:00.000Z',
+    starterIdeas: ['Dominoes that make breakfast', 'A robot wake-up sequence', 'A machine that manufactures rainbows'], tools: ['Scratch', 'HTML + JS', 'p5.js', 'Anything you love'],
   },
   {
     id: 'only-you', weekLabel: 'Challenge 08 · Aug 31–Sep 6', title: 'Only you could make this', eyebrow: 'The grand build week.',

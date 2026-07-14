@@ -1,5 +1,6 @@
 import type { ClubDatabase } from '../worker/index'
 import { scheduledChallenges } from './challenges'
+import { challengeDraftSeeds } from './challengeDrafts'
 
 export const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS challenges (
@@ -76,6 +77,18 @@ export const schemaStatements = [
     status TEXT NOT NULL CHECK (status IN ('pending', 'selected', 'archived')),
     created_at TEXT NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS challenge_drafts (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    eyebrow TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    brief TEXT NOT NULL,
+    starter_ideas TEXT NOT NULL,
+    tools TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('idea', 'scheduled', 'archived')),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS subscribers (
     id TEXT PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
@@ -129,6 +142,7 @@ export const schemaStatements = [
   `CREATE INDEX IF NOT EXISTS votes_project_idx ON votes (project_id)`,
   `CREATE INDEX IF NOT EXISTS submissions_status_created_idx ON submissions (status, created_at)`,
   `CREATE INDEX IF NOT EXISTS challenge_ideas_status_created_idx ON challenge_ideas (status, created_at)`,
+  `CREATE INDEX IF NOT EXISTS challenge_drafts_status_updated_idx ON challenge_drafts (status, updated_at)`,
   `CREATE INDEX IF NOT EXISTS subscribers_status_created_idx ON subscribers (status, created_at)`,
   `CREATE INDEX IF NOT EXISTS moderation_events_item_idx ON moderation_events (item_type, item_id, created_at)`,
   `CREATE INDEX IF NOT EXISTS safety_scans_status_updated_idx ON safety_scans (status, updated_at)`,
@@ -153,6 +167,14 @@ export async function seedDatabase(db: ClubDatabase) {
 
   await db.batch(challenges)
   const now = new Date().toISOString()
+  await db.batch(challengeDraftSeeds.map((draft) => db.prepare(`
+    INSERT OR IGNORE INTO challenge_drafts (
+      id, title, eyebrow, prompt, brief, starter_ideas, tools, status, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    draft.id, draft.title, draft.eyebrow, draft.prompt, draft.brief,
+    JSON.stringify(draft.starterIdeas), JSON.stringify(draft.tools), draft.status, now, now,
+  )))
   await db.prepare(`
     UPDATE challenges SET status = CASE
       WHEN id = (

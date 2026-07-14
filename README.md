@@ -72,6 +72,8 @@ Approving a project makes its kid-safe fields and approved image visible as a re
 
 The Challenges tab shows the active build window, delayed voting window, and next automatic launch. Eight summer challenges run from July 13 through Labor Day weekend. New prompts launch Monday at 9:00 a.m. Eastern; submissions close Sunday at midnight, and the previous challenge’s gallery opens when the new prompt launches. Future prompt titles and copy stay private in the public API and are visible only in Clubhouse Admin before launch.
 
+Every calendar row is clickable. Club grown-ups can view and edit the complete title, tagline, prompt, brief, starter ideas, and tools for any challenge; dates stay editable until that challenge begins. A private idea bank contains ten additional fully written, editable challenge concepts. “Open a secret door” is scheduled for Week 2, and “Make a chain reaction” fills Week 7.
+
 Once voting closes, **[Clubhouse Favorites](https://vibecodekids.com/favorites)** automatically publishes one winner and up to two runners-up for that challenge. No sample winners are shown before the first real result.
 
 ## Weekly email delivery

@@ -639,6 +639,18 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
     starterIdeas: JSON.parse(String(challenge.starterIdeas || '[]')),
     tools: JSON.parse(String(challenge.tools || '[]')),
   }))
+  const { results: draftRows } = await db.prepare(`
+    SELECT id, title, eyebrow, prompt, brief, starter_ideas AS starterIdeas, tools,
+      status, created_at AS createdAt, updated_at AS updatedAt
+    FROM challenge_drafts
+    WHERE status != 'archived'
+    ORDER BY CASE status WHEN 'scheduled' THEN 0 ELSE 1 END, updated_at DESC, title
+  `).all<Record<string, unknown>>()
+  const challengeDrafts = draftRows.map((draft) => ({
+    ...draft,
+    starterIdeas: JSON.parse(String(draft.starterIdeas || '[]')),
+    tools: JSON.parse(String(draft.tools || '[]')),
+  }))
 
   return json({
     submissions: submissions.map((item) => ({
@@ -654,6 +666,7 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
     ideas,
     subscribers,
     activity,
+    challengeDrafts,
     safetyScannerEnabled: Boolean(env.SAFETY_SCAN_SECRET),
     schedule: {
       now,
@@ -737,15 +750,22 @@ async function adminUpdateChallenge(db: ClubDatabase, request: Request, env: Env
   if (!(dates[0] < dates[1] && dates[1] <= dates[2] && dates[2] < dates[3])) {
     return json({ error: 'The build window must end before voting opens, and voting must end afterward.' }, 400)
   }
-  const existing = await db.prepare(`SELECT opens_at AS opensAt FROM challenges WHERE id = ?`).bind(id).first<{ opensAt: string }>()
+  const existing = await db.prepare(`
+    SELECT opens_at AS opensAt, closes_at AS closesAt, voting_opens_at AS votingOpensAt,
+      voting_closes_at AS votingClosesAt FROM challenges WHERE id = ?
+  `).bind(id).first<{ opensAt: string; closesAt: string; votingOpensAt: string; votingClosesAt: string }>()
   if (!existing) return json({ error: 'Challenge not found' }, 404)
-  if (Date.parse(existing.opensAt) <= Date.now()) return json({ error: 'Only upcoming challenges can be edited.' }, 409)
+  const scheduleChanged = [existing.opensAt, existing.closesAt, existing.votingOpensAt, existing.votingClosesAt]
+    .some((value, index) => Date.parse(value) !== dates[index])
+  if (Date.parse(existing.opensAt) <= Date.now() && scheduleChanged) {
+    return json({ error: 'Dates lock after a challenge begins, but its title and prompt can still be edited.' }, 409)
+  }
 
   await db.batch([
     db.prepare(`
       UPDATE challenges SET week_label = ?, title = ?, eyebrow = ?, prompt = ?, brief = ?,
         opens_at = ?, closes_at = ?, voting_opens_at = ?, voting_closes_at = ?,
-        starter_ideas = ?, tools = ?, status = 'upcoming'
+        starter_ideas = ?, tools = ?
       WHERE id = ?
     `).bind(
       weekLabel, title, eyebrow, prompt, brief, opensAt, closesAt, votingOpensAt, votingClosesAt,
@@ -753,6 +773,33 @@ async function adminUpdateChallenge(db: ClubDatabase, request: Request, env: Env
     ),
     db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'challenge', ?, 'schedule_updated', ?)`)
       .bind(crypto.randomUUID(), id, new Date().toISOString()),
+  ])
+  return json({ ok: true })
+}
+
+async function adminUpdateChallengeDraft(db: ClubDatabase, request: Request, env: Env) {
+  if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
+  const id = decodeURIComponent(new URL(request.url).pathname.split('/').pop() || '')
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null
+  const title = validText(body?.title, 80, 3)
+  const eyebrow = validText(body?.eyebrow, 100, 3)
+  const prompt = validText(body?.prompt, 400, 10)
+  const brief = validText(body?.brief, 800, 10)
+  const starterIdeas = Array.isArray(body?.starterIdeas) ? body.starterIdeas.map((item) => validText(item, 100)).filter(Boolean) : []
+  const tools = Array.isArray(body?.tools) ? body.tools.map((item) => validText(item, 60)).filter(Boolean) : []
+  if (!title || !eyebrow || !prompt || !brief || starterIdeas.length < 1 || tools.length < 1) {
+    return json({ error: 'Complete every idea field before saving.' }, 400)
+  }
+  const existing = await db.prepare(`SELECT id FROM challenge_drafts WHERE id = ?`).bind(id).first<{ id: string }>()
+  if (!existing) return json({ error: 'Challenge idea not found.' }, 404)
+  const now = new Date().toISOString()
+  await db.batch([
+    db.prepare(`
+      UPDATE challenge_drafts SET title = ?, eyebrow = ?, prompt = ?, brief = ?,
+        starter_ideas = ?, tools = ?, updated_at = ? WHERE id = ?
+    `).bind(title, eyebrow, prompt, brief, JSON.stringify(starterIdeas), JSON.stringify(tools), now, id),
+    db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'challenge_draft', ?, 'updated', ?)`)
+      .bind(crypto.randomUUID(), id, now),
   ])
   return json({ ok: true })
 }
@@ -890,6 +937,7 @@ export default {
       if (request.method === 'GET' && url.pathname === '/api/admin/dashboard') return adminDashboard(env.DB, request, env)
       if (request.method === 'GET' && url.pathname.startsWith('/api/admin/submission-images/')) return adminSubmissionImage(env.DB, env.UPLOADS, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/submission-images/')) return adminUploadSubmissionImage(env.DB, env.UPLOADS, request, env)
+      if (request.method === 'POST' && url.pathname.startsWith('/api/admin/challenge-drafts/')) return adminUpdateChallengeDraft(env.DB, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/challenges/')) return adminUpdateChallenge(env.DB, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/safety-scans/')) return adminQueueSafetyScan(env.DB, request, env)
       if (request.method === 'POST' && url.pathname === '/api/admin/moderate') return adminModerate(env.DB, request, env)
