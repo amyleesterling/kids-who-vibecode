@@ -44,7 +44,7 @@ function FavoritesPage() {
         <section className="page-shell favorites-content">
           {!favorites && !error && <div className="favorites-loading"><span /><span /><span /><p>Polishing the trophies…</p></div>}
           {error && <div className="favorites-empty"><Medal size={48} /><h2>The trophy shelf is taking a tiny break.</h2><p>{error} Please try again soon.</p></div>}
-          {favorites && !favorites.challenges.length && <div className="favorites-empty"><Sparkles size={48} /><span className="kicker">The very first week</span><h2>No winners yet—and that’s exactly right.</h2><p>The first Clubhouse Favorite and runners-up will appear {revealLabel(favorites.nextRevealAt)}, after everyone has had the same chance to vote.</p><a className="button button-coral" href="/#gallery">Explore this week’s builds</a></div>}
+          {favorites && !favorites.challenges.length && <div className="favorites-empty"><Sparkles size={48} /><span className="kicker">The very first week</span><h2>No winners yet—and that’s exactly right.</h2><p>The first Clubhouse Favorite and runners-up will appear {revealLabel(favorites.nextRevealAt)}.</p><a className="button button-coral" href="/#gallery">Explore this week’s builds</a></div>}
           {favorites?.challenges.map((challenge) => <section className="favorite-week" key={challenge.challengeId}>
             <div className="favorite-week-heading"><div><span className="kicker">{challenge.weekLabel}</span><h2>{challenge.challengeTitle}</h2></div><p>Final results · {revealLabel(challenge.votingClosedAt)}</p></div>
             <div className="podium-grid">{challenge.podium.map((project) => <article className={`podium-card rank-${project.rank}`} key={project.projectId}>
