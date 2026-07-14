@@ -2,6 +2,12 @@
 
 A playful, parent-supervised community for young creative coders. Every week brings a new open-ended challenge; kids can build with any tool, submit through a grown-up, explore approved projects, and vote for one favorite.
 
+## Live site
+
+**[Open Vibe Code Club](https://vibe-code-club-kids.amysterling.chatgpt.site)**
+
+Jump straight to **[this week's challenge](https://vibe-code-club-kids.amysterling.chatgpt.site/#challenge)**.
+
 ## What is included
 
 - A responsive weekly challenge landing page
