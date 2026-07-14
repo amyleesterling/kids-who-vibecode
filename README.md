@@ -22,7 +22,7 @@ Jump straight to **[this week's challenge](https://vibecodekids.com/#challenge)*
 - Kid-safety defaults: nicknames, age bands, no comments or direct messages
 - Hosted D1 database for challenges, approved projects, votes, and private submissions
 - Hosted R2 object storage for private submission images and approved gallery images
-- Offline demo fallback when the community API cannot be reached
+- Empty offline fallback when the community API cannot be reached
 
 ## Run locally
 
@@ -47,13 +47,11 @@ The API never returns either private queue publicly. Review happens in the authe
 
 Every new project submission also requires a grown-up to attest that the project was led by the child rather than built for them by an adult. Teaching, brainstorming, AI assistance, and troubleshooting are welcome; the child must make the creative decisions and lead the build.
 
-The four illustrated projects included at launch are clearly marked clubhouse samples. They are not votable and do not link to fictional repositories; real approved submissions receive working project links and voting controls.
-
 ## Clubhouse Admin
 
 Open **[Clubhouse Admin](https://vibecodekids.com/clubhouse-admin)** to review the private queues. The temporary admin password is stored locally in the ignored `.env.local` file; it is never committed to GitHub. Production stores `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` as secret environment values.
 
-Approving a project marks its kid-safe fields and approved image as ready for that challenge’s scheduled voting gallery; it does not appear early. If a family did not include an image, a club grown-up can add one from the submission card; existing images can also be replaced. Rejecting a project keeps it out of the gallery. The dashboard also supports selecting or archiving challenge ideas and activating or unsubscribing grown-up newsletter addresses.
+Approving a project makes its kid-safe fields and approved image visible as a reviewed gallery preview. Favorite buttons remain locked until that challenge’s scheduled voting week. If a family did not include an image, a club grown-up can add one from the submission card; existing images can also be replaced. Rejecting a project keeps it out of the gallery. The dashboard also supports selecting or archiving challenge ideas and activating or unsubscribing grown-up newsletter addresses.
 
 The Challenges tab shows the active build window, delayed voting window, and next automatic launch. Eight summer challenges are scheduled for Monday at 9:00 a.m. Eastern; submissions close Sunday at midnight, and the previous challenge’s gallery opens when the new prompt launches. Upcoming challenge copy and dates can be edited before launch.
 

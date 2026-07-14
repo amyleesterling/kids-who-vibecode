@@ -1,4 +1,4 @@
-import type { Challenge, Project } from './types'
+import type { Challenge } from './types'
 
 const nextSunday = () => {
   const date = new Date()
@@ -23,25 +23,6 @@ export const activeChallenge: Challenge = {
   starterIdeas: ['A moon base for cats', 'A garden that sings', 'A city inside a raindrop'],
   tools: ['Scratch', 'HTML + CSS', 'Replit', 'Anything you love'],
 }
-
-export const seedProjects: Project[] = [
-  {
-    id: 'mossy-moon', challengeId: 'tiny-worlds', title: 'Mossy Moon', builder: 'PixelPanda', ageBand: '7–9',
-    description: 'Grow glowing space plants and wake up the moon bugs.', baseVotes: 0, scene: 'space', accent: '#b9f44a', isSample: true,
-  },
-  {
-    id: 'bubble-town', challengeId: 'tiny-worlds', title: 'Bubble Town', builder: 'RainbowRex', ageBand: '5–6',
-    description: 'A whole town where every building can float away.', baseVotes: 0, scene: 'ocean', accent: '#65d9ff', isSample: true,
-  },
-  {
-    id: 'snack-forest', challengeId: 'tiny-worlds', title: 'The Snack Forest', builder: 'CodeKoala', ageBand: '7–9',
-    description: 'Help a tiny monster find the legendary golden toast.', baseVotes: 0, scene: 'garden', accent: '#ffb3c7', isSample: true,
-  },
-  {
-    id: 'monster-disco', challengeId: 'tiny-worlds', title: 'Monster Disco', builder: 'BugBunny', ageBand: '5–6',
-    description: 'Tap the beat and give every monster a silly dance.', baseVotes: 0, scene: 'monster', accent: '#ffcb45', isSample: true,
-  },
-]
 
 export const upcomingChallenges = [
   { number: '02', title: 'Make it musical', hint: 'Build something that blips, bloops, sings, or stomps.', color: '#65d9ff' },

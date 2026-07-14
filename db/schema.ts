@@ -126,19 +126,7 @@ export async function seedDatabase(db: ClubDatabase) {
     JSON.stringify(challenge.starterIdeas), JSON.stringify(challenge.tools),
   ))
 
-  const projects = [
-    ['mossy-moon', 'Mossy Moon', 'PixelPanda', '7–9', 'Grow glowing space plants and wake up the moon bugs.', 'https://github.com/', '', 18, 'space', '#b9f44a'],
-    ['bubble-town', 'Bubble Town', 'RainbowRex', '5–6', 'A whole town where every building can float away.', '', '', 14, 'ocean', '#65d9ff'],
-    ['snack-forest', 'The Snack Forest', 'CodeKoala', '7–9', 'Help a tiny monster find the legendary golden toast.', 'https://github.com/', '', 11, 'garden', '#ffb3c7'],
-    ['monster-disco', 'Monster Disco', 'BugBunny', '5–6', 'Tap the beat and give every monster a silly dance.', '', '', 9, 'monster', '#ffcb45'],
-  ].map((project) => db.prepare(`
-    INSERT OR IGNORE INTO projects (
-      id, challenge_id, title, builder, age_band, description, repo_url, demo_url,
-      base_votes, scene, accent, status
-    ) VALUES (?, 'tiny-worlds', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')
-  `).bind(...project))
-
-  await db.batch([...challenges, ...projects])
+  await db.batch(challenges)
   const now = new Date().toISOString()
   await db.prepare(`
     UPDATE challenges SET status = CASE

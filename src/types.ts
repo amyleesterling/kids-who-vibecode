@@ -27,7 +27,6 @@ export type Project = {
   baseVotes: number
   scene: 'space' | 'garden' | 'ocean' | 'monster'
   accent: string
-  isSample?: boolean
 }
 
 export type SubmissionInput = {
@@ -64,5 +63,5 @@ export type CommunitySnapshot = {
   votingOpen: boolean
   acceptingSubmissions: boolean
   upcomingChallenges: Array<Pick<Challenge, 'id' | 'weekLabel' | 'title' | 'eyebrow' | 'prompt' | 'opensAt' | 'closesAt'>>
-  source: 'database' | 'demo'
+  source: 'database' | 'offline'
 }

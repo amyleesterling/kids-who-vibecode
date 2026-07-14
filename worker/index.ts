@@ -124,20 +124,11 @@ async function community(db: ClubDatabase, request: Request) {
     ORDER BY voting_opens_at DESC LIMIT 1
   `).bind(now, now).first<Record<string, unknown>>()
   const galleryId = galleryChallenge ? String(galleryChallenge.id) : String(challenge.id)
-  const projectsStatement = galleryChallenge ? db.prepare(`
+  const projectsStatement = db.prepare(`
     SELECT id, challenge_id AS challengeId, title, builder, age_band AS ageBand,
       description, repo_url AS repoUrl, demo_url AS demoUrl, base_votes AS baseVotes,
-      scene, accent, image_key AS imageKey,
-      CASE WHEN id IN ('mossy-moon', 'bubble-town', 'snack-forest', 'monster-disco') THEN 1 ELSE 0 END AS isSample
+      scene, accent, image_key AS imageKey
     FROM projects WHERE challenge_id = ? AND status = 'approved'
-      AND id NOT IN ('mossy-moon', 'bubble-town', 'snack-forest', 'monster-disco')
-  `).bind(galleryId) : db.prepare(`
-    SELECT id, challenge_id AS challengeId, title, builder, age_band AS ageBand,
-      description, repo_url AS repoUrl, demo_url AS demoUrl, base_votes AS baseVotes,
-      scene, accent, image_key AS imageKey, 1 AS isSample
-    FROM projects
-    WHERE challenge_id = ? AND status = 'approved'
-      AND id IN ('mossy-moon', 'bubble-town', 'snack-forest', 'monster-disco')
   `).bind(galleryId)
   const { results: projects } = await projectsStatement.all<Record<string, unknown>>()
   const { results: counts } = galleryChallenge ? await db.prepare(`
@@ -161,7 +152,6 @@ async function community(db: ClubDatabase, request: Request) {
     projects: projects.map(({ imageKey, ...project }) => ({
       ...project,
       imageUrl: imageKey ? `/api/project-images/${project.id}` : null,
-      isSample: Boolean(project.isSample),
     })),
     voteCounts: Object.fromEntries(counts.map((item) => [item.projectId, Number(item.count)])),
     myVote: currentVote?.projectId || null,
@@ -185,7 +175,6 @@ async function vote(db: ClubDatabase, request: Request) {
     SELECT p.id FROM projects p
     JOIN challenges c ON c.id = p.challenge_id
     WHERE p.id = ? AND p.challenge_id = ? AND p.status = 'approved'
-      AND p.id NOT IN ('mossy-moon', 'bubble-town', 'snack-forest', 'monster-disco')
       AND c.voting_opens_at <= ? AND c.voting_closes_at > ?
   `).bind(projectId, challengeId, now, now).first<{ id: string }>()
   if (!project) return json({ error: 'Project not found' }, 404)

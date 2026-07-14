@@ -155,7 +155,7 @@ function SubmissionModal({ challenge, onClose }: { challenge: Challenge; onClose
               <fieldset>
                 <legend><span>1</span> About the builder</legend>
                 <div className="form-grid">
-                  <label>Creator nickname <small>Public — no full names</small><input required maxLength={24} value={form.childNickname} onChange={(e) => update('childNickname', e.target.value)} placeholder="PixelPanda" /></label>
+                  <label>Creator nickname <small>Public — no full names</small><input required maxLength={24} value={form.childNickname} onChange={(e) => update('childNickname', e.target.value)} placeholder="Your club nickname" /></label>
                   <label>Age group <small>Public</small><select required value={form.ageBand} onChange={(e) => update('ageBand', e.target.value)}><option value="">Choose one</option><option>5–6</option><option>7–9</option><option>10–12</option><option>13–15</option></select></label>
                 </div>
               </fieldset>
@@ -247,7 +247,7 @@ function ChallengeIdeaModal({ onClose }: { onClose: () => void }) {
               <fieldset className="grownup-fieldset">
                 <legend><span>2</span> Who dreamed it up?</legend>
                 <div className="form-grid">
-                  <label>Creator nickname <small>No full names</small><input required maxLength={24} value={form.creatorNickname} onChange={(e) => update('creatorNickname', e.target.value)} placeholder="CosmicCapybara" /></label>
+                  <label>Creator nickname <small>No full names</small><input required maxLength={24} value={form.creatorNickname} onChange={(e) => update('creatorNickname', e.target.value)} placeholder="Your club nickname" /></label>
                   <label>Creator group<select required value={form.creatorGroup} onChange={(e) => update('creatorGroup', e.target.value)}><option value="">Choose one</option><option>5–6</option><option>7–9</option><option>10–12</option><option>13–15</option><option>Grown-up</option></select></label>
                 </div>
                 <label>Grown-up email <small>Never public</small><input required type="email" maxLength={160} value={form.grownupEmail} onChange={(e) => update('grownupEmail', e.target.value)} placeholder="grownup@example.com" /></label>
@@ -327,7 +327,7 @@ function App() {
 
   const sortedProjects = useMemo(() => {
     if (!community) return []
-    const score = (project: Project) => project.isSample ? -1 : project.baseVotes + (community.voteCounts[project.id] || 0)
+    const score = (project: Project) => project.baseVotes + (community.voteCounts[project.id] || 0)
     return [...community.projects].sort((a, b) => score(b) - score(a))
   }, [community])
 
@@ -410,26 +410,25 @@ function App() {
 
         <section id="gallery" className="gallery-section page-shell">
           <div className="section-heading">
-            <div><span className="kicker">{community.votingOpen ? `Voting now · ${community.galleryChallenge?.weekLabel}` : 'Voting opens next Monday'}</span><h2>{community.votingOpen ? `${community.galleryChallenge?.title} showcase` : 'The weekly showcase'}</h2></div>
-            <p>{community.votingOpen ? 'Explore last week’s approved builds, then choose one favorite before voting closes.' : 'Kids can submit all week. Approved builds stay tucked away until everyone gets the same full voting window.'}</p>
+            <div><span className="kicker">{community.votingOpen ? `Voting now · ${community.galleryChallenge?.weekLabel}` : 'Fresh builds · Voting opens next Monday'}</span><h2>{community.votingOpen ? `${community.galleryChallenge?.title} showcase` : 'The weekly showcase'}</h2></div>
+            <p>{community.votingOpen ? 'Explore last week’s approved builds, then choose one favorite before voting closes.' : 'Approved builds can appear here during build week. Everyone’s heart button unlocks together Monday for the same fair voting window.'}</p>
           </div>
-          {community.projects.some((project) => project.isSample) && <div className="sample-banner"><Sparkles size={19} /><p><b>These four are clubhouse samples.</b> They’re make-believe examples while the first real gallery waits for voting week.</p></div>}
           <div className="gallery-grid">
             {sortedProjects.map((project, index) => {
-              const votes = project.isSample ? 0 : project.baseVotes + (community.voteCounts[project.id] || 0)
+              const votes = project.baseVotes + (community.voteCounts[project.id] || 0)
               const selected = community.myVote === project.id
               return (
                 <article className="project-card" key={project.id} style={{ '--accent': project.accent } as CSSProperties}>
                   <div className="project-browser"><div className="window-bar"><span /><span /><span /><small>{project.builder.toLowerCase()}.world</small></div><ProjectScene project={project} /></div>
-                  <div className="project-meta"><div><div className={`project-rank ${project.isSample ? 'sample-rank' : ''}`}>{project.isSample ? 'Clubhouse sample' : `#${index + 1} this week`}</div><h3>{project.title}</h3><p>{project.description}</p><span className="builder-tag">by {project.builder} · age {project.ageBand}</span></div>
-                    {project.isSample ? <div className="sample-vote" aria-label="Sample project—not open for voting"><Sparkles size={22} /><small>Example</small></div> : <button className={`vote-button ${selected ? 'selected' : ''}`} onClick={() => vote(project)} aria-pressed={selected} aria-label={`Vote for ${project.title}`}><Heart size={22} fill={selected ? 'currentColor' : 'none'} /><b>{votes}</b><small>{selected ? 'Your fave' : 'Favorite'}</small></button>}
+                  <div className="project-meta"><div><div className="project-rank">{community.votingOpen ? `#${index + 1} this week` : 'Ready for Monday’s gallery'}</div><h3>{project.title}</h3><p>{project.description}</p><span className="builder-tag">by {project.builder} · age {project.ageBand}</span></div>
+                    {community.votingOpen ? <button className={`vote-button ${selected ? 'selected' : ''}`} onClick={() => vote(project)} aria-pressed={selected} aria-label={`Vote for ${project.title}`}><Heart size={22} fill={selected ? 'currentColor' : 'none'} /><b>{votes}</b><small>{selected ? 'Your fave' : 'Favorite'}</small></button> : <div className="vote-locked" aria-label="Voting opens Monday"><LockKeyhole size={21} /><small>Voting Monday</small></div>}
                   </div>
-                  <div className="project-links">{project.isSample ? <span className="sample-link"><Sparkles size={16} /> No live project—just an idea spark</span> : <>{project.repoUrl && <a href={project.repoUrl} target="_blank" rel="noreferrer"><Github size={16} /> See the code</a>}{project.demoUrl && <a href={project.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Try it</a>}</>}</div>
+                  <div className="project-links">{project.repoUrl && <a href={project.repoUrl} target="_blank" rel="noreferrer"><Github size={16} /> See the code</a>}{project.demoUrl && <a href={project.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Try it</a>}</div>
                 </article>
               )
             })}
           </div>
-          {!community.projects.length && <div className="gallery-waiting"><Sparkles size={30} /><h3>The gallery is getting ready.</h3><p>Approved projects will appear here for their full voting week.</p></div>}
+          {!community.projects.length && <div className="gallery-waiting"><Sparkles size={30} /><h3>The gallery is getting ready.</h3><p>Approved projects will appear here as clubhouse grown-ups finish reviewing them.</p></div>}
           <p className="gallery-footnote"><ShieldCheck size={16} /> Every project and link is checked by a club grown-up before appearing here.</p>
         </section>
 
@@ -465,7 +464,7 @@ function App() {
       </main>
 
       <footer><div className="page-shell footer-layout"><Logo /><p>Made for small coders with big ideas.</p><div><a href="#subscribe">Weekly email</a><a href="#grownups">Safety</a><a href="mailto:hello@vibecodekids.com">Contact</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING WEIRD</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
-      {community.source === 'demo' && <div className="demo-badge" title="The community database could not be reached">Offline demo <ChevronDown size={13} /></div>}
+      {community.source === 'offline' && <div className="offline-badge" title="The community database could not be reached">Offline mode <ChevronDown size={13} /></div>}
       {notice && <div className="toast" role="status"><Heart size={17} fill="currentColor" /> {notice}</div>}
       {showSubmit && community.acceptingSubmissions && <SubmissionModal challenge={community.challenge} onClose={() => setShowSubmit(false)} />}
       {showIdea && <ChallengeIdeaModal onClose={() => setShowIdea(false)} />}

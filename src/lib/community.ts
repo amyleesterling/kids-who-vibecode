@@ -1,4 +1,4 @@
-import { activeChallenge, seedProjects } from '../data'
+import { activeChallenge } from '../data'
 import type { ChallengeIdeaInput, CommunitySnapshot, SubmissionInput } from '../types'
 
 const deviceKey = 'vibe-club-device-id'
@@ -11,12 +11,12 @@ function getVoterId() {
   return next
 }
 
-function demoSnapshot(): CommunitySnapshot {
+function offlineSnapshot(): CommunitySnapshot {
   const stored = localStorage.getItem(`vibe-club-vote:${activeChallenge.id}`)
   const counts = JSON.parse(localStorage.getItem('vibe-club-counts') || '{}') as Record<string, number>
   return {
-    challenge: activeChallenge, projects: seedProjects, voteCounts: counts, myVote: stored,
-    galleryChallenge: null, votingOpen: false, acceptingSubmissions: true, upcomingChallenges: [], source: 'demo',
+    challenge: activeChallenge, projects: [], voteCounts: counts, myVote: stored,
+    galleryChallenge: null, votingOpen: false, acceptingSubmissions: true, upcomingChallenges: [], source: 'offline',
   }
 }
 
@@ -26,8 +26,8 @@ export async function loadCommunity(): Promise<CommunitySnapshot> {
     if (!response.ok) throw new Error('Community API unavailable')
     return await response.json() as CommunitySnapshot
   } catch (error) {
-    console.warn('Community database unavailable; using demo data.', error)
-    return demoSnapshot()
+    console.warn('Community database unavailable; using offline mode.', error)
+    return offlineSnapshot()
   }
 }
 
