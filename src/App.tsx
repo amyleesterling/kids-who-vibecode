@@ -73,8 +73,13 @@ function ChallengePreview({ challenge }: { challenge: Challenge }) {
   return (
     <aside className="challenge-preview" aria-label="This week's challenge">
       <div className="window-bar"><span /><span /><span /><small>THIS_WEEK.vibe</small></div>
-      <div className="challenge-art hero-makers-art">
-        <img className="hero-makers-image" src="/hero-kids-coding.webp" alt="Two kids creating together on a laptop while the club cat watches" />
+      <div className="challenge-art">
+        <span className="orbit orbit-one" /><span className="orbit orbit-two" />
+        <span className="pixel-sun">✦</span>
+        <div className="tiny-world">
+          <span className="world-face">•ᴗ•</span><i className="world-tree" /><i className="world-home" />
+        </div>
+        <span className="floating-code">&lt;make<br />magic /&gt;</span>
       </div>
       <div className="challenge-preview-copy">
         <span className="kicker">{challenge.weekLabel}</span>
@@ -385,9 +390,9 @@ function App() {
       <main>
         <section className="hero page-shell">
           <div className="hero-copy">
-            <div className="eyebrow-pill"><Sparkles size={14} /> A creative coding club for curious kids</div>
-            <h1 className="hero-title-clear">Weekly vibe coding<br /><span>challenges for kids.</span></h1>
-            <p className="hero-lede">Try a new prompt every Monday, then get inspired by projects from kids vibe coding around the world. Build something, share it with a grown-up, and vote for a Clubhouse Favorite.</p>
+            <div className="eyebrow-pill"><Sparkles size={14} /> A weekly vibe coding club for kids</div>
+            <h1>A prompt to create.<br />A place to share.<br /><span>Ideas to inspire.</span></h1>
+            <p className="hero-lede">Every Monday, kids get a new vibe coding challenge. Build it your way, share it with the club, and get inspired by projects from kids around the world.</p>
             <div className="hero-actions"><a className="button button-coral" href="#challenge">See this week’s challenge <ArrowRight size={19} /></a><button className="text-link" onClick={openSubmission}>I made something! <span>↗</span></button></div>
             <div className="trust-note"><span className="avatar-stack"><i>🐯</i><i>🦊</i><i>🐸</i></span><p><b>Built for kids who create. Guided by grown-ups.</b></p></div>
           </div>
