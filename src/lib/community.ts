@@ -99,4 +99,5 @@ export async function subscribeWeeklyChallenge(email: string, adultConsent: bool
     const result = await response.json().catch(() => ({ error: 'Signup failed' })) as { error?: string }
     throw new Error(result.error || 'Signup failed')
   }
+  return await response.json() as { ok: true; confirmationSent: boolean }
 }

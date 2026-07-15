@@ -2,8 +2,16 @@ name: Send weekly challenge email
 
 on:
   schedule:
+    # Monday morning in the US; GitHub Actions cron uses UTC.
     - cron: '0 13 * * 1'
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-challenge-email
+  cancel-in-progress: false
 
 jobs:
   send:
@@ -20,7 +28,7 @@ jobs:
           status=$(curl --silent --show-error --output response.json --write-out "%{http_code}" \
             --request POST \
             --header "Authorization: Bearer $NEWSLETTER_CRON_SECRET" \
-            https://vibecodeclub.org/api/newsletter/send-weekly)
+            https://vibecodekids.com/api/newsletter/send-weekly)
           if [ "$status" = "200" ]; then
             cat response.json
             exit 0

@@ -313,13 +313,15 @@ function WeeklySignup() {
   const [email, setEmail] = useState('')
   const [adultConsent, setAdultConsent] = useState(false)
   const [status, setStatus] = useState<'idle' | 'saving' | 'done' | 'error'>('idle')
+  const [confirmationSent, setConfirmationSent] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!adultConsent) { setStatus('error'); return }
     setStatus('saving')
     try {
-      await subscribeWeeklyChallenge(email, adultConsent)
+      const result = await subscribeWeeklyChallenge(email, adultConsent)
+      setConfirmationSent(result.confirmationSent)
       setStatus('done')
       setEmail('')
       setAdultConsent(false)
@@ -338,7 +340,7 @@ function WeeklySignup() {
           <p>One playful coding prompt every Monday. No kid emails, no spam, and one-click unsubscribe anytime.</p>
         </div>
         {status === 'done' ? (
-          <div className="newsletter-success" role="status"><Check size={25} /><div><b>You’re on the grown-up list!</b><span>The next challenge will head your way. New here? <a href="/getting-started">Read the Parent Guide / Getting started</a>.</span></div></div>
+          <div className="newsletter-success" role="status"><Check size={25} /><div><b>You’re on the grown-up list!</b><span>{confirmationSent ? 'Check your inbox for a welcome email. ' : 'The next challenge will head your way. '}New here? <a href="/getting-started">Read the Parent Guide / Getting started</a>.</span></div></div>
         ) : (
           <form className="newsletter-form" onSubmit={handleSubmit}>
             <label htmlFor="newsletter-email">Grown-up email</label>
