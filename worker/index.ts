@@ -456,7 +456,34 @@ async function submitChallengeIdea(db: ClubDatabase, request: Request, env: Env,
   return json({ ok: true }, 201)
 }
 
-async function subscribe(db: ClubDatabase, request: Request) {
+async function sendWelcomeEmail(email: string, unsubscribeToken: string, env: Env) {
+  if (!env.RESEND_API_KEY || !env.NEWSLETTER_FROM_EMAIL) return false
+
+  const unsubscribeUrl = `https://vibecodekids.com/api/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'content-type': 'application/json',
+      'idempotency-key': `welcome-${unsubscribeToken}`,
+    },
+    body: JSON.stringify({
+      from: env.NEWSLETTER_FROM_EMAIL,
+      to: [email],
+      subject: 'Welcome to Vibe Code Club',
+      html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#211d38"><p style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#ff5b55">You’re on the grown-up list</p><h1 style="font-size:36px;line-height:1.05">Welcome to Vibe Code Club.</h1><p style="font-size:17px;line-height:1.6">Every Monday, we’ll send you one playful coding challenge to explore with your kid.</p><p style="font-size:17px;line-height:1.6">New here? The Parent Guide walks you through getting started, keeping your child in the director’s chair, and building one small thing together.</p><p style="margin:32px 0"><a href="https://vibecodekids.com/getting-started" style="background:#211d38;color:#fff;padding:14px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Open the Parent Guide →</a></p><hr style="border:0;border-top:1px solid #ddd"><p style="font-size:12px;color:#666">You’re receiving this grown-up newsletter because this address subscribed at Vibe Code Club. <a href="${unsubscribeUrl}">Unsubscribe</a>.</p></div>`,
+      text: `Welcome to Vibe Code Club.\n\nEvery Monday, we’ll send you one playful coding challenge to explore with your kid.\n\nStart with the Parent Guide: https://vibecodekids.com/getting-started\n\nUnsubscribe: ${unsubscribeUrl}`,
+    }),
+  })
+
+  if (!response.ok) {
+    console.error('Welcome email failed', response.status, await response.text())
+    return false
+  }
+  return true
+}
+
+async function subscribe(db: ClubDatabase, request: Request, env: Env) {
   const body = await request.json().catch(() => null) as Record<string, unknown> | null
   if (!body || text(body.website)) return json({ error: 'Invalid signup' }, 400)
 
@@ -467,7 +494,8 @@ async function subscribe(db: ClubDatabase, request: Request) {
   }
 
   const now = new Date().toISOString()
-  const existing = await db.prepare(`SELECT id FROM subscribers WHERE email = ?`).bind(email).first<{ id: string }>()
+  const existing = await db.prepare(`SELECT id, unsubscribe_token AS unsubscribeToken FROM subscribers WHERE email = ?`).bind(email).first<{ id: string; unsubscribeToken: string }>()
+  const unsubscribeToken = existing?.unsubscribeToken || crypto.randomUUID()
   if (existing) {
     await db.prepare(`
       UPDATE subscribers
@@ -479,10 +507,14 @@ async function subscribe(db: ClubDatabase, request: Request) {
       INSERT INTO subscribers (
         id, email, adult_consent, status, unsubscribe_token, source, created_at, updated_at
       ) VALUES (?, ?, 1, 'active', ?, 'website', ?, ?)
-    `).bind(crypto.randomUUID(), email, crypto.randomUUID(), now, now).run()
+    `).bind(crypto.randomUUID(), email, unsubscribeToken, now, now).run()
   }
 
-  return json({ ok: true }, 201)
+  const confirmationSent = await sendWelcomeEmail(email, unsubscribeToken, env).catch((error) => {
+    console.error('Welcome email failed', error)
+    return false
+  })
+  return json({ ok: true, confirmationSent }, 201)
 }
 
 async function unsubscribe(db: ClubDatabase, request: Request) {
@@ -1176,7 +1208,7 @@ export default {
       if (request.method === 'POST' && url.pathname === '/api/vote') return vote(env.DB, request)
       if (request.method === 'POST' && url.pathname === '/api/submissions') return submit(env.DB, env.UPLOADS, request, env, context)
       if (request.method === 'POST' && url.pathname === '/api/challenge-ideas') return submitChallengeIdea(env.DB, request, env, context)
-      if (request.method === 'POST' && url.pathname === '/api/subscribers') return subscribe(env.DB, request)
+      if (request.method === 'POST' && url.pathname === '/api/subscribers') return subscribe(env.DB, request, env)
       if (request.method === 'GET' && url.pathname === '/api/unsubscribe') return unsubscribe(env.DB, request)
       if (request.method === 'POST' && url.pathname === '/api/newsletter/send-weekly') return sendWeeklyChallenge(env.DB, request, env)
       if (request.method === 'GET' && url.pathname === '/api/safety/queue') return claimSafetyScans(env.DB, request, env)
