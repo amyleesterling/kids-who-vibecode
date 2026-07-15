@@ -553,6 +553,7 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
 .starter-prompt-card { padding: 36px; border: 2px solid white; border-radius: 18px; background: var(--paper); color: var(--ink); box-shadow: 9px 9px 0 var(--coral); transform: rotate(-1deg); }
 .starter-prompt-card > div { display: flex; align-items: center; gap: 9px; margin-bottom: 24px; font-family: 'DM Mono'; font-size: 10px; letter-spacing: .08em; }
 .starter-prompt-card p { margin-bottom: 18px; font-size: 16px; line-height: 1.75; }
+.starter-prompt-card .starter-prompt-parent-note { margin-bottom: 22px; padding: 13px 15px; border-left: 4px solid var(--coral); border-radius: 5px; background: rgba(255,204,69,.3); font-size: 14px; line-height: 1.55; }
 .starter-prompt-card mark { padding: 2px 5px; border-radius: 4px; background: var(--yellow); color: inherit; }
 .starter-prompt-card > small { display: block; padding-top: 20px; border-top: 1px dashed var(--line); color: var(--ink-soft); font-size: 11px; line-height: 1.65; }
 .guide-tools { padding-block: 120px 130px; }

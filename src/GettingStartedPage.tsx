@@ -115,10 +115,10 @@ function GettingStartedPage() {
               </ol>
               <aside className="starter-prompt-card">
                 <div><Lightbulb size={20} /><span>COPY, FILL IN, AND GO</span></div>
-                <p>We are making a <b>kid-led project</b> together. Ask the child three short questions, one at a time, about what it should look like and do.</p>
-                <p>Then build a small playable <mark>[game / world / page]</mark> about <mark>[our idea]</mark>. It needs <mark>[feature one]</mark>, <mark>[feature two]</mark>, and one surprise.</p>
-                <p>Use big buttons and simple instructions. Do not add logins, chat, purchases, personal information, or outside links. After the first version, stop and ask what the child wants to change.</p>
-                <small>Tip: keep the child in the director’s chair. AI can type; it should not make every interesting decision.</small>
+                <p className="starter-prompt-parent-note"><b>For parents:</b> Ask your child what their creation should look like and do—colors, style, and anything else they imagine.</p>
+                <p>We are making a <b>kid-led project</b> together.</p>
+                <p>Build a <mark>[game / world / page]</mark> about <mark>[our idea]</mark>. It needs <mark>[feature one]</mark>, <mark>[feature two]</mark>, and one surprise.</p>
+                <small>Tip: keep the child in the director’s chair. Invite them to make as many decisions as possible.</small>
               </aside>
             </div>
           </div>
