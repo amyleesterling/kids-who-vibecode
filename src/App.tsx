@@ -19,7 +19,6 @@ const emptyChallengeIdea: ChallengeIdeaInput = {
 }
 
 const mascotMessages = [
-  'Psst—tap me!',
   'Tiny idea. Big weird.',
   'Tap. Test. Tweak!',
   'I sniff out bugs for snacks.',
@@ -317,7 +316,7 @@ function App() {
   const [mobileNav, setMobileNav] = useState(false)
   const [notice, setNotice] = useState('')
   const [voting, setVoting] = useState('')
-  const [mascotMessage, setMascotMessage] = useState(0)
+  const [mascotMessage, setMascotMessage] = useState<number | null>(null)
 
   useEffect(() => { loadCommunity().then(setCommunity) }, [])
   useEffect(() => {
@@ -392,10 +391,9 @@ function App() {
             <div className="trust-note"><span className="avatar-stack"><i>🐯</i><i>🦊</i><i>🐸</i></span><p><b>Built for kids who create. Guided by grown-ups.</b></p></div>
           </div>
           <div className="mobile-mascot-wrap">
-            <button className="mobile-mascot" type="button" onClick={() => setMascotMessage((current) => (current + 1) % mascotMessages.length)} aria-label="Tap the club cat for another message">
-              <span className="mascot-bubble" key={`bubble-${mascotMessage}`}>{mascotMessages[mascotMessage]}</span>
-              <img key={`cat-${mascotMessage}`} src="/club-cat.webp" alt="A curious, chubby orange club cat" />
-              <small>tap the cat</small>
+            <button className="mobile-mascot" type="button" onClick={() => setMascotMessage((current) => current === null ? 0 : (current + 1) % mascotMessages.length)} aria-label="Club cat">
+              {mascotMessage !== null && <span className="mascot-bubble" key={`bubble-${mascotMessage}`}>{mascotMessages[mascotMessage]}</span>}
+              <img key={`cat-${mascotMessage ?? 'resting'}`} src="/club-cat.webp" alt="A curious, chubby orange club cat" />
             </button>
           </div>
           <ChallengePreview challenge={community.challenge} />
