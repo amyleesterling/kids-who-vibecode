@@ -172,6 +172,11 @@ export const schemaStatements = [
     attempts INTEGER NOT NULL,
     window_started TEXT NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS site_metrics (
+    metric TEXT PRIMARY KEY,
+    value INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL
+  )`,
   `CREATE INDEX IF NOT EXISTS projects_challenge_status_idx ON projects (challenge_id, status)`,
   `CREATE INDEX IF NOT EXISTS votes_project_idx ON votes (project_id)`,
   `CREATE INDEX IF NOT EXISTS votes_fingerprint_idx ON votes (challenge_id, fingerprint_hash)`,

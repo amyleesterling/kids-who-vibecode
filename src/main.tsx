@@ -6,7 +6,7 @@ import LegalPage from './LegalPage'
 import FavoritesPage from './FavoritesPage'
 import ReviewerApp from './ReviewerApp'
 import GettingStartedPage from './GettingStartedPage'
-import AnalyticsConsent from './AnalyticsConsent'
+import VisitCounter from './VisitCounter'
 import { applyPageSeo } from './lib/seo'
 import './styles.css'
 import './admin.css'
@@ -33,7 +33,7 @@ if (alternateHosts.has(window.location.hostname)) {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <Page />
-      {!window.location.pathname.startsWith('/clubhouse-admin') && !window.location.pathname.startsWith('/review') && <AnalyticsConsent />}
+      {!window.location.pathname.startsWith('/clubhouse-admin') && !window.location.pathname.startsWith('/review') && <VisitCounter />}
     </StrictMode>,
   )
 }

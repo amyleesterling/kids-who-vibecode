@@ -114,6 +114,8 @@ type AdminChallengeDraft = {
 }
 
 type Dashboard = {
+  siteVisits: number
+  lastVisitAt?: string | null
   submissions: AdminSubmission[]
   ideas: AdminIdea[]
   subscribers: AdminSubscriber[]
@@ -488,6 +490,7 @@ function AdminApp() {
       </header>
 
       <section className="admin-schedule-overview" aria-label="Challenge schedule overview">
+        <article className="schedule-card visits"><span><Users size={17} /> Anonymous visits</span><h2>{(dashboard?.siteVisits || 0).toLocaleString()}</h2><b>Approximate browser sessions</b><small>{dashboard?.lastVisitAt ? `Latest visit ${dateLabel(dashboard.lastVisitAt)}` : 'Counting starts now'}</small></article>
         <article className="schedule-card current"><span><Clock3 size={17} /> Building now</span><h2>{dashboard?.schedule.currentChallenge?.title || 'No active challenge'}</h2>{dashboard?.schedule.currentChallenge && <><b>{remainingLabel(dashboard.schedule.currentChallenge.closesAt, clock)} left to submit</b><small>Closes {dateLabel(dashboard.schedule.currentChallenge.closesAt)}</small></>}</article>
         <article className="schedule-card voting"><span><Heart size={17} /> Voting now</span><h2>{dashboard?.schedule.votingChallenge?.title || 'Voting waits for Monday'}</h2>{dashboard?.schedule.votingChallenge ? <><b>{remainingLabel(dashboard.schedule.votingChallenge.votingClosesAt, clock)} left to vote</b><small>Closes {dateLabel(dashboard.schedule.votingChallenge.votingClosesAt)}</small></> : dashboard?.schedule.currentChallenge && <><b>Delayed for a fair start</b><small>Opens {dateLabel(dashboard.schedule.currentChallenge.votingOpensAt)}</small></>}</article>
         <article className="schedule-card next"><span><CalendarDays size={17} /> Up next</span><h2>{dashboard?.schedule.nextChallenge?.title || 'Summer finale'}</h2>{dashboard?.schedule.nextChallenge && <><b>Auto-launches in {remainingLabel(dashboard.schedule.nextChallenge.opensAt, clock)}</b><small>{dateLabel(dashboard.schedule.nextChallenge.opensAt)}</small></>}</article>
