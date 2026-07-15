@@ -72,35 +72,47 @@ const escapeHtml = (value: unknown) => String(value ?? '')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;')
 
-async function sendOwnerNotification(env: Env, kind: 'project' | 'idea') {
+type OwnerNotification = {
+  kind: 'project' | 'idea'
+  id: string
+  title: string
+  creator: string
+  grownupEmail: string
+}
+
+async function sendOwnerNotification(env: Env, notification: OwnerNotification) {
   const recipient = validEmail(env.OWNER_NOTIFICATION_EMAIL)
-  if (!recipient) return
+  if (!recipient || !env.RESEND_API_KEY || !env.NEWSLETTER_FROM_EMAIL) {
+    console.error('Owner notification email is not configured')
+    return false
+  }
 
-  const project = kind === 'project'
-  const form = new URLSearchParams({
-    _subject: project
-      ? 'New Vibe Code Kids project waiting for review'
-      : 'New Vibe Code Kids challenge idea waiting for review',
-    _template: 'table',
-    _captcha: 'false',
-    _url: 'https://vibecodekids.com/clubhouse-admin',
-    Alert: project ? 'A new project was submitted.' : 'A new challenge idea was submitted.',
-    'Next step': 'Open the private Clubhouse Admin to review it.',
-    Clubhouse: 'https://vibecodekids.com/clubhouse-admin',
-    'Submitted at': new Date().toISOString(),
-  })
-
-  const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, {
+  const project = notification.kind === 'project'
+  const label = project ? 'project submission' : 'challenge idea'
+  const subject = project
+    ? `New project submission: ${notification.title}`
+    : `New challenge idea: ${notification.title}`
+  const clubhouseUrl = `https://vibecodekids.com/clubhouse-admin?tab=${project ? 'submissions' : 'ideas'}`
+  const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      accept: 'application/json',
-      'content-type': 'application/x-www-form-urlencoded',
-      origin: 'https://vibecodekids.com',
-      referer: 'https://vibecodekids.com/',
+      authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'content-type': 'application/json',
+      'idempotency-key': `owner-${notification.kind}-${notification.id}`,
     },
-    body: form.toString(),
+    body: JSON.stringify({
+      from: env.NEWSLETTER_FROM_EMAIL,
+      to: [recipient],
+      subject,
+      html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#211d38"><p style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#ff5b55">New ${label}</p><h1 style="font-size:32px;line-height:1.1">${escapeHtml(notification.title)}</h1><p style="font-size:16px;line-height:1.6"><strong>Submitted by:</strong> ${escapeHtml(notification.creator)}<br><strong>Grown-up contact:</strong> ${escapeHtml(notification.grownupEmail)}</p><p style="margin:30px 0"><a href="${clubhouseUrl}" style="background:#211d38;color:#fff;padding:14px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Review in the Clubhouse →</a></p><p style="font-size:12px;color:#666">This private alert was sent because a new ${label} arrived at Vibe Code Kids.</p></div>`,
+      text: `New ${label}\n\n${notification.title}\nSubmitted by: ${notification.creator}\nGrown-up contact: ${notification.grownupEmail}\n\nReview it in the Clubhouse: ${clubhouseUrl}`,
+    }),
   })
-  if (!response.ok) console.error('Owner notification delivery failed', response.status)
+  if (!response.ok) {
+    console.error('Owner notification delivery failed', response.status, await response.text())
+    return false
+  }
+  return true
 }
 
 const adminCookieName = 'clubhouse_admin'
@@ -422,7 +434,13 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request, 
     if (imageKey) await uploads.delete(imageKey).catch(() => undefined)
     throw error
   }
-  context.waitUntil(sendOwnerNotification(env, 'project').catch((error) => console.error('Owner notification failed', error)))
+  context.waitUntil(sendOwnerNotification(env, {
+    kind: 'project',
+    id,
+    title: projectTitle,
+    creator: `${childNickname} · age ${ageBand}`,
+    grownupEmail: parentEmail,
+  }).catch((error) => console.error('Owner notification failed', error)))
   return json({ ok: true }, 201)
 }
 
@@ -443,16 +461,23 @@ async function submitChallengeIdea(db: ClubDatabase, request: Request, env: Env,
     return json({ error: 'Please complete every required field, permission box, and terms box.' }, 400)
   }
 
+  const id = crypto.randomUUID()
   await db.prepare(`
     INSERT INTO challenge_ideas (
       id, idea_title, idea_prompt, starter_spark, creator_nickname,
       creator_group, grownup_email, consent, terms_accepted, terms_version, status, created_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, ?, 'pending', ?)
   `).bind(
-    crypto.randomUUID(), ideaTitle, ideaPrompt, starterSpark, creatorNickname,
+    id, ideaTitle, ideaPrompt, starterSpark, creatorNickname,
     creatorGroup, grownupEmail.toLowerCase(), legalTermsVersion, new Date().toISOString(),
   ).run()
-  context.waitUntil(sendOwnerNotification(env, 'idea').catch((error) => console.error('Owner notification failed', error)))
+  context.waitUntil(sendOwnerNotification(env, {
+    kind: 'idea',
+    id,
+    title: ideaTitle,
+    creator: `${creatorNickname} · ${creatorGroup}`,
+    grownupEmail: grownupEmail.toLowerCase(),
+  }).catch((error) => console.error('Owner notification failed', error)))
   return json({ ok: true }, 201)
 }
 
