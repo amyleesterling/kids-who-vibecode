@@ -76,25 +76,27 @@ function ChallengePreview({ challenge }: { challenge: Challenge }) {
   }, [challenge])
 
   return (
-    <aside className="challenge-preview" aria-label="This week's challenge">
-      <div className="window-bar"><span /><span /><span /><small>THIS_WEEK.vibe</small></div>
-      <div className="challenge-art hero-makers-art">
-        <img className="hero-makers-image" src="/hero-kids-banner.webp" alt="Two kids creating together on a laptop with the club cat" />
-      </div>
-      <div className="challenge-preview-copy">
-        <span className="kicker">{challenge.weekLabel}</span>
-        <h2>{challenge.title}</h2>
-        <div className="countdown-block" aria-label={`${remaining.days} days, ${remaining.hours} hours, ${remaining.minutes} minutes, and ${remaining.seconds} seconds left`}>
-          <div className="countdown-progress" aria-hidden="true"><span style={{ width: `${remaining.remainingPercent}%` }} /></div>
-          <div className="countdown">
-            <span><b>{String(remaining.days).padStart(2, '0')}</b> days</span>
-            <em>:</em><span><b>{String(remaining.hours).padStart(2, '0')}</b> hrs</span>
-            <em>:</em><span><b>{String(remaining.minutes).padStart(2, '0')}</b> min</span>
-            <em>:</em><span><b>{String(remaining.seconds).padStart(2, '0')}</b> sec</span>
+    <a className="challenge-preview-link" href="#challenge" aria-label={`View this week's challenge: ${challenge.title}`}>
+      <aside className="challenge-preview">
+        <div className="window-bar"><span /><span /><span /><small>THIS_WEEK.vibe</small></div>
+        <div className="challenge-art hero-makers-art">
+          <img className="hero-makers-image" src="/hero-kids-banner.webp" alt="Two kids creating together on a laptop with the club cat" />
+        </div>
+        <div className="challenge-preview-copy">
+          <span className="kicker">{challenge.weekLabel}</span>
+          <h2>{challenge.title}</h2>
+          <div className="countdown-block" aria-label={`${remaining.days} days, ${remaining.hours} hours, ${remaining.minutes} minutes, and ${remaining.seconds} seconds left`}>
+            <div className="countdown-progress" aria-hidden="true"><span style={{ width: `${remaining.remainingPercent}%` }} /></div>
+            <div className="countdown">
+              <span><b>{String(remaining.days).padStart(2, '0')}</b> days</span>
+              <em>:</em><span><b>{String(remaining.hours).padStart(2, '0')}</b> hrs</span>
+              <em>:</em><span><b>{String(remaining.minutes).padStart(2, '0')}</b> min</span>
+              <em>:</em><span><b>{String(remaining.seconds).padStart(2, '0')}</b> sec</span>
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </a>
   )
 }
 

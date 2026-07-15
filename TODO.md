@@ -15,3 +15,11 @@
 - [ ] Have the Terms, Safety & Privacy Notice reviewed by a qualified lawyer before broad promotion.
 - [ ] Connect and test weekly challenge email delivery after the sending domain is verified.
 - [ ] Run a full mobile submission, moderation, gallery, voting, and winner-reveal test before the first public voting week.
+
+## Chinese-language edition
+
+- [ ] Launch a Simplified Chinese version with localized navigation, challenges, gallery, forms, safety and legal copy, and email signup.
+- [ ] Rewrite the Chinese parent guide around AI tools and models that are actually available in mainland China; verify current access, age requirements, terms, and regional restrictions at launch.
+- [ ] Research locally available candidates such as DeepSeek, Qwen/Tongyi, Kimi, Doubao, ERNIE Bot, Tencent Hunyuan, and GLM, then verify each official product and its suitability for kids and families before recommending it.
+- [ ] Re-check OpenAI and Anthropic's official supported-country policies at launch, and do not recommend VPN or unsupported-account workarounds.
+- [ ] Have a native Simplified Chinese reviewer check tone, terminology, safety language, forms, and legal copy before launch.
