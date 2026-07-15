@@ -17,6 +17,7 @@ New grown-ups can use the **[Parent Guide](https://vibecodekids.com/getting-star
 ## What is included
 
 - A responsive weekly challenge landing page
+- An original, animated chubby-cat mascot with tap-to-change encouragement on mobile
 - A public, beginner-friendly Getting Started guide for parents who have never vibe coded
 - Project gallery with clickable playable previews, one favorite vote per browser, and shared weekly totals
 - A public Clubhouse Favorites page with each finished week’s winner and two runners-up

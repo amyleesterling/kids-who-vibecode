@@ -18,6 +18,13 @@ const emptyChallengeIdea: ChallengeIdeaInput = {
   grownupEmail: '', consent: false, termsAccepted: false,
 }
 
+const mascotMessages = [
+  'Psst—tap me!',
+  'Tiny idea. Big weird.',
+  'Tap. Test. Tweak!',
+  'I sniff out bugs for snacks.',
+]
+
 function timeLeft(iso: string) {
   const milliseconds = Math.max(0, new Date(iso).getTime() - Date.now())
   const days = Math.floor(milliseconds / 86_400_000)
@@ -315,6 +322,7 @@ function App() {
   const [mobileNav, setMobileNav] = useState(false)
   const [notice, setNotice] = useState('')
   const [voting, setVoting] = useState('')
+  const [mascotMessage, setMascotMessage] = useState(0)
 
   useEffect(() => { loadCommunity().then(setCommunity) }, [])
   useEffect(() => {
@@ -387,6 +395,13 @@ function App() {
             <p className="hero-lede">A new creative coding adventure every week. Build it your way, share it with the club, and cheer on other young makers.</p>
             <div className="hero-actions"><a className="button button-coral" href="#challenge">See this week’s challenge <ArrowRight size={19} /></a><button className="text-link" onClick={openSubmission}>I made something! <span>↗</span></button></div>
             <div className="trust-note"><span className="avatar-stack"><i>🐯</i><i>🦊</i><i>🐸</i></span><p><b>Built for kids who create. Guided by grown-ups.</b></p></div>
+          </div>
+          <div className="mobile-mascot-wrap">
+            <button className="mobile-mascot" type="button" onClick={() => setMascotMessage((current) => (current + 1) % mascotMessages.length)} aria-label="Tap the club cat for another message">
+              <span className="mascot-bubble" key={`bubble-${mascotMessage}`}>{mascotMessages[mascotMessage]}</span>
+              <img key={`cat-${mascotMessage}`} src="/club-cat.webp" alt="A curious, chubby orange club cat" />
+              <small>tap the cat</small>
+            </button>
           </div>
           <ChallengePreview challenge={community.challenge} />
         </section>
