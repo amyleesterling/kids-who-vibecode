@@ -390,9 +390,9 @@ function App() {
       <main>
         <section className="hero page-shell">
           <div className="hero-copy">
-            <div className="eyebrow-pill"><Sparkles size={14} /> A weekly vibe coding club for kids</div>
+            <div className="eyebrow-pill"><Sparkles size={14} /> Summer 2026 · 8 challenges through Labor Day</div>
             <h1 className="hero-title-direct">New challenge each week.<br />Share your build.<br /><span>Get inspired by kids around the world.</span></h1>
-            <p className="hero-lede">Vibe Code Kids is a weekly creative coding club for kids, with grown-ups helping them share safely.</p>
+            <p className="hero-lede">Vibe Code Kids is a free creative coding club for kids, with guidance from their grown-ups.</p>
             <div className="hero-actions"><a className="button button-coral" href="#challenge">See this week’s challenge <ArrowRight size={19} /></a><button className="text-link" onClick={openSubmission}>I made something! <span>↗</span></button></div>
             <div className="trust-note"><span className="avatar-stack"><i>🐯</i><i>🦊</i><i>🐸</i></span><p><b>Built for kids who create. Guided by grown-ups.</b></p></div>
           </div>
