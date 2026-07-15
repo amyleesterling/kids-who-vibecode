@@ -390,9 +390,9 @@ function App() {
       <main>
         <section className="hero page-shell">
           <div className="hero-copy">
-            <div className="eyebrow-pill"><Sparkles size={14} /> Summer 2026 · 8 challenges through Labor Day</div>
+            <div className="eyebrow-pill"><Sparkles size={14} /> A weekly vibe coding club for kids</div>
             <h1>Make weird.<br />Make wonderful.<br /><span>Make it yours.</span></h1>
-            <p className="hero-lede">A new creative coding adventure every week. Build it your way, share it with the club, and cheer on other young makers.</p>
+            <p className="hero-lede">Every Monday brings a new creative coding challenge for kids. Build with AI and any coding tools, submit with a grown-up, explore the gallery, and vote for a Clubhouse Favorite.</p>
             <div className="hero-actions"><a className="button button-coral" href="#challenge">See this week’s challenge <ArrowRight size={19} /></a><button className="text-link" onClick={openSubmission}>I made something! <span>↗</span></button></div>
             <div className="trust-note"><span className="avatar-stack"><i>🐯</i><i>🦊</i><i>🐸</i></span><p><b>Built for kids who create. Guided by grown-ups.</b></p></div>
           </div>
