@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 const measurementId = 'G-CKMNKY2T5N'
 const consentKey = 'vck_analytics_consent'
+const mobileQuery = '(max-width: 720px), (pointer: coarse)'
 
 type AnalyticsChoice = 'granted' | 'denied'
 
@@ -48,20 +49,35 @@ function denyAnalytics() {
 }
 
 export default function AnalyticsConsent() {
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia(mobileQuery).matches)
   const [choice, setChoice] = useState<AnalyticsChoice | null>(() => {
     const saved = window.localStorage.getItem(consentKey)
     return saved === 'granted' || saved === 'denied' ? saved : null
   })
 
   useEffect(() => {
+    const media = window.matchMedia(mobileQuery)
+    const update = () => setIsMobile(media.matches)
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+
+  useEffect(() => {
+    if (isMobile) {
+      denyAnalytics()
+      document.getElementById('google-analytics')?.remove()
+      return
+    }
     if (choice === 'granted') loadAnalytics()
-  }, [choice])
+  }, [choice, isMobile])
 
   function saveChoice(nextChoice: AnalyticsChoice) {
     window.localStorage.setItem(consentKey, nextChoice)
     if (nextChoice === 'denied') denyAnalytics()
     setChoice(nextChoice)
   }
+
+  if (isMobile) return null
 
   if (choice) {
     return <button className="analytics-settings" type="button" onClick={() => setChoice(null)}>Analytics settings</button>
