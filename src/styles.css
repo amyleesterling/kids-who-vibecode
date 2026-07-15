@@ -508,6 +508,7 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
 .ai-tool-card > b { font-size: 14px; }.ai-tool-card p { color: var(--ink-soft); font-size: 13px; }
 .ai-tool-card a, .builder-grid a, .creative-tool-grid a, .github-links a, .age-safety a { display: inline-flex; align-items: center; gap: 6px; margin-top: auto; font-size: 11px; font-weight: 800; text-decoration: underline; text-decoration-color: var(--coral); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 .builder-heading { margin: 100px 0 40px; }
+.builder-heading > p { max-width: 760px; color: var(--ink-soft); font-size: 14px; }
 .builder-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
 .builder-grid article { padding: 28px; border: 1.5px solid var(--ink); border-radius: 15px; background: var(--paper-deep); }
 .builder-icon { display: grid; place-items: center; width: 50px; height: 50px; margin-bottom: 24px; border: 2px solid var(--ink); border-radius: 13px; background: var(--yellow); box-shadow: 3px 3px 0 var(--ink); }
@@ -552,6 +553,8 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
 .safety-checklist li b { font-size: 12px; }.safety-checklist li span { color: var(--ink-soft); font-size: 11px; }
 .age-safety { display: grid; grid-template-columns: 60px 1fr; gap: 28px; margin-block: 100px; padding: 38px; border: 2px solid var(--ink); border-radius: 17px; background: #fff3c9; box-shadow: 7px 7px 0 var(--coral); }
 .age-safety > svg { color: var(--coral); }.age-safety h2 { margin: 10px 0 12px; font-size: 34px; }.age-safety p { color: var(--ink-soft); font-size: 13px; }.age-safety > div > div { display: flex; flex-wrap: wrap; gap: 20px; }
+.more-tools-section { padding-block: 20px 110px; }
+.more-tools-section .builder-heading { margin: 0 0 40px; }
 .guide-final { padding-block: 75px; border-top: 2px solid var(--ink); background: var(--ink); color: white; }
 .guide-final .page-shell { display: grid; grid-template-columns: 70px 1fr auto; gap: 28px; align-items: center; }
 .guide-final .page-shell > span { display: grid; place-items: center; width: 60px; height: 60px; border: 2px solid white; border-radius: 50%; background: var(--purple); }
@@ -573,7 +576,7 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
   .guide-definition h2, .guide-heading h2, .builder-heading h2 { font-size: 42px; }.guide-definition > div:last-child > p { font-size: 15px; }
   .model-tool-note { grid-template-columns: 1fr; }.model-tool-note > p { grid-column: auto; }.model-tool-note > div { font-size: 13px; }
   .first-build-section { padding-block: 75px; }.guide-heading { display: block; margin-bottom: 35px; }.guide-heading > p { margin-top: 16px; }.first-build-grid { gap: 45px; }.starter-prompt-card { padding: 27px 22px; transform: none; }.starter-prompt-card p { font-size: 14px; }
-  .ai-tool-grid, .builder-grid, .creative-tool-grid { grid-template-columns: 1fr; }.ai-tool-card { min-height: auto; }.builder-grid p { min-height: 0; }.builder-heading { margin-top: 75px; }.creative-tool-grid article:last-child { grid-column: auto; }.creative-tools-section { padding-block: 75px; }
+  .ai-tool-grid, .builder-grid, .creative-tool-grid { grid-template-columns: 1fr; }.ai-tool-card { min-height: auto; }.builder-grid p { min-height: 0; }.builder-heading { margin-top: 75px; }.more-tools-section { padding-block: 10px 75px; }.more-tools-section .builder-heading { margin-top: 0; }.creative-tool-grid article:last-child { grid-column: auto; }.creative-tools-section { padding-block: 75px; }
   .github-guide { padding-block: 75px; }.github-window { box-shadow: 7px 7px 0 var(--ink); }.github-window-body { padding: 30px 20px; }.github-intro { grid-template-columns: 1fr; }.github-intro h2 { font-size: 42px; }.github-terms { grid-template-columns: 1fr; }
   .grownup-role-section { padding-block: 75px; }.grownup-role-grid { gap: 50px; }.grownup-role-grid > div > h2 { font-size: 52px; }.role-columns { grid-template-columns: 1fr; }.safety-checklist { padding: 26px 21px; transform: none; }
   .age-safety { grid-template-columns: 1fr; margin-block: 70px; padding: 27px 21px; }.age-safety h2 { font-size: 30px; }

@@ -27,18 +27,18 @@ const tools = [
 
 const builders = [
   {
-    name: 'Canva Code', label: 'Easiest colorful start', icon: <WandSparkles />,
-    copy: 'Describe a quiz, mini-game, or interactive page and customize it inside Canva. Great when design is part of the fun.',
-    href: 'https://www.canva.com/newsroom/news/canva-ai-launches/',
-  },
-  {
-    name: 'Replit Agent', label: 'More app-building power', icon: <Rocket />,
-    copy: 'Describe an app, see it in a live preview, ask for fixes, and publish a link. A grown-up should review the plan and test the result.',
+    name: 'Replit Agent', label: 'AI app builder', icon: <Rocket />,
+    copy: 'A prompt-driven vibe-coding workspace that can build, preview, fix, and publish an app. It is powerful, but not required for a first project.',
     href: 'https://docs.replit.com/build/your-first-app',
   },
   {
-    name: 'Scratch', label: 'See how the logic works', icon: <Code2 />,
-    copy: 'Drag-and-drop blocks make the program visible. Scratch is designed mainly for ages 8–16; younger children often use it with a parent.',
+    name: 'Canva Code', label: 'Prompt + design', icon: <WandSparkles />,
+    copy: 'Canva’s prompt-driven coding tool makes interactive pages, games, and apps that you can also edit like a Canva design. It counts as vibe coding.',
+    href: 'https://www.canva.com/newsroom/news/Canva-Code/',
+  },
+  {
+    name: 'Scratch', label: 'Visual coding, not AI', icon: <Code2 />,
+    copy: 'Scratch is not vibe coding by itself. Its drag-and-drop blocks can still help kids see, change, and understand the logic behind a project.',
     href: 'https://scratch.mit.edu/help/parents/',
   },
 ]
@@ -100,14 +100,14 @@ function GettingStartedPage() {
           <div className="page-shell">
             <div className="guide-heading">
               <div><span className="kicker">The 20-minute experiment</span><h2>Make one tiny thing together.</h2></div>
-              <p>The goal is a complete loop—not a perfect project.</p>
+              <p>The goal is something that you can tinker with, not a perfect project.</p>
             </div>
             <div className="first-build-grid">
               <ol className="first-build-steps">
                 <li><span>01</span><div><h3>Let the kid choose</h3><p>A pet rock game? An alien lunch menu? A button that makes frogs rain? Small and specific wins.</p></div></li>
-                <li><span>02</span><div><h3>Pick one tool</h3><p>Start with ChatGPT, Claude, Canva Code, or Scratch. Do not open five tools at once.</p></div></li>
-                <li><span>03</span><div><h3>Describe, then build</h3><p>Use the starter prompt. Let the child answer the creative questions.</p></div></li>
-                <li><span>04</span><div><h3>Click everything</h3><p>Try the buttons, make a weird choice, refresh the page, and look at it on a phone.</p></div></li>
+                <li><span>02</span><div><h3>Pick one tool</h3><p>Start with ChatGPT or Claude. Do not open five tools at once.</p></div></li>
+                <li><span>03</span><div><h3>Describe, then build</h3><p>You craft the starter prompt. Let your child answer the creative questions. Ask the AI to give you a link to the working prototype so that you can test it.</p></div></li>
+                <li><span>04</span><div><h3>Click everything</h3><p>Try the buttons, visit and try everything in your build, refresh the page, and look at it on a phone.</p></div></li>
                 <li><span>05</span><div><h3>Ask for one change</h3><p>“Make the moon bounce” is better than “make it better.” Repeat while it is still fun.</p></div></li>
               </ol>
               <aside className="starter-prompt-card">
@@ -135,10 +135,6 @@ function GettingStartedPage() {
               </article>)}
             </div>
 
-            <div className="builder-heading"><span className="kicker">Places to build</span><h2>Pick the kind of workspace that feels fun.</h2></div>
-            <div className="builder-grid">
-              {builders.map((builder) => <article key={builder.name}><span className="builder-icon">{builder.icon}</span><small>{builder.label}</small><h3>{builder.name}</h3><p>{builder.copy}</p><a href={builder.href} target="_blank" rel="noreferrer">Learn more <ExternalLink size={14} /></a></article>)}
-            </div>
           </div>
         </section>
 
@@ -161,15 +157,15 @@ function GettingStartedPage() {
           <div className="github-window">
             <div className="window-bar"><span /><span /><span /><small>github_explained.txt</small></div>
             <div className="github-window-body">
-              <div className="github-intro"><Github size={48} /><div><span className="kicker">The mysterious “repo” box</span><h2>GitHub is a project shelf plus a time machine.</h2><p>A GitHub <b>repository</b> (usually called a “repo”) is a folder containing the project’s code, files, and saved history. If something breaks, that history helps you see what changed or return to an earlier version.</p></div></div>
+              <div className="github-intro"><Github size={48} /><div><span className="kicker">The mysterious “repo” box</span><h2>GitHub is where the project lives and gets updated.</h2><p>A GitHub <b>repository</b> (usually called a “repo”) is a folder containing the project’s code, files, and saved history. A grown-up can connect that repo to an AI coding workspace, review each proposed update, and keep the public site current.</p></div></div>
               <div className="github-terms">
-                <article><span>README</span><h3>The project’s label</h3><p>What it is, how to try it, and anything another person should know.</p></article>
-                <article><span>COMMIT</span><h3>A named checkpoint</h3><p>A saved group of changes, like “made the frog jump.”</p></article>
-                <article><span>REPO LINK</span><h3>See the ingredients</h3><p>Shows the files and code. It is not always the playable experience.</p></article>
-                <article><span>LIVE LINK</span><h3>Try the finished thing</h3><p>GitHub Pages can turn HTML, CSS, and JavaScript in a repo into a public website.</p></article>
+                <article><span>01</span><h3>Sign in or make an account</h3><p>The grown-up creates a free GitHub account, verifies the email address, and signs in.</p></article>
+                <article><span>02</span><h3>Create the repository</h3><p>Make a new repo for the project and initialize it with a README.</p></article>
+                <article><span>03</span><h3>Give the AI the repo link</h3><p>In a coding workspace that can access GitHub, paste the repository link and authorize access if asked.</p></article>
+                <article><span>04</span><h3>Review and merge updates</h3><p>Ask the AI to propose changes in a pull request. Review the new code, then merge it on GitHub to update the connected public site.</p></article>
               </div>
               <div className="github-warning"><ShieldCheck /><p><b>Public means public.</b> Never put a child’s full name, school, location, private photo, password, API key, or <code>.env</code> file in a public repository. GitHub accounts are for people 13+ (or older where local law requires).</p></div>
-              <div className="github-links"><a href="https://docs.github.com/en/repositories/creating-and-managing-repositories/about-repositories" target="_blank" rel="noreferrer">What is a repository? <ExternalLink size={14} /></a><a href="https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages" target="_blank" rel="noreferrer">What is GitHub Pages? <ExternalLink size={14} /></a></div>
+              <div className="github-links"><a href="https://docs.github.com/en/get-started/start-your-journey/creating-an-account-on-github" target="_blank" rel="noreferrer">Create an account <ExternalLink size={14} /></a><a href="https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository" target="_blank" rel="noreferrer">Create a repository <ExternalLink size={14} /></a><a href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request" target="_blank" rel="noreferrer">Create a pull request <ExternalLink size={14} /></a><a href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request" target="_blank" rel="noreferrer">Merge a pull request <ExternalLink size={14} /></a></div>
             </div>
           </div>
         </section>
@@ -186,8 +182,8 @@ function GettingStartedPage() {
               </div>
             </div>
             <aside className="safety-checklist">
-              <span className="kicker">Before you share</span><h3>The five-click grown-up check</h3>
-              <ol><li><b>Play it from the beginning.</b><span>Try every button and strange choice.</span></li><li><b>Read every word.</b><span>AI can invent surprising or incorrect text.</span></li><li><b>Look for personal clues.</b><span>No names, faces, voices, school, or location.</span></li><li><b>Check every link.</b><span>Make sure it opens the intended project.</span></li><li><b>Open it on a phone.</b><span>Buttons should be tappable and the page usable.</span></li></ol>
+              <span className="kicker">Before you share</span><h3>The four-click grown-up check</h3>
+              <ol><li><b>Play it from the beginning.</b><span>Try every button and strange choice.</span></li><li><b>Read every word.</b><span>AI can invent surprising or incorrect text.</span></li><li><b>Check every link.</b><span>Make sure it opens the intended project.</span></li><li><b>Open it on a phone.</b><span>Buttons should be tappable and the page usable.</span></li></ol>
             </aside>
           </div>
         </section>
@@ -199,8 +195,15 @@ function GettingStartedPage() {
           </div>
         </section>
 
+        <section className="more-tools-section page-shell">
+          <div className="builder-heading"><span className="kicker">More tools to try</span><h2>Explore these after your first project.</h2><p>None of these is required. Replit Agent and Canva Code are prompt-driven vibe-coding tools; Scratch is a visual programming workspace that can help kids understand the logic.</p></div>
+          <div className="builder-grid">
+            {builders.map((builder) => <article key={builder.name}><span className="builder-icon">{builder.icon}</span><small>{builder.label}</small><h3>{builder.name}</h3><p>{builder.copy}</p><a href={builder.href} target="_blank" rel="noreferrer">Learn more <ExternalLink size={14} /></a></article>)}
+          </div>
+        </section>
+
         <section className="guide-final">
-          <div className="page-shell"><span><Play /></span><div><small>READY?</small><h2>Start tiny. Let it be weird.</h2><p>A working button that makes a potato sing is a perfectly excellent first project.</p></div><a className="button button-coral" href="/#challenge">See this week’s challenge <ArrowRight size={18} /></a></div>
+          <div className="page-shell"><span><Play /></span><div><small>READY?</small><h2>Start small. Have fun!</h2><p>A working button that makes a potato sing is a perfectly excellent first project.</p></div><a className="button button-coral" href="/#challenge">See this week’s challenge <ArrowRight size={18} /></a></div>
         </section>
       </main>
 
