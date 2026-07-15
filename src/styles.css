@@ -273,6 +273,7 @@ h1, h2, h3, p { margin-top: 0; }
 .newsletter-success div { display: grid; gap: 4px; }
 .newsletter-success b { font-size: 15px; }
 .newsletter-success span { font-size: 10px; color: var(--ink-soft); }
+.newsletter-success a { color: var(--ink); font-weight: 800; text-decoration: underline; text-underline-offset: 2px; }
 
 .grownups-section { background: var(--blue); border-block: 2px solid var(--ink); padding-block: 95px; }
 .grownups-layout { display: grid; grid-template-columns: .75fr 1.25fr; gap: 90px; align-items: center; }

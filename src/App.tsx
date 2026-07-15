@@ -338,7 +338,7 @@ function WeeklySignup() {
           <p>One playful coding prompt every Monday. No kid emails, no spam, and one-click unsubscribe anytime.</p>
         </div>
         {status === 'done' ? (
-          <div className="newsletter-success" role="status"><Check size={25} /><div><b>You’re on the grown-up list!</b><span>The next challenge will head your way.</span></div></div>
+          <div className="newsletter-success" role="status"><Check size={25} /><div><b>You’re on the grown-up list!</b><span>The next challenge will head your way. New here? <a href="/getting-started">Read the Parent Guide / Getting started</a>.</span></div></div>
         ) : (
           <form className="newsletter-form" onSubmit={handleSubmit}>
             <label htmlFor="newsletter-email">Grown-up email</label>
@@ -472,8 +472,6 @@ function App() {
               <span className="tape" />
               <h3>Need a spark?</h3>
               <ul>{community.challenge.starterIdeas.map((idea, index) => <li key={idea}><span>0{index + 1}</span>{idea}</li>)}</ul>
-              <div className="tool-row">{community.challenge.tools.map((tool) => <span key={tool}>{tool}</span>)}</div>
-              <small>No required tool. No “right” answer.</small>
             </div>
           </div>
         </section>
