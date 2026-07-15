@@ -178,15 +178,26 @@ async function initialize(db: ClubDatabase) {
   await seedDatabase(db)
 }
 
-async function recordAnonymousVisit(db: ClubDatabase) {
+async function recordAnonymousVisit(db: ClubDatabase, request: Request) {
   const now = new Date().toISOString()
-  await db.prepare(`
+  const countryCode = text((request as Request & { cf?: { country?: string } }).cf?.country).toUpperCase()
+  const statements = [db.prepare(`
     INSERT INTO site_metrics (metric, value, updated_at)
     VALUES ('anonymous_visits', 1, ?)
     ON CONFLICT(metric) DO UPDATE SET
       value = value + 1,
       updated_at = excluded.updated_at
-  `).bind(now).run()
+  `).bind(now)]
+  if (/^[A-Z]{2}$/.test(countryCode) && countryCode !== 'XX') {
+    statements.push(db.prepare(`
+      INSERT INTO site_metrics (metric, value, updated_at)
+      VALUES (?, 1, ?)
+      ON CONFLICT(metric) DO UPDATE SET
+        value = value + 1,
+        updated_at = excluded.updated_at
+    `).bind(`country:${countryCode}`, now))
+  }
+  await db.batch(statements)
   return new Response(null, { status: 204, headers: { 'cache-control': 'no-store' } })
 }
 
@@ -874,6 +885,13 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
   const visitMetric = await db.prepare(`
     SELECT value, updated_at AS updatedAt FROM site_metrics WHERE metric = 'anonymous_visits'
   `).first<{ value: number; updatedAt: string }>()
+  const { results: visitCountryRows } = await db.prepare(`
+    SELECT SUBSTR(metric, 9) AS countryCode, value AS count
+    FROM site_metrics
+    WHERE metric LIKE 'country:%'
+    ORDER BY value DESC, metric
+    LIMIT 20
+  `).all<{ countryCode: string; count: number }>()
   const { results: submissions } = await db.prepare(`
     SELECT s.id, challenge_id AS challengeId, child_nickname AS childNickname,
       age_band AS ageBand, country_code AS countryCode, project_title AS projectTitle, description, repo_url AS repoUrl,
@@ -963,6 +981,7 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
   return json({
     siteVisits: Number(visitMetric?.value || 0),
     lastVisitAt: visitMetric?.updatedAt || null,
+    visitCountries: visitCountryRows.map((item) => ({ countryCode: item.countryCode, count: Number(item.count) })),
     submissions: submissions.map((item) => ({
       ...item,
       childLed: Boolean(item.childLed),
@@ -1245,7 +1264,7 @@ export default {
     try {
       await initialize(env.DB)
       if (request.method === 'GET' && url.pathname === '/api/community') return community(env.DB, request)
-      if (request.method === 'POST' && url.pathname === '/api/visits') return recordAnonymousVisit(env.DB)
+      if (request.method === 'POST' && url.pathname === '/api/visits') return recordAnonymousVisit(env.DB, request)
       if (request.method === 'GET' && url.pathname === '/api/favorites') return favorites(env.DB)
       if (request.method === 'GET' && url.pathname.startsWith('/api/project-images/')) return projectImage(env.DB, env.UPLOADS, request)
       if (request.method === 'POST' && url.pathname === '/api/vote') return vote(env.DB, request)
