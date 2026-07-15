@@ -97,9 +97,11 @@ function LegalPage() {
               <ul>
                 <li><b>Public project information:</b> a child’s nickname, age group, project title and description, approved image, project links, and favorite totals.</li>
                 <li><b>Private grown-up information:</b> parent or guardian name and email, permissions and attestations, challenge-idea contact email, and newsletter email.</li>
-                <li><b>Basic technical information:</b> a random browser voting identifier stored on the device, server request information used for security and reliability, and an admin session cookie used only for the private clubhouse.</li>
+                <li><b>Basic technical information:</b> a random browser voting identifier stored on the device, server request information used for security and reliability, an optional analytics choice stored on the device, and an admin session cookie used only for the private clubhouse.</li>
               </ul>
               <p>We use this information to review and display approved projects, operate one-vote-per-browser favorites, communicate with adults, send requested weekly emails, maintain safety, prevent abuse, and operate the service. We do not sell personal information or use behavioral advertising.</p>
+              <h3>Optional website analytics</h3>
+              <p>Google Analytics remains off unless a visitor chooses “Allow analytics.” If allowed, it may receive public page views, general browser and device information, approximate location, traffic source, scroll activity, and link interactions. We disable advertising storage, Google signals, and ad personalization, and we do not intentionally send names, email addresses, form contents, project submissions, or other personal information entered on the site. Visitors can change this choice using the Analytics settings button.</p>
               <h3>Automated safety reviews</h3>
               <p>Playable project links may be opened by an isolated automated browser. An AI service may receive sampled screenshots, visible page text, project descriptions, and a limited action log to identify potentially inappropriate content and coverage gaps. The automated result is advisory: a clubhouse grown-up makes the final publication decision. Safety-review screenshots are analyzed during the run and are not intentionally retained by Vibe Code Club.</p>
               <h3>Who receives information</h3>

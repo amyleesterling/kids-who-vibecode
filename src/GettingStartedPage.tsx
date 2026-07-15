@@ -129,9 +129,12 @@ function GettingStartedPage() {
         <section id="tools" className="guide-tools page-shell">
           <div className="guide-section-number">02</div>
           <div>
-            <div className="guide-heading">
-              <div><span className="kicker">Meet the helpers</span><h2>Three big AI families, in normal language.</h2></div>
-              <p>All can brainstorm and write code. The best one is usually the one your grown-up already understands.</p>
+            <div className="ai-families-intro">
+              <div className="guide-heading">
+                <div><span className="kicker">Meet the helpers</span><h2>Three big AI families, in normal language.</h2></div>
+                <p>All can brainstorm and write code. The best one is usually the one your grown-up already understands.</p>
+              </div>
+              <figure className="ai-families-art"><img src="/parent-guide-ai-families.png" alt="Orange coding cat facing a friendly three-headed green hydra" /></figure>
             </div>
             <div className="ai-tool-grid">
               {tools.map((tool) => <article className={`ai-tool-card ${tool.color}`} key={tool.name}>
@@ -194,7 +197,6 @@ function GettingStartedPage() {
         </section>
 
         <section className="age-safety page-shell">
-          <figure className="age-safety-art"><img src="/parent-guide-resting-cat.png" alt="Orange clubhouse cat curled up and resting" /></figure>
           <div><span className="kicker">A note about kids and AI accounts</span><h2>Adult supervision is not optional.</h2><p>Many consumer AI and coding services require users to be at least 13, sometimes older, and rules vary by country and feature. ChatGPT requires users to be 13+ with parent permission under 18; GitHub accounts are 13+; Google provides some supervised Gemini access through Family Link. For younger children, the adult should actively operate an eligible adult account only where the service’s terms allow—or choose a child-focused tool such as Scratch or ScratchJr. Never hand a child an adult login.</p><p>AI filters are not perfect. Stay beside younger creators, keep personal information out of prompts, and review everything before it goes public.</p>
             <div><a href="https://openai.com/policies/terms-of-use/" target="_blank" rel="noreferrer">OpenAI terms <ExternalLink size={14} /></a><a href="https://help.openai.com/en/articles/12315553-parental-controls-in-chatgpt" target="_blank" rel="noreferrer">ChatGPT parental controls <ExternalLink size={14} /></a><a href="https://support.google.com/gemini/answer/16109150" target="_blank" rel="noreferrer">Gemini family guide <ExternalLink size={14} /></a></div>
           </div>

@@ -443,7 +443,7 @@ function App() {
             <HeroCountdown challenge={community.challenge} />
             <h1 className="hero-title-direct">Weekly challenge.<br />Share your build.<br /><span>Get inspired by kids around the world.</span></h1>
             <div className="hero-intro-row">
-              <p className="hero-lede">Vibe Code Kids is a free creative coding club running Summer 2026. Participation requires guidance from a grown-up.</p>
+              <p className="hero-lede">Vibe Code Kids is a free, grown-up-guided vibe coding club running Summer 2026. Kids create games, worlds, and webpages with AI.</p>
               <div className="mobile-mascot-wrap">
                 <button className="mobile-mascot" type="button" onClick={() => setMascotMessage((current) => current === null ? 0 : (current + 1) % mascotMessages.length)} aria-label="Club cat">
                   {mascotMessage !== null && <span className="mascot-bubble" key={`bubble-${mascotMessage}`}>{mascotMessages[mascotMessage]}</span>}
