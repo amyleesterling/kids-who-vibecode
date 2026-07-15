@@ -73,13 +73,8 @@ function ChallengePreview({ challenge }: { challenge: Challenge }) {
   return (
     <aside className="challenge-preview" aria-label="This week's challenge">
       <div className="window-bar"><span /><span /><span /><small>THIS_WEEK.vibe</small></div>
-      <div className="challenge-art">
-        <span className="orbit orbit-one" /><span className="orbit orbit-two" />
-        <span className="pixel-sun">✦</span>
-        <div className="tiny-world">
-          <span className="world-face">•ᴗ•</span><i className="world-tree" /><i className="world-home" />
-        </div>
-        <span className="floating-code">&lt;make<br />magic /&gt;</span>
+      <div className="challenge-art hero-makers-art">
+        <img className="hero-makers-image" src="/hero-kids-banner.webp" alt="Two kids creating together on a laptop with the club cat" />
       </div>
       <div className="challenge-preview-copy">
         <span className="kicker">{challenge.weekLabel}</span>
