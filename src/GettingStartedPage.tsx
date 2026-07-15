@@ -66,7 +66,7 @@ function GettingStartedPage() {
             <div>
               <span className="kicker">A no-experience-required guide</span>
               <h1>You don’t need to know how to code.</h1>
-              <p>Your kid brings the imagination. You bring the grown-up judgment. AI can help with the typing, explaining, and untangling in between.</p>
+              <p>Your kid brings the imagination. You bring the grown-up judgment. AI does the work.</p>
               <div className="guide-hero-actions">
                 <a className="button button-coral" href="#first-build">Make a first project <ArrowRight size={18} /></a>
                 <a className="guide-text-link" href="#tools">Meet the tools</a>
