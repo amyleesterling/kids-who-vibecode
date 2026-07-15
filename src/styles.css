@@ -292,6 +292,7 @@ h1, h2, h3, p { margin-top: 0; }
 footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidden; }
 .footer-layout { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; padding-bottom: 45px; }
 .footer-layout p { max-width: 430px; margin: 0 auto; text-align: center; color: rgba(255,255,255,.65); font-size: 11px; line-height: 1.6; }
+.footer-layout p a { color: white; font-weight: 800; text-decoration: underline; text-decoration-color: var(--coral); text-underline-offset: 3px; }
 .footer-layout > div { display: flex; justify-content: flex-end; gap: 24px; font-size: 10px; font-weight: 700; }
 .footer-ticker { display: flex; align-items: center; justify-content: center; white-space: nowrap; gap: 30px; border-top: 1px solid rgba(255,255,255,.15); padding: 16px 0; color: var(--green); font-family: 'DM Mono'; font-size: 10px; letter-spacing: .1em; }
 .footer-ticker i { color: var(--coral); font-style: normal; }
