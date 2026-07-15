@@ -20,6 +20,7 @@ export type Project = {
   title: string
   builder: string
   ageBand: string
+  countryCode?: string
   description: string
   repoUrl?: string
   demoUrl?: string
@@ -32,6 +33,7 @@ export type Project = {
 export type SubmissionInput = {
   childNickname: string
   ageBand: string
+  countryCode: string
   projectTitle: string
   description: string
   repoUrl: string
@@ -74,6 +76,7 @@ export type FavoriteProject = {
   title: string
   builder: string
   ageBand: string
+  countryCode?: string
   description: string
   repoUrl?: string
   demoUrl?: string

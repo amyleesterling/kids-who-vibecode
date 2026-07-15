@@ -1,6 +1,7 @@
 import { ArrowLeft, ExternalLink, Github, Medal, Sparkles, Trophy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { FavoritesSnapshot } from './types'
+import { countryCodeToFlag, countryName } from './lib/countries'
 
 function revealLabel(value: string | null) {
   if (!value) return 'after the first voting week closes'
@@ -50,7 +51,7 @@ function FavoritesPage() {
             <div className="podium-grid">{challenge.podium.map((project) => <article className={`podium-card rank-${project.rank}`} key={project.projectId}>
               <div className="podium-ribbon">{project.rank === 1 ? <><Trophy size={17} /> Clubhouse Favorite</> : <><Medal size={17} /> Runner-up #{project.rank - 1}</>}</div>
               {project.demoUrl ? <a className="podium-image experience-launch" href={project.demoUrl} target="_blank" rel="noreferrer" aria-label={`Launch ${project.title}`}>{project.imageUrl ? <img src={project.imageUrl} alt={`Screenshot of ${project.title}`} /> : <div><Sparkles size={32} /><span>{project.title}</span></div>}</a> : <div className="podium-image">{project.imageUrl ? <img src={project.imageUrl} alt={`Screenshot of ${project.title}`} /> : <div><Sparkles size={32} /><span>{project.title}</span></div>}</div>}
-              <div className="podium-copy"><h3>{project.demoUrl ? <a className="project-title-launch" href={project.demoUrl} target="_blank" rel="noreferrer">{project.title}</a> : project.title}</h3><p>{project.description}</p><span>by {project.builder} · age {project.ageBand}</span><b>{project.votes} favorite{project.votes === 1 ? '' : 's'}</b></div>
+              <div className="podium-copy"><h3>{project.demoUrl ? <a className="project-title-launch" href={project.demoUrl} target="_blank" rel="noreferrer">{project.title}</a> : project.title}</h3><p>{project.description}</p><span>by {project.builder} · age {project.ageBand}{project.countryCode && <span className="country-flag" title={countryName(project.countryCode)} aria-label={`from ${countryName(project.countryCode)}`}>{countryCodeToFlag(project.countryCode)}</span>}</span><b>{project.votes} favorite{project.votes === 1 ? '' : 's'}</b></div>
               <div className="podium-links">{project.repoUrl && <a href={project.repoUrl} target="_blank" rel="noreferrer"><Github size={15} /> Code</a>}{project.demoUrl && <a href={project.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={15} /> Try it</a>}</div>
             </article>)}</div>
           </section>)}
