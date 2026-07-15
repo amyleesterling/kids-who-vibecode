@@ -103,6 +103,10 @@ Signups are stored immediately in D1. The Monday 9:00 a.m. Eastern delivery sche
 
 The sender reads the active challenge directly from D1, uses idempotency protection, and includes a private unsubscribe link in every message.
 
+## Clubhouse owner alerts
+
+Set `OWNER_NOTIFICATION_EMAIL` in the production site environment to receive a short email when a new project or challenge idea enters the moderation queue. Alerts contain only the submission type, time, and a link to Clubhouse Admin; child nicknames, project copy, and grown-up contact details stay out of the notification service. Delivery uses FormSubmit's free email endpoint. The first alert asks the owner to confirm the recipient address before later alerts are delivered.
+
 ## Build
 
 ```bash

@@ -28,10 +28,15 @@ type Env = {
   UPLOADS: ClubUploads
   ADMIN_PASSWORD?: string
   ADMIN_SESSION_SECRET?: string
+  OWNER_NOTIFICATION_EMAIL?: string
   RESEND_API_KEY?: string
   NEWSLETTER_CRON_SECRET?: string
   NEWSLETTER_FROM_EMAIL?: string
   SAFETY_SCAN_SECRET?: string
+}
+
+type WorkerExecutionContext = {
+  waitUntil(promise: Promise<unknown>): void
 }
 
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), {
@@ -62,6 +67,37 @@ const escapeHtml = (value: unknown) => String(value ?? '')
   .replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;')
+
+async function sendOwnerNotification(env: Env, kind: 'project' | 'idea') {
+  const recipient = validEmail(env.OWNER_NOTIFICATION_EMAIL)
+  if (!recipient) return
+
+  const project = kind === 'project'
+  const form = new URLSearchParams({
+    _subject: project
+      ? 'New Vibe Code Kids project waiting for review'
+      : 'New Vibe Code Kids challenge idea waiting for review',
+    _template: 'table',
+    _captcha: 'false',
+    _url: 'https://vibecodekids.com/clubhouse-admin',
+    Alert: project ? 'A new project was submitted.' : 'A new challenge idea was submitted.',
+    'Next step': 'Open the private Clubhouse Admin to review it.',
+    Clubhouse: 'https://vibecodekids.com/clubhouse-admin',
+    'Submitted at': new Date().toISOString(),
+  })
+
+  const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/x-www-form-urlencoded',
+      origin: 'https://vibecodekids.com',
+      referer: 'https://vibecodekids.com/',
+    },
+    body: form.toString(),
+  })
+  if (!response.ok) console.error('Owner notification delivery failed', response.status)
+}
 
 const adminCookieName = 'clubhouse_admin'
 const legalTermsVersion = '2026-07-14'
@@ -310,7 +346,7 @@ async function vote(db: ClubDatabase, request: Request) {
   return json({ ok: true })
 }
 
-async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request) {
+async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request, env: Env, context: WorkerExecutionContext) {
   const body = await request.formData().catch(() => null)
   if (!body || text(body.get('website'))) return json({ error: 'Invalid submission' }, 400)
 
@@ -380,10 +416,11 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request) 
     if (imageKey) await uploads.delete(imageKey).catch(() => undefined)
     throw error
   }
+  context.waitUntil(sendOwnerNotification(env, 'project').catch((error) => console.error('Owner notification failed', error)))
   return json({ ok: true }, 201)
 }
 
-async function submitChallengeIdea(db: ClubDatabase, request: Request) {
+async function submitChallengeIdea(db: ClubDatabase, request: Request, env: Env, context: WorkerExecutionContext) {
   const body = await request.json().catch(() => null) as Record<string, unknown> | null
   if (!body || text(body.website)) return json({ error: 'Invalid submission' }, 400)
 
@@ -409,6 +446,7 @@ async function submitChallengeIdea(db: ClubDatabase, request: Request) {
     crypto.randomUUID(), ideaTitle, ideaPrompt, starterSpark, creatorNickname,
     creatorGroup, grownupEmail.toLowerCase(), legalTermsVersion, new Date().toISOString(),
   ).run()
+  context.waitUntil(sendOwnerNotification(env, 'idea').catch((error) => console.error('Owner notification failed', error)))
   return json({ ok: true }, 201)
 }
 
@@ -1120,7 +1158,7 @@ async function adminModerate(db: ClubDatabase, request: Request, env: Env) {
 }
 
 export default {
-  async fetch(request: Request, env: Env) {
+  async fetch(request: Request, env: Env, context: WorkerExecutionContext) {
     const url = new URL(request.url)
     if (!url.pathname.startsWith('/api/')) return new Response('Not found', { status: 404 })
 
@@ -1130,8 +1168,8 @@ export default {
       if (request.method === 'GET' && url.pathname === '/api/favorites') return favorites(env.DB)
       if (request.method === 'GET' && url.pathname.startsWith('/api/project-images/')) return projectImage(env.DB, env.UPLOADS, request)
       if (request.method === 'POST' && url.pathname === '/api/vote') return vote(env.DB, request)
-      if (request.method === 'POST' && url.pathname === '/api/submissions') return submit(env.DB, env.UPLOADS, request)
-      if (request.method === 'POST' && url.pathname === '/api/challenge-ideas') return submitChallengeIdea(env.DB, request)
+      if (request.method === 'POST' && url.pathname === '/api/submissions') return submit(env.DB, env.UPLOADS, request, env, context)
+      if (request.method === 'POST' && url.pathname === '/api/challenge-ideas') return submitChallengeIdea(env.DB, request, env, context)
       if (request.method === 'POST' && url.pathname === '/api/subscribers') return subscribe(env.DB, request)
       if (request.method === 'GET' && url.pathname === '/api/unsubscribe') return unsubscribe(env.DB, request)
       if (request.method === 'POST' && url.pathname === '/api/newsletter/send-weekly') return sendWeeklyChallenge(env.DB, request, env)
