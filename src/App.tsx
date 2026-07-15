@@ -387,11 +387,15 @@ function App() {
             <div className="eyebrow-pill"><Sparkles size={14} /> Summer 2026 · 8 challenges through Labor Day</div>
             <h1 className="hero-title-direct">Weekly challenge.<br />Share your build.<br /><span>Get inspired by kids around the world.</span></h1>
             <div className="hero-intro-row">
-              <p className="hero-lede">Vibe Code Kids is a free creative coding club for kids, with guidance from their grown-ups.</p>
+              <p className="hero-lede">Vibe Code Kids is a free creative coding club running Summer 2026. Participation requires guidance from a grown-up.</p>
               <div className="mobile-mascot-wrap">
                 <button className="mobile-mascot" type="button" onClick={() => setMascotMessage((current) => current === null ? 0 : (current + 1) % mascotMessages.length)} aria-label="Club cat">
                   {mascotMessage !== null && <span className="mascot-bubble" key={`bubble-${mascotMessage}`}>{mascotMessages[mascotMessage]}</span>}
-                  <img key={`cat-${mascotMessage ?? 'resting'}`} src="/club-cat.webp" alt="A curious, chubby orange club cat" />
+                  <span className="mobile-cat-scene" aria-hidden="true">
+                    <img className="mobile-cat-tail" src="/club-cat-tail.webp" alt="" />
+                    <span className="mobile-cat-table" />
+                    <img className="mobile-cat-body" src="/club-cat-looking-up.webp" alt="" />
+                  </span>
                 </button>
               </div>
             </div>
