@@ -284,7 +284,12 @@ function AdminApp() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null)
   const [dashboard, setDashboard] = useState<Dashboard | null>(null)
   const [password, setPassword] = useState('')
-  const [tab, setTab] = useState<AdminTab>('challenges')
+  const [tab, setTab] = useState<AdminTab>(() => {
+    const requested = new URLSearchParams(window.location.search).get('tab')
+    return requested && ['challenges', 'submissions', 'ideas', 'reviewers', 'vote-alerts', 'subscribers'].includes(requested)
+      ? requested as AdminTab
+      : 'challenges'
+  })
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [clock, setClock] = useState(Date.now())
