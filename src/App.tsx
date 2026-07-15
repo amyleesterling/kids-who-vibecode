@@ -386,15 +386,17 @@ function App() {
           <div className="hero-copy">
             <div className="eyebrow-pill"><Sparkles size={14} /> Summer 2026 · 8 challenges through Labor Day</div>
             <h1 className="hero-title-direct">Weekly challenge.<br />Share your build.<br /><span>Get inspired by kids around the world.</span></h1>
-            <p className="hero-lede">Vibe Code Kids is a free creative coding club for kids, with guidance from their grown-ups.</p>
+            <div className="hero-intro-row">
+              <p className="hero-lede">Vibe Code Kids is a free creative coding club for kids, with guidance from their grown-ups.</p>
+              <div className="mobile-mascot-wrap">
+                <button className="mobile-mascot" type="button" onClick={() => setMascotMessage((current) => current === null ? 0 : (current + 1) % mascotMessages.length)} aria-label="Club cat">
+                  {mascotMessage !== null && <span className="mascot-bubble" key={`bubble-${mascotMessage}`}>{mascotMessages[mascotMessage]}</span>}
+                  <img key={`cat-${mascotMessage ?? 'resting'}`} src="/club-cat.webp" alt="A curious, chubby orange club cat" />
+                </button>
+              </div>
+            </div>
             <div className="hero-actions"><a className="button button-coral" href="#challenge">See this week’s challenge <ArrowRight size={19} /></a><button className="text-link" onClick={openSubmission}>I made something! <span>↗</span></button></div>
             <div className="trust-note"><span className="avatar-stack"><i>🐯</i><i>🦊</i><i>🐸</i></span><p><b>Built for kids who create. Guided by grown-ups.</b></p></div>
-          </div>
-          <div className="mobile-mascot-wrap">
-            <button className="mobile-mascot" type="button" onClick={() => setMascotMessage((current) => current === null ? 0 : (current + 1) % mascotMessages.length)} aria-label="Club cat">
-              {mascotMessage !== null && <span className="mascot-bubble" key={`bubble-${mascotMessage}`}>{mascotMessages[mascotMessage]}</span>}
-              <img key={`cat-${mascotMessage ?? 'resting'}`} src="/club-cat.webp" alt="A curious, chubby orange club cat" />
-            </button>
           </div>
           <ChallengePreview challenge={community.challenge} />
         </section>
