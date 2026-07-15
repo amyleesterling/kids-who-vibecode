@@ -102,7 +102,6 @@ function GettingStartedPage() {
           <div className="page-shell">
             <div className="guide-heading">
               <div><span className="kicker">The 20-minute experiment</span><h2>Make one tiny thing together.</h2></div>
-              <figure className="first-build-art"><img src="/parent-guide-together-cats.jpg" alt="A grown-up clubhouse cat and a younger cat celebrating their build with a high five" /></figure>
               <p>The goal is something that you can tinker with, not a perfect project.</p>
             </div>
             <div className="first-build-grid">
@@ -113,13 +112,16 @@ function GettingStartedPage() {
                 <li><span>04</span><div><h3>Click everything</h3><p>Try the buttons, visit and try everything in your build, refresh the page, and look at it on a phone.</p></div></li>
                 <li><span>05</span><div><h3>Ask for one change</h3><p>“Make the moon bounce” is better than “make it better.” Repeat while it is still fun.</p></div></li>
               </ol>
-              <aside className="starter-prompt-card">
-                <div><Lightbulb size={20} /><span>COPY, FILL IN, AND GO</span></div>
-                <p className="starter-prompt-parent-note"><b>For parents:</b> Ask your child what their creation should look like and do—colors, style, and anything else they imagine.</p>
-                <p>We are making a <b>kid-led project</b> together.</p>
-                <p>Build a <mark>[game / world / page]</mark> about <mark>[our idea]</mark>. It needs <mark>[feature one]</mark>, <mark>[feature two]</mark>, and one surprise.</p>
-                <small>Tip: keep the child in the director’s chair. Invite them to make as many decisions as possible.</small>
-              </aside>
+              <div className="starter-prompt-column">
+                <aside className="starter-prompt-card">
+                  <div><Lightbulb size={20} /><span>COPY, FILL IN, AND GO</span></div>
+                  <p className="starter-prompt-parent-note"><b>For parents:</b> Ask your child what their creation should look like and do—colors, style, and anything else they imagine.</p>
+                  <p>We are making a <b>kid-led project</b> together.</p>
+                  <p>Build a <mark>[game / world / page]</mark> about <mark>[our idea]</mark>. It needs <mark>[feature one]</mark>, <mark>[feature two]</mark>, and one surprise.</p>
+                  <small>Tip: keep the child in the director’s chair. Invite them to make as many decisions as possible.</small>
+                </aside>
+                <figure className="first-build-art"><img src="/parent-guide-together-cats.jpg" alt="A grown-up clubhouse cat and a younger cat celebrating their build with a high five" /></figure>
+              </div>
             </div>
           </div>
         </section>
