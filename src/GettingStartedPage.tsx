@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import {
   ArrowLeft, ArrowRight, Bot, Check, Code2, ExternalLink, Film, Github, Image,
-  Lightbulb, MousePointer2, Play, Rocket, ShieldCheck, Sparkles, WandSparkles, Wrench,
+  Lightbulb, MousePointer2, Play, Rocket, ShieldCheck, Sparkles, WandSparkles,
 } from 'lucide-react'
 
 const tools = [
@@ -87,12 +87,11 @@ function GettingStartedPage() {
           <div>
             <span className="kicker">First: what are we even doing?</span>
             <h2>Vibe coding is making software by describing, trying, and changing.</h2>
-            <p>You tell an AI what you want. It creates a first version. You click around, notice what is delightful or broken, and ask for the next change. The useful skill is not memorizing magic words—it is having an idea, making choices, testing, and explaining what should happen next.</p>
+            <p>You tell an AI what you want. It creates a first version. You click around, notice what is delightful or broken, and ask for the next change. Your unique human perspective turns AI-generated code into something that only you could create.</p>
             <div className="guide-definition-explainer">
               <figure className="guide-definition-art"><img src="/parent-guide-vibe-coding.jpg" alt="Orange clubhouse cat using a laptop to imagine and build a playful cat-feeding machine" /></figure>
               <div className="model-tool-note">
                 <div><Bot /><span><b>A model is the engine.</b> GPT, Claude, and Gemini are model families. Their exact version names change often.</span></div>
-                <div><Wrench /><span><b>A tool is where you create.</b> ChatGPT, Claude, Gemini, Canva, Replit, and Scratch are products or workspaces.</span></div>
                 <p>For a first project, use the normal/default option. You do not need to become a model expert.</p>
               </div>
             </div>

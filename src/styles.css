@@ -530,7 +530,7 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
 .guide-definition-explainer { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 34px; align-items: center; margin-top: 38px; }
 .guide-definition-art { width: 180px; margin: 0; pointer-events: none; }
 .guide-definition-art img { width: 100%; height: auto; mix-blend-mode: multiply; }
-.model-tool-note { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 36px; }
+.model-tool-note { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 36px; }
 .guide-definition-explainer .model-tool-note { margin-top: 0; }
 .model-tool-note > div { display: flex; gap: 14px; padding: 22px; border: 2px solid var(--ink); border-radius: 14px; background: white; box-shadow: 4px 4px 0 var(--ink); font-size: 14px; line-height: 1.65; }
 .model-tool-note > div:nth-child(2) { background: var(--blue); }
