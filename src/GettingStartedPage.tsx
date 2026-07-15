@@ -103,6 +103,7 @@ function GettingStartedPage() {
           <div className="page-shell">
             <div className="guide-heading">
               <div><span className="kicker">The 20-minute experiment</span><h2>Make one tiny thing together.</h2></div>
+              <figure className="first-build-art"><img src="/parent-guide-together-cats.jpg" alt="A grown-up clubhouse cat and a younger cat celebrating their build with a high five" /></figure>
               <p>The goal is something that you can tinker with, not a perfect project.</p>
             </div>
             <div className="first-build-grid">

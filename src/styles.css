@@ -239,10 +239,8 @@ h1, h2, h3, p { margin-top: 0; }
 
 .newsletter-section { background: var(--coral); border-block: 2px solid var(--ink); padding-block: 72px; }
 .newsletter-card { display: grid; grid-template-columns: 170px .9fr 1.25fr; gap: 42px; align-items: center; background: var(--paper); border: 2px solid var(--ink); border-radius: 18px; box-shadow: 10px 10px 0 var(--ink); padding: 38px 44px; }
-.newsletter-art { width: 150px; height: 150px; border: 2px solid var(--ink); border-radius: 47% 53% 44% 56%; background: var(--yellow); display: grid; place-items: center; position: relative; transform: rotate(-4deg); box-shadow: 5px 5px 0 var(--ink); }
-.newsletter-art svg { position: absolute; left: 23px; top: 22px; }
-.newsletter-art span { font-family: 'Paytone One', 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif; font-size: 19px; line-height: .95; transform: rotate(6deg); margin: 35px 0 0 35px; }
-.newsletter-art i { position: absolute; right: 15px; top: 8px; font-size: 23px; font-style: normal; color: var(--coral); }
+.newsletter-art { width: 150px; pointer-events: none; }
+.newsletter-art img { width: 100%; height: auto; mix-blend-mode: multiply; }
 .newsletter-copy h2 { font-size: clamp(35px, 4vw, 52px); line-height: .98; margin: 9px 0 13px; }
 .newsletter-copy p { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
 .newsletter-form { display: grid; gap: 10px; }
@@ -527,6 +525,9 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
 .guide-heading h2 { margin-bottom: 0; }
 .guide-heading > p { max-width: 370px; margin: 0; color: var(--ink-soft); font-size: 14px; }
 .first-build-section .guide-heading > p { color: rgba(255,255,255,.68); }
+.first-build-section .guide-heading { display: grid; grid-template-columns: minmax(0, 1fr) 180px 280px; align-items: end; gap: 30px; }
+.first-build-art { width: 180px; margin: 0; pointer-events: none; }
+.first-build-art img { width: 100%; height: auto; mix-blend-mode: screen; }
 .first-build-grid { display: grid; grid-template-columns: .92fr 1.08fr; gap: 68px; align-items: start; }
 .first-build-steps { display: grid; gap: 0; padding: 0; margin: 0; list-style: none; }
 .first-build-steps li { display: grid; grid-template-columns: 58px 1fr; gap: 18px; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,.16); }
@@ -603,6 +604,7 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
   .guide-hero-inner { grid-template-columns: 1fr; gap: 60px; }.guide-starter-card { max-width: 620px; }
   .guide-definition, .guide-tools { grid-template-columns: 60px minmax(0, 1fr); gap: 36px; }
   .first-build-grid, .grownup-role-grid { grid-template-columns: 1fr; }.starter-prompt-card { max-width: 700px; }
+  .first-build-section .guide-heading { grid-template-columns: minmax(0, 1fr) 150px; }.first-build-section .guide-heading > p { grid-column: 1 / -1; }.first-build-art { width: 150px; }
   .ai-tool-grid, .builder-grid, .creative-tool-grid { grid-template-columns: 1fr 1fr; }.creative-tool-grid article:last-child { grid-column: 1 / -1; }
   .github-terms { grid-template-columns: 1fr 1fr; }.safety-checklist { max-width: 650px; }
 }
@@ -615,7 +617,7 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
   .guide-definition h2, .guide-heading h2, .builder-heading h2 { font-size: 42px; }.guide-definition > div:last-child > p { font-size: 15px; }
   .guide-definition-explainer { grid-template-columns: 1fr; gap: 18px; }.guide-definition-art { width: 136px; margin: -2px 4px -8px auto; }
   .model-tool-note { grid-template-columns: 1fr; }.model-tool-note > p { grid-column: auto; }.model-tool-note > div { font-size: 13px; }
-  .first-build-section { padding-block: 75px; }.guide-heading { display: block; margin-bottom: 35px; }.guide-heading > p { margin-top: 16px; }.first-build-grid { gap: 45px; }.starter-prompt-card { padding: 27px 22px; transform: none; }.starter-prompt-card p { font-size: 14px; }
+  .first-build-section { padding-block: 75px; }.guide-heading { display: block; margin-bottom: 35px; }.guide-heading > p { margin-top: 16px; }.first-build-section .guide-heading { display: grid; grid-template-columns: minmax(0, 1fr) 112px; gap: 16px; }.first-build-section .guide-heading > p { grid-column: 1 / -1; margin-top: 0; }.first-build-art { width: 112px; }.first-build-grid { gap: 45px; }.starter-prompt-card { padding: 27px 22px; transform: none; }.starter-prompt-card p { font-size: 14px; }
   .ai-tool-grid, .builder-grid, .creative-tool-grid { grid-template-columns: 1fr; }.ai-tool-card { min-height: auto; }.builder-grid p { min-height: 0; }.builder-heading { margin-top: 75px; }.more-tools-section { padding-block: 10px 75px; }.more-tools-section .builder-heading { margin-top: 0; }.creative-tool-grid article:last-child { grid-column: auto; }.creative-tools-section { padding-block: 75px; }
   .github-guide { padding-block: 75px; }.github-window { box-shadow: 7px 7px 0 var(--ink); }.github-window-body { padding: 30px 20px; }.github-intro { grid-template-columns: 1fr; }.github-intro h2 { font-size: 42px; }.github-terms { grid-template-columns: 1fr; }
   .grownup-role-section { padding-block: 75px; }.grownup-role-grid { gap: 50px; }.grownup-role-grid > div > h2 { font-size: 52px; }.role-columns { grid-template-columns: 1fr; }.safety-checklist { padding: 26px 21px; transform: none; }
