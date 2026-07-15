@@ -63,6 +63,7 @@ h1, h2, h3, p { margin-top: 0; }
 .eyebrow-pill svg { color: var(--coral); }
 .hero h1 { font-family: 'Paytone One', 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif; font-size: clamp(55px, 6.3vw, 90px); line-height: .92; letter-spacing: -.045em; margin-bottom: 28px; font-weight: 400; }
 .hero h1 span { color: var(--coral); -webkit-text-stroke: 1.5px var(--ink); text-shadow: 3px 3px 0 var(--ink); }
+.hero h1.hero-title-clear { font-size: clamp(52px, 5vw, 72px); line-height: .98; letter-spacing: -.035em; }
 .hero-lede { color: var(--ink-soft); font-size: 17px; max-width: 560px; }
 .hero-actions { display: flex; align-items: center; gap: 28px; margin: 30px 0 38px; }
 .text-link { border: 0; background: none; font-weight: 800; cursor: pointer; padding: 10px 0; border-bottom: 2px solid var(--ink); }
@@ -83,7 +84,10 @@ h1, h2, h3, p { margin-top: 0; }
 .window-bar span:nth-child(3) { background: var(--green); }
 .window-bar small { font-family: 'DM Mono', monospace; font-size: 8px; margin: auto; transform: translateX(-16px); color: var(--ink-soft); }
 .challenge-art { height: 330px; position: relative; overflow: hidden; background: #8068f0; background-image: radial-gradient(circle at 30% 20%, rgba(255,255,255,.18) 0 2px, transparent 3px), radial-gradient(circle at 80% 35%, rgba(255,255,255,.18) 0 2px, transparent 3px); background-size: 52px 52px, 74px 74px; }
+.hero-makers-art { background: var(--paper-deep); }
+.hero-makers-image { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center 52%; }
 .challenge-art::after { content: ''; position: absolute; left: -10%; bottom: -75px; width: 120%; height: 150px; border-radius: 50% 50% 0 0; background: #89d94a; border-top: 3px solid var(--ink); }
+.hero-makers-art::after { display: none; }
 .pixel-sun { position: absolute; top: 34px; right: 46px; width: 55px; height: 55px; display: grid; place-items: center; border: 2px solid var(--ink); background: var(--yellow); font-size: 27px; transform: rotate(9deg); box-shadow: 5px 5px 0 var(--ink); z-index: 1; }
 .orbit { position: absolute; border: 2px solid rgba(255,255,255,.5); border-radius: 50%; }
 .orbit-one { width: 340px; height: 140px; left: 24px; top: 95px; transform: rotate(-12deg); }
@@ -417,7 +421,7 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
   .page-shell, .site-header { width: min(100% - 28px, 1180px); }
   .site-header { height: 72px; }
   .hero { min-height: auto; padding-block: 48px 70px; gap: 34px; }
-  .hero h1 { font-size: clamp(48px, 15vw, 70px); }.hero-lede { font-size: 15px; }.hero-actions { align-items: stretch; flex-direction: column; gap: 10px; }.hero-actions .button { width: 100%; }.text-link { align-self: center; }
+  .hero h1 { font-size: clamp(48px, 15vw, 70px); }.hero h1.hero-title-clear { font-size: clamp(44px, 12.5vw, 60px); }.hero-lede { font-size: 15px; }.hero-actions { align-items: stretch; flex-direction: column; gap: 10px; }.hero-actions .button { width: 100%; }.text-link { align-self: center; }
   .mobile-mascot-wrap { position: relative; z-index: 5; display: flex; justify-content: flex-end; height: 172px; margin: -10px 4px -51px 0; pointer-events: none; }
   .mobile-mascot { position: relative; width: 100%; max-width: 340px; height: 190px; padding: 0; border: 0; background: transparent; color: var(--ink); cursor: pointer; pointer-events: auto; }
   .mobile-mascot:focus-visible { outline: 3px solid var(--purple); outline-offset: 4px; border-radius: 18px; }
