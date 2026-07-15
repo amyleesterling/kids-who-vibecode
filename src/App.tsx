@@ -80,7 +80,8 @@ function ChallengePreview({ challenge }: { challenge: Challenge }) {
       <aside className="challenge-preview">
         <div className="window-bar"><span /><span /><span /><small>THIS_WEEK.vibe</small></div>
         <div className="challenge-art hero-makers-art">
-          <img className="hero-makers-image" src="/hero-kids-banner.webp" alt="Two kids creating together on a laptop with the club cat" />
+          <img className="hero-makers-layer hero-makers-tail" src="/hero-kids-tail.png" alt="" aria-hidden="true" />
+          <img className="hero-makers-layer hero-makers-body" src="/hero-kids-body.png" alt="Two kids creating together on a laptop with the club cat" />
         </div>
         <div className="challenge-preview-copy">
           <span className="kicker">{challenge.weekLabel}</span>
