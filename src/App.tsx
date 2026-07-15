@@ -329,7 +329,7 @@ function WeeklySignup() {
   return (
     <section id="subscribe" className="newsletter-section">
       <div className="page-shell newsletter-card">
-        <div className="newsletter-art" aria-hidden="true"><Mail size={48} /><span>NEW<br />MISSION!</span><i>✦</i></div>
+        <div className="newsletter-art"><img src="/newsletter-cat.jpg" alt="Orange clubhouse cat carrying an envelope" /></div>
         <div className="newsletter-copy">
           <span className="kicker">A tiny email for the grown-ups</span>
           <h2>Get the weekly challenge.</h2>
