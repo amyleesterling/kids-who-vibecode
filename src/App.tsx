@@ -6,10 +6,11 @@ import {
 } from 'lucide-react'
 import { loadCommunity, saveVote, subscribeWeeklyChallenge, submitChallengeIdea, submitProject } from './lib/community'
 import { prepareProjectImage } from './lib/projectImage'
+import { countries, countryCodeToFlag, countryName } from './lib/countries'
 import type { Challenge, ChallengeIdeaInput, CommunitySnapshot, Project, SubmissionInput } from './types'
 
 const emptySubmission: SubmissionInput = {
-  childNickname: '', ageBand: '', projectTitle: '', description: '', repoUrl: '', demoUrl: '',
+  childNickname: '', ageBand: '', countryCode: '', projectTitle: '', description: '', repoUrl: '', demoUrl: '',
   parentName: '', parentEmail: '', consent: false, publicSharing: false, childLed: false, termsAccepted: false, image: null,
 }
 
@@ -24,12 +25,18 @@ const mascotMessages = [
   'I sniff out bugs for snacks.',
 ]
 
-function timeLeft(iso: string) {
-  const milliseconds = Math.max(0, new Date(iso).getTime() - Date.now())
+function timeLeft(challenge: Challenge) {
+  const now = Date.now()
+  const opensAt = new Date(challenge.opensAt).getTime()
+  const closesAt = new Date(challenge.closesAt).getTime()
+  const milliseconds = Math.max(0, closesAt - now)
+  const duration = Math.max(1, closesAt - opensAt)
   const days = Math.floor(milliseconds / 86_400_000)
   const hours = Math.floor((milliseconds % 86_400_000) / 3_600_000)
   const minutes = Math.floor((milliseconds % 3_600_000) / 60_000)
-  return { days, hours, minutes }
+  const seconds = Math.floor((milliseconds % 60_000) / 1_000)
+  const remainingPercent = Math.max(0, Math.min(100, (milliseconds / duration) * 100))
+  return { days, hours, minutes, seconds, remainingPercent }
 }
 
 function Logo() {
@@ -63,11 +70,11 @@ function ProjectScene({ project }: { project: Project }) {
 }
 
 function ChallengePreview({ challenge }: { challenge: Challenge }) {
-  const [remaining, setRemaining] = useState(() => timeLeft(challenge.closesAt))
+  const [remaining, setRemaining] = useState(() => timeLeft(challenge))
   useEffect(() => {
-    const timer = window.setInterval(() => setRemaining(timeLeft(challenge.closesAt)), 60_000)
+    const timer = window.setInterval(() => setRemaining(timeLeft(challenge)), 1_000)
     return () => window.clearInterval(timer)
-  }, [challenge.closesAt])
+  }, [challenge])
 
   return (
     <aside className="challenge-preview" aria-label="This week's challenge">
@@ -78,10 +85,14 @@ function ChallengePreview({ challenge }: { challenge: Challenge }) {
       <div className="challenge-preview-copy">
         <span className="kicker">{challenge.weekLabel}</span>
         <h2>{challenge.title}</h2>
-        <div className="countdown" aria-label={`${remaining.days} days, ${remaining.hours} hours left`}>
-          <span><b>{String(remaining.days).padStart(2, '0')}</b> days</span>
-          <em>:</em><span><b>{String(remaining.hours).padStart(2, '0')}</b> hrs</span>
-          <em>:</em><span><b>{String(remaining.minutes).padStart(2, '0')}</b> min</span>
+        <div className="countdown-block" aria-label={`${remaining.days} days, ${remaining.hours} hours, ${remaining.minutes} minutes, and ${remaining.seconds} seconds left`}>
+          <div className="countdown-progress" aria-hidden="true"><span style={{ width: `${remaining.remainingPercent}%` }} /></div>
+          <div className="countdown">
+            <span><b>{String(remaining.days).padStart(2, '0')}</b> days</span>
+            <em>:</em><span><b>{String(remaining.hours).padStart(2, '0')}</b> hrs</span>
+            <em>:</em><span><b>{String(remaining.minutes).padStart(2, '0')}</b> min</span>
+            <em>:</em><span><b>{String(remaining.seconds).padStart(2, '0')}</b> sec</span>
+          </div>
         </div>
       </div>
     </aside>
@@ -89,16 +100,16 @@ function ChallengePreview({ challenge }: { challenge: Challenge }) {
 }
 
 function HeroCountdown({ challenge }: { challenge: Challenge }) {
-  const [remaining, setRemaining] = useState(() => timeLeft(challenge.closesAt))
+  const [remaining, setRemaining] = useState(() => timeLeft(challenge))
   useEffect(() => {
-    const timer = window.setInterval(() => setRemaining(timeLeft(challenge.closesAt)), 60_000)
+    const timer = window.setInterval(() => setRemaining(timeLeft(challenge)), 1_000)
     return () => window.clearInterval(timer)
-  }, [challenge.closesAt])
+  }, [challenge])
 
   return (
-    <div className="hero-countdown" aria-label={`${remaining.days} days, ${remaining.hours} hours, and ${remaining.minutes} minutes left in this week's challenge`}>
-      <span><Clock3 size={15} /> Time left to build</span>
-      <strong><b>{String(remaining.days).padStart(2, '0')}</b><small>days</small><i>:</i><b>{String(remaining.hours).padStart(2, '0')}</b><small>hrs</small><i>:</i><b>{String(remaining.minutes).padStart(2, '0')}</b><small>min</small></strong>
+    <div className="hero-countdown" aria-label={`${remaining.days} days, ${remaining.hours} hours, ${remaining.minutes} minutes, and ${remaining.seconds} seconds left in this week's challenge`}>
+      <div className="hero-countdown-row"><span><Clock3 size={15} /> Time left to build</span><strong><b>{String(remaining.days).padStart(2, '0')}</b><small>days</small><i>:</i><b>{String(remaining.hours).padStart(2, '0')}</b><small>hrs</small><i>:</i><b>{String(remaining.minutes).padStart(2, '0')}</b><small>min</small><i>:</i><b>{String(remaining.seconds).padStart(2, '0')}</b><small>sec</small></strong></div>
+      <div className="countdown-progress" aria-hidden="true"><span style={{ width: `${remaining.remainingPercent}%` }} /></div>
     </div>
   )
 }
@@ -189,6 +200,7 @@ function SubmissionModal({ challenge, onClose }: { challenge: Challenge; onClose
                   <label>Creator nickname <small>Public — no full names</small><input required maxLength={24} value={form.childNickname} onChange={(e) => update('childNickname', e.target.value)} placeholder="Your club nickname" /></label>
                   <label>Age group <small>Public</small><select required value={form.ageBand} onChange={(e) => update('ageBand', e.target.value)}><option value="">Choose one</option><option>5–6</option><option>7–9</option><option>10–12</option><option>13–15</option><option>16–18</option></select></label>
                 </div>
+                <label>Country <small>Public — shown as a flag</small><select required value={form.countryCode} onChange={(e) => update('countryCode', e.target.value)}><option value="">Choose a country</option>{countries.map((country) => <option key={country.code} value={country.code}>{country.flag} {country.name}</option>)}</select></label>
               </fieldset>
               <fieldset>
                 <legend><span>2</span> About the build</legend>
@@ -423,7 +435,7 @@ function App() {
       <main>
         <section className="hero page-shell">
           <div className="hero-copy">
-            <div className="eyebrow-pill"><Sparkles size={14} /> Summer 2026 · 8 challenges through Labor Day</div>
+            <div className="eyebrow-pill"><Sparkles size={14} /> 8 challenges · now through Sept 7</div>
             <HeroCountdown challenge={community.challenge} />
             <h1 className="hero-title-direct">Weekly challenge.<br />Share your build.<br /><span>Get inspired by kids around the world.</span></h1>
             <div className="hero-intro-row">
@@ -466,6 +478,7 @@ function App() {
         </section>
 
         <section id="gallery" className="gallery-section page-shell">
+          <div className="gallery-mascot-card"><img src="/weekly-showcase-cat.jpg" alt="Orange clubhouse cat peeking over the weekly showcase" /></div>
           <div className="section-heading">
             <div><span className="kicker">{community.votingOpen ? `Voting now · ${community.galleryChallenge?.weekLabel}` : 'Fresh builds · Voting opens next Monday'}</span><h2>{community.votingOpen ? `${community.galleryChallenge?.title} showcase` : 'The weekly showcase'}</h2></div>
             <p>{community.votingOpen ? 'Explore this week’s gallery of approved builds and choose one favorite before Sunday night. Come back Monday to meet the winners and see the next challenge!' : 'Explore this week’s gallery of approved builds. Come back on Monday to vote for your favorite and see the next challenge!'}</p>
@@ -477,7 +490,7 @@ function App() {
               return (
                 <article className="project-card" key={project.id} style={{ '--accent': project.accent } as CSSProperties}>
                   {project.demoUrl ? <a className="project-browser experience-launch" href={project.demoUrl} target="_blank" rel="noreferrer" aria-label={`Launch ${project.title}`}><div className="window-bar"><span /><span /><span /><small>{project.builder.toLowerCase()}.world</small></div><ProjectScene project={project} /></a> : <div className="project-browser"><div className="window-bar"><span /><span /><span /><small>{project.builder.toLowerCase()}.world</small></div><ProjectScene project={project} /></div>}
-                  <div className="project-meta"><div><div className="project-rank">{community.votingOpen ? `#${index + 1} this week` : 'Ready for Monday’s vote'}</div><h3>{project.demoUrl ? <a className="project-title-launch" href={project.demoUrl} target="_blank" rel="noreferrer">{project.title}</a> : project.title}</h3><p>{project.description}</p><span className="builder-tag">by {project.builder} · age {project.ageBand}</span></div>
+                  <div className="project-meta"><div><div className="project-rank">{community.votingOpen ? `#${index + 1} this week` : 'Ready for Monday’s vote'}</div><h3>{project.demoUrl ? <a className="project-title-launch" href={project.demoUrl} target="_blank" rel="noreferrer">{project.title}</a> : project.title}</h3><p>{project.description}</p><span className="builder-tag">by {project.builder} · age {project.ageBand}{project.countryCode && <span className="country-flag" title={countryName(project.countryCode)} aria-label={`from ${countryName(project.countryCode)}`}>{countryCodeToFlag(project.countryCode)}</span>}</span></div>
                     {community.votingOpen ? <button className={`vote-button ${selected ? 'selected' : ''}`} onClick={() => vote(project)} aria-pressed={selected} aria-label={`Vote for ${project.title}`}><Heart size={22} fill={selected ? 'currentColor' : 'none'} /><b>{votes}</b><small>{selected ? 'Your fave' : 'Favorite'}</small></button> : <button type="button" className="vote-locked" onClick={() => setShowVoteReminder(true)} aria-label={`Get a reminder when voting opens for ${project.title}`}><LockKeyhole size={21} /><small>Voting Monday</small></button>}
                   </div>
                   <div className="project-links">{project.repoUrl && <a href={project.repoUrl} target="_blank" rel="noreferrer"><Github size={16} /> See the code</a>}{project.demoUrl && <a href={project.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Try it</a>}</div>
@@ -486,12 +499,12 @@ function App() {
             })}
           </div>
           {!community.projects.length && <div className="gallery-waiting"><Sparkles size={30} /><h3>The gallery is getting ready.</h3><p>Approved projects will appear here as clubhouse grown-ups finish reviewing them.</p></div>}
-          <div className="gallery-footer-row"><p className="gallery-footnote"><ShieldCheck size={16} /> Every project and link is checked by a club grown-up before appearing here.</p><a className="button button-dark" href="/favorites"><Trophy size={17} /> Meet the Clubhouse Favorites</a></div>
+          <div className="gallery-footer-row"><p className="gallery-footnote"><ShieldCheck size={16} /> Every project and link is checked by a club grown-up before appearing here.</p><div className="gallery-footer-actions"><a className="button button-coral" href="#challenge">This week’s challenge <ArrowRight size={17} /></a><a className="button button-dark" href="/favorites"><Trophy size={17} /> Meet the Clubhouse Favorites</a></div></div>
         </section>
 
         <section id="how" className="how-section">
           <div className="page-shell">
-            <div className="section-heading compact"><div><span className="kicker">Zero pressure. Maximum curiosity.</span><h2>How the club works</h2></div><p>Every Monday brings two adventures: a brand-new build challenge and a chance to vote for last week’s Clubhouse Favorite.</p></div>
+            <div className="how-intro"><div className="section-heading compact"><div><span className="kicker">Zero pressure. Maximum curiosity.</span><h2>How the club works</h2></div><p>Every Monday brings two adventures: a brand-new build challenge and a chance to vote for last week’s Clubhouse Favorite.</p></div><div className="how-mascot-card"><img src="/how-it-works-cat.jpg" alt="Orange clubhouse cat wearing glasses" /></div></div>
             <div className="steps-grid">
               <article><span className="step-icon coral"><MousePointer2 /></span><small>01 · MONDAY</small><h3>A new prompt drops</h3><p>We reveal a playful mission. Use any tool, language, or creative shortcut you like.</p></article>
               <article><span className="step-icon blue"><Code2 /></span><small>02 · ALL WEEK</small><h3>Build and submit</h3><p>Vibe at your own pace. A grown-up can submit your project any time before Sunday night.</p></article>

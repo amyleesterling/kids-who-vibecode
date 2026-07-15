@@ -4,12 +4,14 @@ import {
   BookOpen, Copy, ImagePlus, Inbox, Lightbulb, LogOut, Mail, Pencil, Play, RefreshCw, Save, ShieldCheck, Sparkles, UserPlus, Users, X,
 } from 'lucide-react'
 import { prepareProjectImage } from './lib/projectImage'
+import { countryCodeToFlag, countryName } from './lib/countries'
 
 type AdminSubmission = {
   id: string
   challengeId: string
   childNickname: string
   ageBand: string
+  countryCode: string
   projectTitle: string
   description: string
   repoUrl: string
@@ -541,7 +543,7 @@ function AdminApp() {
                   <small>JPEG, PNG, or WebP · resized and stripped of photo metadata</small>
                 </div>
                 <div className="admin-card-copy">
-                  <span className="builder-tag">by {item.childNickname} · age {item.ageBand}</span>
+                  <span className="builder-tag">by {item.childNickname} · age {item.ageBand}{item.countryCode && <span className="country-flag" title={countryName(item.countryCode)} aria-label={`from ${countryName(item.countryCode)}`}>{countryCodeToFlag(item.countryCode)}</span>}</span>
                   {item.childLed ? <span className="child-led-badge"><ShieldCheck size={15} /> Grown-up attested: child-led project</span> : <span className="child-led-badge missing"><X size={15} /> No child-led attestation on this older submission</span>}
                   <h3>{item.projectTitle}</h3>
                   <p>{item.description}</p>

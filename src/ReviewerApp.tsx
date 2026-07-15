@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AlertTriangle, Check, ExternalLink, Github, Image as ImageIcon, RefreshCw, ShieldCheck, Sparkles, Users } from 'lucide-react'
+import { countryCodeToFlag, countryName } from './lib/countries'
 
 type ReviewerSubmission = {
   id: string
   childNickname: string
   ageBand: string
+  countryCode: string
   projectTitle: string
   description: string
   repoUrl: string
@@ -79,7 +81,7 @@ function ReviewCard({ submission, token, onSaved }: { submission: ReviewerSubmis
   return <article className="reviewer-card">
     <ProtectedImage submission={submission} token={token} />
     <div className="reviewer-card-copy">
-      <span className="builder-tag">by {submission.childNickname} · age {submission.ageBand}</span>
+      <span className="builder-tag">by {submission.childNickname} · age {submission.ageBand}{submission.countryCode && <span className="country-flag" title={countryName(submission.countryCode)} aria-label={`from ${countryName(submission.countryCode)}`}>{countryCodeToFlag(submission.countryCode)}</span>}</span>
       <h2>{submission.projectTitle}</h2>
       <p>{submission.description}</p>
       <div className="reviewer-links"><a href={submission.repoUrl} target="_blank" rel="noreferrer"><Github size={17} /> Review the code</a>{submission.demoUrl && <a href={submission.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={17} /> Play the experience</a>}</div>

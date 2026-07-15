@@ -61,6 +61,10 @@ const validEmail = (value: unknown) => {
   const result = text(value).toLowerCase()
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result) && result.length <= 160 ? result : null
 }
+const validCountryCode = (value: unknown) => {
+  const result = text(value).toUpperCase()
+  return /^[A-Z]{2}$/.test(result) ? result : null
+}
 const escapeHtml = (value: unknown) => String(value ?? '')
   .replaceAll('&', '&amp;')
   .replaceAll('<', '&lt;')
@@ -183,7 +187,7 @@ async function community(db: ClubDatabase, request: Request) {
   const galleryId = galleryChallenge ? String(galleryChallenge.id) : String(challenge.id)
   const projectsStatement = db.prepare(`
     SELECT id, challenge_id AS challengeId, title, builder, age_band AS ageBand,
-      description, repo_url AS repoUrl, demo_url AS demoUrl, base_votes AS baseVotes,
+      country_code AS countryCode, description, repo_url AS repoUrl, demo_url AS demoUrl, base_votes AS baseVotes,
       scene, accent, image_key AS imageKey
     FROM projects WHERE challenge_id = ? AND status = 'approved'
   `).bind(galleryId)
@@ -226,7 +230,7 @@ async function favorites(db: ClubDatabase) {
     WITH totals AS (
       SELECT c.id AS challengeId, c.week_label AS weekLabel, c.title AS challengeTitle,
         c.voting_closes_at AS votingClosedAt, p.id AS projectId, p.title,
-        p.builder, p.age_band AS ageBand, p.description, p.repo_url AS repoUrl,
+        p.builder, p.age_band AS ageBand, p.country_code AS countryCode, p.description, p.repo_url AS repoUrl,
         p.demo_url AS demoUrl, p.image_key AS imageKey,
         p.base_votes + COUNT(v.project_id) AS votes
       FROM challenges c
@@ -234,7 +238,7 @@ async function favorites(db: ClubDatabase) {
       LEFT JOIN votes v ON v.project_id = p.id AND v.challenge_id = c.id
       WHERE c.voting_closes_at <= ?
       GROUP BY c.id, c.week_label, c.title, c.voting_closes_at, p.id, p.title,
-        p.builder, p.age_band, p.description, p.repo_url, p.demo_url, p.image_key, p.base_votes
+        p.builder, p.age_band, p.country_code, p.description, p.repo_url, p.demo_url, p.image_key, p.base_votes
     ), ranked AS (
       SELECT *, ROW_NUMBER() OVER (
         PARTITION BY challengeId ORDER BY votes DESC, title COLLATE NOCASE
@@ -266,6 +270,7 @@ async function favorites(db: ClubDatabase) {
       title: item.title,
       builder: item.builder,
       ageBand: item.ageBand,
+      countryCode: item.countryCode,
       description: item.description,
       repoUrl: item.repoUrl,
       demoUrl: item.demoUrl,
@@ -353,6 +358,7 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request, 
   const challengeId = validText(body.get('challengeId'), 80)
   const childNickname = validText(body.get('childNickname'), 24)
   const ageBand = ['5–6', '7–9', '10–12', '13–15', '16–18'].includes(text(body.get('ageBand'))) ? text(body.get('ageBand')) : null
+  const countryCode = validCountryCode(body.get('countryCode'))
   const projectTitle = validText(body.get('projectTitle'), 60)
   const description = validText(body.get('description'), 280, 10)
   const repoUrl = validUrl(body.get('repoUrl'))
@@ -366,7 +372,7 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request, 
   const image = body.get('image')
   const hasImage = image instanceof File && image.size > 0
 
-  if (!challengeId || !childNickname || !ageBand || !projectTitle || !description || !repoUrl || demoUrl === null || !parentName || !parentEmail || !consent || !publicSharing || !childLed || !termsAccepted) {
+  if (!challengeId || !childNickname || !ageBand || !countryCode || !projectTitle || !description || !repoUrl || demoUrl === null || !parentName || !parentEmail || !consent || !publicSharing || !childLed || !termsAccepted) {
     return json({ error: 'Please complete every required field and permission box.' }, 400)
   }
   if (hasImage && (!['image/webp', 'image/jpeg', 'image/png'].includes(image.type) || image.size > 5_000_000)) {
@@ -393,13 +399,13 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request, 
     const scanId = crypto.randomUUID()
     await db.batch([db.prepare(`
       INSERT INTO submissions (
-        id, challenge_id, child_nickname, age_band, project_title, description,
+        id, challenge_id, child_nickname, age_band, country_code, project_title, description,
         repo_url, demo_url, parent_name, parent_email, consent, public_sharing, child_led,
         terms_accepted, terms_version,
         image_key, image_name, image_content_type, image_size, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 1, 1, ?, ?, ?, ?, ?, 'pending', ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 1, 1, ?, ?, ?, ?, ?, 'pending', ?)
     `).bind(
-      id, challengeId, childNickname, ageBand, projectTitle, description,
+      id, challengeId, childNickname, ageBand, countryCode, projectTitle, description,
       repoUrl, demoUrl, parentName, parentEmail, legalTermsVersion, imageKey || null,
       hasImage ? image.name.slice(0, 120) : null, hasImage ? image.type : null,
         hasImage ? image.size : null, now,
@@ -734,7 +740,7 @@ async function reviewerSubmissions(db: ClubDatabase, request: Request) {
   if (!invite) return json({ error: 'This reviewer invite is missing, expired, or revoked.' }, 401)
   const { results } = await db.prepare(`
     SELECT s.id, s.child_nickname AS childNickname, s.age_band AS ageBand,
-      s.project_title AS projectTitle, s.description, s.repo_url AS repoUrl,
+      s.country_code AS countryCode, s.project_title AS projectTitle, s.description, s.repo_url AS repoUrl,
       s.demo_url AS demoUrl,
       CASE WHEN s.image_key IS NULL OR s.image_key = '' THEN 0 ELSE 1 END AS hasImage,
       sc.status AS safetyStatus, sc.summary AS safetySummary,
@@ -798,7 +804,7 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
   const now = new Date().toISOString()
   const { results: submissions } = await db.prepare(`
     SELECT s.id, challenge_id AS challengeId, child_nickname AS childNickname,
-      age_band AS ageBand, project_title AS projectTitle, description, repo_url AS repoUrl,
+      age_band AS ageBand, country_code AS countryCode, project_title AS projectTitle, description, repo_url AS repoUrl,
       demo_url AS demoUrl, parent_name AS parentName, parent_email AS parentEmail,
       child_led AS childLed,
       image_name AS imageName, image_content_type AS imageContentType, image_size AS imageSize,
@@ -1075,11 +1081,11 @@ async function adminModerate(db: ClubDatabase, request: Request, env: Env) {
   if (type === 'submission' && action === 'approve') {
     const submission = await db.prepare(`
       SELECT id, challenge_id AS challengeId, child_nickname AS childNickname,
-        age_band AS ageBand, project_title AS projectTitle, description,
+        age_band AS ageBand, country_code AS countryCode, project_title AS projectTitle, description,
         repo_url AS repoUrl, demo_url AS demoUrl, image_key AS imageKey
       FROM submissions WHERE id = ?
     `).bind(id).first<{
-      id: string; challengeId: string; childNickname: string; ageBand: string;
+      id: string; challengeId: string; childNickname: string; ageBand: string; countryCode: string;
       projectTitle: string; description: string; repoUrl: string; demoUrl: string | null; imageKey: string | null;
     }>()
     if (!submission) return json({ error: 'Submission not found' }, 404)
@@ -1095,16 +1101,16 @@ async function adminModerate(db: ClubDatabase, request: Request, env: Env) {
     await db.batch([
       db.prepare(`
         INSERT INTO projects (
-          id, challenge_id, title, builder, age_band, description, repo_url, demo_url,
+          id, challenge_id, title, builder, age_band, country_code, description, repo_url, demo_url,
           base_votes, scene, accent, image_key, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, 'approved')
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, 'approved')
         ON CONFLICT(id) DO UPDATE SET
           title = excluded.title, builder = excluded.builder, age_band = excluded.age_band,
-          description = excluded.description, repo_url = excluded.repo_url, demo_url = excluded.demo_url,
+          country_code = excluded.country_code, description = excluded.description, repo_url = excluded.repo_url, demo_url = excluded.demo_url,
           scene = excluded.scene, accent = excluded.accent, image_key = excluded.image_key, status = 'approved'
       `).bind(
         projectId, submission.challengeId, submission.projectTitle, submission.childNickname,
-        submission.ageBand, submission.description, submission.repoUrl, submission.demoUrl || '',
+        submission.ageBand, submission.countryCode, submission.description, submission.repoUrl, submission.demoUrl || '',
         scenes[variant], accents[variant], submission.imageKey,
       ),
       db.prepare(`UPDATE submissions SET status = 'approved' WHERE id = ?`).bind(id),

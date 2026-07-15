@@ -1,0 +1,2 @@
+ALTER TABLE submissions ADD COLUMN country_code TEXT NOT NULL DEFAULT '';
+ALTER TABLE projects ADD COLUMN country_code TEXT NOT NULL DEFAULT '';
