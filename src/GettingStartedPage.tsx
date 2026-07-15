@@ -86,7 +86,7 @@ function GettingStartedPage() {
           <div className="guide-section-number">01</div>
           <div>
             <span className="kicker">First: what are we even doing?</span>
-            <h2>Vibe coding is making software by describing, trying, and changing.</h2>
+            <h2>Vibe coding is making software where AI does the coding.</h2>
             <p>You tell an AI what you want. It creates a first version. You click around, notice what is delightful or broken, and ask for the next change. Your unique human perspective turns AI-generated code into something that only you could create.</p>
             <div className="guide-definition-explainer">
               <figure className="guide-definition-art"><img src="/parent-guide-vibe-coding.jpg" alt="Orange clubhouse cat using a laptop to imagine and build a playful cat-feeding machine" /></figure>
