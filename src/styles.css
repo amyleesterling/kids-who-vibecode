@@ -438,25 +438,25 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
 @media (max-width: 700px) {
   .page-shell, .site-header { width: min(100% - 28px, 1180px); }
   .site-header { height: 72px; }
-  .hero { min-height: auto; padding-block: 26px 62px; gap: 28px; }
-  .eyebrow-pill { margin-bottom: 12px; padding: 6px 10px; font-size: 9px; }
+  .hero { min-height: auto; padding-block: 10px 62px; gap: 28px; }
+  .eyebrow-pill { margin-bottom: 12px; padding: 7px 12px; font-size: 11px; letter-spacing: .04em; }
   .hero h1 { font-size: clamp(48px, 15vw, 70px); }.hero h1.hero-title-direct { font-size: clamp(42px, 12vw, 58px); }.hero-lede { margin: 0; font-size: 15px; }.hero-actions { align-items: stretch; flex-direction: column; gap: 10px; }.hero-actions .button { width: 100%; }.text-link { align-self: center; }
-  .hero-countdown { display: grid; gap: 8px; margin: 0 0 14px; padding: 10px 12px 8px; border: 1.5px solid var(--blue); border-radius: 10px; background: #15132b; background-image: linear-gradient(rgba(101,217,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(101,217,255,.05) 1px, transparent 1px); background-size: 10px 10px; color: white; box-shadow: 4px 4px 0 var(--purple), inset 0 0 20px rgba(101,217,255,.08); }
+  .hero-countdown { display: grid; gap: 7px; margin: 0 0 12px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--ink); box-shadow: none; }
   .hero-countdown-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .hero-countdown-row > span { display: flex; align-items: center; gap: 6px; color: var(--blue); font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+  .hero-countdown-row > span { display: flex; align-items: center; gap: 6px; color: var(--coral); font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
   .hero-countdown strong { display: flex; align-items: baseline; gap: 4px; font-family: 'DM Mono', monospace; }
-  .hero-countdown b { color: white; font-size: 13px; text-shadow: 0 0 8px rgba(101,217,255,.65); }.hero-countdown small { color: var(--green); font-size: 6px; text-transform: uppercase; }.hero-countdown i { color: rgba(255,255,255,.45); font-size: 9px; font-style: normal; }
+  .hero-countdown b { color: var(--ink); font-size: 13px; }.hero-countdown small { color: var(--purple); font-size: 6px; text-transform: uppercase; }.hero-countdown i { color: var(--ink-soft); font-size: 9px; font-style: normal; }
   .hero-countdown-meter { display: grid; gap: 3px; }
-  .hero-countdown .countdown-progress { height: 8px; border-color: rgba(101,217,255,.8); background-color: #09081a; background-image: repeating-linear-gradient(90deg, transparent 0 calc(14.285% - 1px), rgba(101,217,255,.4) calc(14.285% - 1px) 14.285%); box-shadow: 0 0 8px rgba(101,217,255,.25); }
-  .hero-countdown .countdown-progress span { background: linear-gradient(90deg, var(--purple), var(--blue), var(--green)); box-shadow: 0 0 10px rgba(101,217,255,.75); }
-  .hero-countdown-scale { display: flex; justify-content: space-between; color: rgba(255,255,255,.5); font-family: 'DM Mono', monospace; font-size: 6px; letter-spacing: .08em; }
+  .hero-countdown .countdown-progress { height: 6px; border: 0; background: rgba(33,29,56,.13); box-shadow: none; }
+  .hero-countdown .countdown-progress span { background: linear-gradient(90deg, var(--coral), var(--yellow), var(--green)); box-shadow: none; }
+  .hero-countdown-scale { display: flex; justify-content: space-between; color: var(--ink-soft); font-family: 'DM Mono', monospace; font-size: 7px; letter-spacing: .08em; }
   .hero-intro-row { display: grid; grid-template-columns: minmax(0, 1fr) 142px; align-items: center; gap: 6px; }
   .mobile-mascot-wrap { position: relative; z-index: 5; display: block; height: 142px; pointer-events: none; }
   .mobile-mascot { position: relative; width: 142px; height: 142px; padding: 0; border: 0; background: transparent; color: var(--ink); cursor: pointer; pointer-events: auto; }
   .mobile-mascot:focus-visible { outline: 3px solid var(--purple); outline-offset: 4px; border-radius: 18px; }
   .mobile-cat-scene { position: absolute; inset: 0; display: block; }
   .mobile-cat-body { position: absolute; z-index: 3; right: 10px; bottom: 9px; width: 121px; height: 121px; object-fit: contain; }
-  .mobile-cat-tail { position: absolute; z-index: 1; right: 6px; bottom: 11px; width: 34px; height: 88px; object-fit: contain; transform-origin: 48% 90%; animation: cat-tail-sway 4.6s ease-in-out infinite; }
+  .mobile-cat-tail { position: absolute; z-index: 1; right: 21px; bottom: 11px; width: 36px; height: 90px; object-fit: contain; transform-origin: 48% 90%; animation: cat-tail-sway 4.6s ease-in-out infinite; }
   .mobile-cat-table { position: absolute; z-index: 2; right: -2px; bottom: 8px; width: 144px; height: 15px; border: 2px solid var(--ink); border-radius: 8px 8px 4px 4px; background: var(--yellow); box-shadow: 3px 4px 0 var(--ink); }
   .mobile-cat-table::before, .mobile-cat-table::after { content: ''; position: absolute; top: 12px; width: 11px; height: 19px; border: 2px solid var(--ink); border-top: 0; background: var(--coral); }
   .mobile-cat-table::before { left: 17px; transform: rotate(2deg); }
