@@ -27,10 +27,9 @@ const mascotMessages = [
 
 function timeLeft(challenge: Challenge) {
   const now = Date.now()
-  const opensAt = new Date(challenge.opensAt).getTime()
   const closesAt = new Date(challenge.closesAt).getTime()
   const milliseconds = Math.max(0, closesAt - now)
-  const duration = Math.max(1, closesAt - opensAt)
+  const duration = 7 * 86_400_000
   const days = Math.floor(milliseconds / 86_400_000)
   const hours = Math.floor((milliseconds % 86_400_000) / 3_600_000)
   const minutes = Math.floor((milliseconds % 3_600_000) / 60_000)
@@ -108,8 +107,8 @@ function HeroCountdown({ challenge }: { challenge: Challenge }) {
 
   return (
     <div className="hero-countdown" aria-label={`${remaining.days} days, ${remaining.hours} hours, ${remaining.minutes} minutes, and ${remaining.seconds} seconds left in this week's challenge`}>
-      <div className="hero-countdown-row"><span><Clock3 size={15} /> Time left to build</span><strong><b>{String(remaining.days).padStart(2, '0')}</b><small>days</small><i>:</i><b>{String(remaining.hours).padStart(2, '0')}</b><small>hrs</small><i>:</i><b>{String(remaining.minutes).padStart(2, '0')}</b><small>min</small><i>:</i><b>{String(remaining.seconds).padStart(2, '0')}</b><small>sec</small></strong></div>
-      <div className="countdown-progress" aria-hidden="true"><span style={{ width: `${remaining.remainingPercent}%` }} /></div>
+      <div className="hero-countdown-row"><span><Clock3 size={15} /> Time left this week</span><strong><b>{String(remaining.days).padStart(2, '0')}</b><small>D</small><i>:</i><b>{String(remaining.hours).padStart(2, '0')}</b><small>H</small><i>:</i><b>{String(remaining.minutes).padStart(2, '0')}</b><small>M</small><i>:</i><b>{String(remaining.seconds).padStart(2, '0')}</b><small>S</small></strong></div>
+      <div className="hero-countdown-meter"><div className="countdown-progress" aria-hidden="true"><span style={{ width: `${remaining.remainingPercent}%` }} /></div><div className="hero-countdown-scale" aria-hidden="true"><span>7 DAYS</span><span>0</span></div></div>
     </div>
   )
 }
