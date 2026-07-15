@@ -20,6 +20,6 @@ export const activeChallenge: Challenge = {
   votingOpensAt: nextSunday(),
   votingClosesAt: nextSunday(),
   status: 'active',
-  starterIdeas: ['A moon base for cats', 'A garden that sings', 'A city inside a raindrop'],
+  starterIdeas: ['A moon base for cats', 'An alien garden', 'A city inside a raindrop'],
   tools: ['Scratch', 'HTML + CSS', 'Replit', 'Anything you love'],
 }

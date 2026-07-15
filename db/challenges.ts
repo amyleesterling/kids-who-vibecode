@@ -4,7 +4,7 @@ export const scheduledChallenges = [
     prompt: 'Create a little place we can visit. Who lives there? What happens when we tap, click, or press a key?',
     brief: 'Make a tiny interactive world with at least one surprise. It can be a website, game, animation, or something nobody has named yet.',
     opensAt: '2026-07-13T13:00:00.000Z', closesAt: '2026-07-20T04:00:00.000Z', votingOpensAt: '2026-07-20T13:00:00.000Z', votingClosesAt: '2026-07-27T13:00:00.000Z',
-    starterIdeas: ['A moon base for cats', 'A garden that sings', 'A city inside a raindrop'], tools: ['Scratch', 'HTML + CSS', 'Replit', 'Anything you love'],
+    starterIdeas: ['A moon base for cats', 'An alien garden', 'A city inside a raindrop'], tools: ['Scratch', 'HTML + CSS', 'Replit', 'Anything you love'],
   },
   {
     id: 'secret-door', weekLabel: 'Challenge 02 · Jul 20–26', title: 'Open a secret door', eyebrow: 'Every door needs a surprise.',

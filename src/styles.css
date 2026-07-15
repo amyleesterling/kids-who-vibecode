@@ -106,6 +106,7 @@ h1, h2, h3, p { margin-top: 0; }
 .countdown span { display: flex; align-items: baseline; gap: 4px; font-family: 'DM Mono'; font-size: 9px; text-transform: uppercase; }
 .countdown b { font-size: 19px; }
 .countdown em { font-style: normal; font-weight: 800; }
+.hero-countdown { display: none; }
 
 .challenge-section { background: var(--ink); color: white; padding: 100px 0; }
 .challenge-layout { display: grid; grid-template-columns: 110px 1fr .85fr; gap: 58px; align-items: center; }
@@ -182,7 +183,8 @@ h1, h2, h3, p { margin-top: 0; }
 .vote-button { width: 70px; height: 84px; align-self: start; border: 1.5px solid var(--ink); background: white; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
 .vote-button:hover, .vote-button.selected { color: #e6425d; background: #fff1f3; }
 .vote-button b { font-size: 15px; margin-top: 2px; }.vote-button small { font-size: 7px; font-weight: 800; text-transform: uppercase; }
-.vote-locked { width: 70px; height: 84px; align-self: start; border: 1.5px dashed var(--ink); background: var(--paper); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--ink-soft); text-align: center; }
+.vote-locked { width: 70px; height: 84px; align-self: start; border: 1.5px dashed var(--ink); background: var(--paper); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--ink-soft); text-align: center; font: inherit; cursor: pointer; transition: transform .15s ease, background .15s ease, box-shadow .15s ease; }
+.vote-locked:hover, .vote-locked:focus-visible { background: var(--yellow); box-shadow: 3px 3px 0 var(--ink); transform: translate(-1px, -1px); }
 .vote-locked small { max-width: 52px; margin-top: 6px; font-size: 7px; font-weight: 800; line-height: 1.25; text-transform: uppercase; }
 .project-links { display: flex; gap: 18px; border-top: 1px solid var(--line); padding: 11px 7px 3px; }
 .project-links a { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; }
@@ -304,6 +306,11 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
 .success-burst { width: 85px; height: 85px; display: grid; place-items: center; margin: 0 auto 28px; border-radius: 38% 62% 48% 52%; background: var(--green); border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); }
 .idea-success { background: var(--yellow); }
 .success-state .button { margin-top: 18px; }
+.vote-reminder-modal { position: relative; width: min(470px, 100%); padding: 46px 42px 40px; border: 2px solid var(--ink); border-radius: 20px; background: var(--paper); box-shadow: 10px 10px 0 var(--yellow); text-align: center; }
+.vote-reminder-icon { display: grid; place-items: center; width: 62px; height: 62px; margin: 0 auto 22px; border: 2px solid var(--ink); border-radius: 16px; background: var(--blue); box-shadow: 4px 4px 0 var(--ink); transform: rotate(-4deg); }
+.vote-reminder-modal h2 { margin: 9px 0 13px; font-family: 'Paytone One', 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif; font-size: 40px; font-weight: 400; line-height: 1; }
+.vote-reminder-modal p { margin: 0 auto 25px; max-width: 360px; color: var(--ink-soft); font-size: 13px; line-height: 1.6; }
+.vote-reminder-modal .button { margin: auto; }
 .toast { position: fixed; right: 22px; bottom: 22px; z-index: 60; display: flex; align-items: center; gap: 9px; background: var(--ink); color: white; border: 2px solid white; box-shadow: 4px 4px 0 var(--coral); border-radius: 11px; padding: 13px 17px; font-size: 11px; font-weight: 800; }
 .offline-badge { position: fixed; left: 18px; bottom: 16px; z-index: 20; display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,.9); border: 1px solid var(--line); border-radius: 99px; padding: 7px 10px; font-family: 'DM Mono'; font-size: 8px; color: var(--ink-soft); backdrop-filter: blur(7px); }
 
@@ -421,6 +428,10 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
   .site-header { height: 72px; }
   .hero { min-height: auto; padding-block: 48px 70px; gap: 34px; }
   .hero h1 { font-size: clamp(48px, 15vw, 70px); }.hero h1.hero-title-direct { font-size: clamp(42px, 12vw, 58px); }.hero-lede { margin: 0; font-size: 15px; }.hero-actions { align-items: stretch; flex-direction: column; gap: 10px; }.hero-actions .button { width: 100%; }.text-link { align-self: center; }
+  .hero-countdown { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 11px 13px; border: 1.5px solid var(--ink); border-radius: 13px; background: var(--yellow); box-shadow: 4px 4px 0 var(--ink); }
+  .hero-countdown > span { display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+  .hero-countdown strong { display: flex; align-items: baseline; gap: 4px; font-family: 'DM Mono', monospace; }
+  .hero-countdown b { font-size: 15px; }.hero-countdown small { font-size: 7px; text-transform: uppercase; }.hero-countdown i { font-size: 11px; font-style: normal; }
   .hero-intro-row { display: grid; grid-template-columns: minmax(0, 1fr) 142px; align-items: center; gap: 6px; }
   .mobile-mascot-wrap { position: relative; z-index: 5; display: block; height: 150px; pointer-events: none; }
   .mobile-mascot { position: relative; width: 142px; height: 150px; padding: 0; border: 0; background: transparent; color: var(--ink); cursor: pointer; pointer-events: auto; }
@@ -447,6 +458,7 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
   .grownups-section { padding-block: 75px; }.grownups-layout { grid-template-columns: 1fr; gap: 55px; }.safety-art { width: 250px; margin: auto; }.grownups-section ul { grid-template-columns: 1fr; }
   .footer-layout { grid-template-columns: 1fr; justify-items: center; gap: 25px; }.footer-layout > div { justify-content: center; }.footer-ticker { justify-content: flex-start; padding-left: 20px; }
   .submission-modal { padding: 36px 18px 24px; max-height: calc(100vh - 20px); }.modal-backdrop { padding: 10px; }.modal-intro h2, .success-state h2 { font-size: 31px; }.form-grid { grid-template-columns: 1fr; }.submission-modal fieldset { padding: 18px 13px; }.submit-row { flex-direction: column; align-items: stretch; }.submit-row .button { width: 100%; }.submit-row p { justify-content: center; }
+  .vote-reminder-modal { padding: 42px 22px 30px; box-shadow: 7px 7px 0 var(--yellow); }.vote-reminder-modal h2 { font-size: 34px; }.vote-reminder-modal .button { width: 100%; }
   .legal-header { min-height: 76px; }.legal-back { min-height: 38px; font-size: 0; gap: 0; padding-inline: 12px; }.legal-back svg { width: 18px; }
   .legal-hero-inner { min-height: auto; padding-block: 55px; }.legal-hero h1 { font-size: clamp(48px, 14vw, 64px); }.legal-hero p { font-size: 14px; }
   .legal-layout { grid-template-columns: 1fr; gap: 42px; padding-block: 46px 80px; }.legal-nav { position: static; display: grid; grid-template-columns: 1fr 1fr; }.legal-nav span { grid-column: 1 / -1; }

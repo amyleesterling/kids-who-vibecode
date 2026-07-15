@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
-  ArrowRight, CalendarDays, Check, ChevronDown, Code2, ExternalLink, Github, Heart, Lightbulb,
+  ArrowRight, CalendarDays, Check, ChevronDown, Clock3, Code2, ExternalLink, Github, Heart, Lightbulb,
   ImagePlus, LockKeyhole, Mail, Menu, MousePointer2, ShieldCheck, Sparkles, Trophy, X,
 } from 'lucide-react'
 import { loadCommunity, saveVote, subscribeWeeklyChallenge, submitChallengeIdea, submitProject } from './lib/community'
@@ -85,6 +85,36 @@ function ChallengePreview({ challenge }: { challenge: Challenge }) {
         </div>
       </div>
     </aside>
+  )
+}
+
+function HeroCountdown({ challenge }: { challenge: Challenge }) {
+  const [remaining, setRemaining] = useState(() => timeLeft(challenge.closesAt))
+  useEffect(() => {
+    const timer = window.setInterval(() => setRemaining(timeLeft(challenge.closesAt)), 60_000)
+    return () => window.clearInterval(timer)
+  }, [challenge.closesAt])
+
+  return (
+    <div className="hero-countdown" aria-label={`${remaining.days} days, ${remaining.hours} hours, and ${remaining.minutes} minutes left in this week's challenge`}>
+      <span><Clock3 size={15} /> Time left to build</span>
+      <strong><b>{String(remaining.days).padStart(2, '0')}</b><small>days</small><i>:</i><b>{String(remaining.hours).padStart(2, '0')}</b><small>hrs</small><i>:</i><b>{String(remaining.minutes).padStart(2, '0')}</b><small>min</small></strong>
+    </div>
+  )
+}
+
+function VoteReminderModal({ onClose, onSubscribe }: { onClose: () => void; onSubscribe: () => void }) {
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className="vote-reminder-modal" role="dialog" aria-modal="true" aria-labelledby="vote-reminder-title">
+        <button className="modal-close" onClick={onClose} aria-label="Close voting reminder"><X size={20} /></button>
+        <span className="vote-reminder-icon"><Mail size={29} /></span>
+        <span className="kicker">Voting opens Monday</span>
+        <h2 id="vote-reminder-title">Remind me to vote!</h2>
+        <p>Join the grown-up email list and we’ll send the next weekly challenge straight to your inbox—right when voting opens.</p>
+        <button className="button button-coral" onClick={onSubscribe}>Remind me to vote <ArrowRight size={18} /></button>
+      </section>
+    </div>
   )
 }
 
@@ -313,6 +343,7 @@ function App() {
   const [community, setCommunity] = useState<CommunitySnapshot | null>(null)
   const [showSubmit, setShowSubmit] = useState(false)
   const [showIdea, setShowIdea] = useState(false)
+  const [showVoteReminder, setShowVoteReminder] = useState(false)
   const [mobileNav, setMobileNav] = useState(false)
   const [notice, setNotice] = useState('')
   const [voting, setVoting] = useState('')
@@ -320,14 +351,14 @@ function App() {
 
   useEffect(() => { loadCommunity().then(setCommunity) }, [])
   useEffect(() => {
-    if (!showSubmit && !showIdea) return
+    if (!showSubmit && !showIdea && !showVoteReminder) return
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { setShowSubmit(false); setShowIdea(false) }
+      if (event.key === 'Escape') { setShowSubmit(false); setShowIdea(false); setShowVoteReminder(false) }
     }
     document.body.classList.add('modal-open')
     window.addEventListener('keydown', onKey)
     return () => { document.body.classList.remove('modal-open'); window.removeEventListener('keydown', onKey) }
-  }, [showSubmit, showIdea])
+  }, [showSubmit, showIdea, showVoteReminder])
 
   const sortedProjects = useMemo(() => {
     if (!community) return []
@@ -363,6 +394,14 @@ function App() {
     setShowSubmit(true)
   }
 
+  function openVoteSignup() {
+    setShowVoteReminder(false)
+    window.requestAnimationFrame(() => {
+      document.querySelector('#subscribe')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      window.setTimeout(() => document.querySelector<HTMLInputElement>('#newsletter-email')?.focus(), 600)
+    })
+  }
+
   if (!community) return <main className="loading-screen"><Logo /><div className="loader"><span /><span /><span /></div><p>Opening the clubhouse…</p></main>
 
   return (
@@ -385,6 +424,7 @@ function App() {
         <section className="hero page-shell">
           <div className="hero-copy">
             <div className="eyebrow-pill"><Sparkles size={14} /> Summer 2026 · 8 challenges through Labor Day</div>
+            <HeroCountdown challenge={community.challenge} />
             <h1 className="hero-title-direct">Weekly challenge.<br />Share your build.<br /><span>Get inspired by kids around the world.</span></h1>
             <div className="hero-intro-row">
               <p className="hero-lede">Vibe Code Kids is a free creative coding club running Summer 2026. Participation requires guidance from a grown-up.</p>
@@ -438,7 +478,7 @@ function App() {
                 <article className="project-card" key={project.id} style={{ '--accent': project.accent } as CSSProperties}>
                   {project.demoUrl ? <a className="project-browser experience-launch" href={project.demoUrl} target="_blank" rel="noreferrer" aria-label={`Launch ${project.title}`}><div className="window-bar"><span /><span /><span /><small>{project.builder.toLowerCase()}.world</small></div><ProjectScene project={project} /></a> : <div className="project-browser"><div className="window-bar"><span /><span /><span /><small>{project.builder.toLowerCase()}.world</small></div><ProjectScene project={project} /></div>}
                   <div className="project-meta"><div><div className="project-rank">{community.votingOpen ? `#${index + 1} this week` : 'Ready for Monday’s vote'}</div><h3>{project.demoUrl ? <a className="project-title-launch" href={project.demoUrl} target="_blank" rel="noreferrer">{project.title}</a> : project.title}</h3><p>{project.description}</p><span className="builder-tag">by {project.builder} · age {project.ageBand}</span></div>
-                    {community.votingOpen ? <button className={`vote-button ${selected ? 'selected' : ''}`} onClick={() => vote(project)} aria-pressed={selected} aria-label={`Vote for ${project.title}`}><Heart size={22} fill={selected ? 'currentColor' : 'none'} /><b>{votes}</b><small>{selected ? 'Your fave' : 'Favorite'}</small></button> : <div className="vote-locked" aria-label="Voting opens Monday"><LockKeyhole size={21} /><small>Voting Monday</small></div>}
+                    {community.votingOpen ? <button className={`vote-button ${selected ? 'selected' : ''}`} onClick={() => vote(project)} aria-pressed={selected} aria-label={`Vote for ${project.title}`}><Heart size={22} fill={selected ? 'currentColor' : 'none'} /><b>{votes}</b><small>{selected ? 'Your fave' : 'Favorite'}</small></button> : <button type="button" className="vote-locked" onClick={() => setShowVoteReminder(true)} aria-label={`Get a reminder when voting opens for ${project.title}`}><LockKeyhole size={21} /><small>Voting Monday</small></button>}
                   </div>
                   <div className="project-links">{project.repoUrl && <a href={project.repoUrl} target="_blank" rel="noreferrer"><Github size={16} /> See the code</a>}{project.demoUrl && <a href={project.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Try it</a>}</div>
                 </article>
@@ -485,6 +525,7 @@ function App() {
       {notice && <div className="toast" role="status"><Heart size={17} fill="currentColor" /> {notice}</div>}
       {showSubmit && community.acceptingSubmissions && <SubmissionModal challenge={community.challenge} onClose={() => setShowSubmit(false)} />}
       {showIdea && <ChallengeIdeaModal onClose={() => setShowIdea(false)} />}
+      {showVoteReminder && <VoteReminderModal onClose={() => setShowVoteReminder(false)} onSubscribe={openVoteSignup} />}
     </div>
   )
 }
