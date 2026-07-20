@@ -17,7 +17,7 @@ type ProjectIdea = {
   kidLeads: string[]
   prompt: string
   levelUps: string[]
-  more: string[]
+  more: { title: string; type: string; description: string }[]
 }
 
 const ideas: ProjectIdea[] = [
@@ -29,7 +29,11 @@ const ideas: ProjectIdea[] = [
     kidLeads: ['Choose what the button looks like', 'Invent three or more surprises', 'Decide which version is funniest'],
     prompt: 'Help us make a very simple, colorful webpage for a young child. Put one huge button in the middle. Every tap should show a different silly surprise: [ADD THE CHILD’S IDEAS]. Use big shapes, very little text, and no links or menus. Ask us one creative question before you build it.',
     levelUps: ['Add a “start over” button', 'Make the button wobble', 'Create a day and night version'],
-    more: ['Dress-up potato', 'Animal soundboard', 'Magic color mixer'],
+    more: [
+      { title: 'Dress-Up Potato', type: 'Interactive toy', description: 'Tap hats, shoes, faces, and costumes to style one extremely fashionable potato.' },
+      { title: 'Animal Soundboard', type: 'Sound + buttons', description: 'Build a board of big animal buttons with sounds chosen or recorded by a grown-up.' },
+      { title: 'Magic Color Mixer', type: 'Art experiment', description: 'Choose two colors, stir them together, and reveal a creature that matches the new color.' },
+    ],
   },
   {
     age: '7–9', slug: 'ages-7-9', label: 'Curious creators', title: 'Alien Pet Maker',
@@ -39,7 +43,11 @@ const ideas: ProjectIdea[] = [
     kidLeads: ['Draw or describe the pet parts', 'Write the funny introductions', 'Choose every color and label'],
     prompt: 'Build a kid-friendly alien pet maker. Let me choose a body color, number of eyes, antenna style, and favorite snack. Add a button that reveals the pet with a funny introduction. Make it bright, easy to tap, and usable without typing personal information. Use these pet ideas: [ADD THE CHILD’S IDEAS].',
     levelUps: ['Add a randomize button', 'Give each snack a reaction', 'Make a printable pet card'],
-    more: ['Joke vending machine', 'Design-a-dinosaur', 'Tiny café menu'],
+    more: [
+      { title: 'Joke Vending Machine', type: 'Comedy machine', description: 'Press a chunky vending-machine button to receive a joke, riddle, or absurd fortune.' },
+      { title: 'Design-a-Dinosaur', type: 'Character creator', description: 'Combine a head, tail, pattern, habitat, and snack to invent a brand-new dinosaur.' },
+      { title: 'Tiny Café Menu', type: 'Pretend-play page', description: 'Create a clickable menu of impossible snacks, then total a customer’s silly order.' },
+    ],
   },
   {
     age: '10–12', slug: 'ages-10-12', label: 'World builders', title: 'The Mystery Map',
@@ -49,7 +57,11 @@ const ideas: ProjectIdea[] = [
     kidLeads: ['Sketch the map and name each place', 'Write clues and wrong answers', 'Test whether the ending feels fair'],
     prompt: 'Create a one-page mystery map game with four clickable locations: [LIST THE PLACES]. Players collect three clues and then try to open a secret door. Show the clues they have found. Include a reset button and a hint if they get stuck. Keep everything on the device—no accounts, chat, or personal data.',
     levelUps: ['Add two possible endings', 'Create a simple inventory', 'Add keyboard controls'],
-    more: ['Creature care simulator', 'Choose-your-path comic', 'Mini escape room'],
+    more: [
+      { title: 'Creature Care Simulator', type: 'Simulation', description: 'Balance a tiny creature’s snacks, sleep, play, and mysterious magical needs.' },
+      { title: 'Choose-Your-Path Comic', type: 'Interactive story', description: 'Turn drawings or generated scenes into a branching comic with multiple endings.' },
+      { title: 'Mini Escape Room', type: 'Puzzle game', description: 'Hide three clues in one illustrated room and make a final lock that checks the answer.' },
+    ],
   },
   {
     age: '13–15', slug: 'ages-13-15', label: 'Feature inventors', title: 'Mood-to-Music Machine',
@@ -59,7 +71,11 @@ const ideas: ProjectIdea[] = [
     kidLeads: ['Define the moods and visual rules', 'Design the cover styles', 'Decide what should be saved or reset'],
     prompt: 'Build a polished mood-to-music generator. Let someone choose a mood and energy level, then create an imaginary playlist title, three-color palette, and animated cover. Do not use a music service or collect data. Include accessible labels, a reset button, and a way to save the cover as an image if that can work entirely in the browser.',
     levelUps: ['Remember the last mix on this device', 'Add shareable color codes', 'Make the motion react to energy'],
-    more: ['Personal quiz builder', 'Habit streak garden', 'Interactive fan museum'],
+    more: [
+      { title: 'Personal Quiz Builder', type: 'Quiz tool', description: 'Write questions, outcomes, and scoring rules for a quiz about any delightfully niche topic.' },
+      { title: 'Habit Streak Garden', type: 'Local tracker', description: 'Grow a private, device-only garden as small daily habits are checked off.' },
+      { title: 'Interactive Fan Museum', type: 'Digital exhibit', description: 'Curate a spoiler-aware gallery about a favorite fictional world, with sources and sections.' },
+    ],
   },
   {
     age: '16–18', slug: 'ages-16-18', label: 'Product shapers', title: 'Local Events Explorer',
@@ -69,7 +85,11 @@ const ideas: ProjectIdea[] = [
     kidLeads: ['Choose the audience and useful filters', 'Gather and verify public information', 'Interview one tester and improve the design'],
     prompt: 'Help me build a responsive local events explorer for [AUDIENCE]. Start with sample data in a separate file. Add search and filters for date, category, free/paid, and accessibility. Show an empty state when nothing matches. Do not scrape sites or collect visitor information. Cite each event’s public source and clearly label when details were last checked.',
     levelUps: ['Import a clean CSV file', 'Add a map using a privacy-safe approach', 'Write usability tests and fix the top issue'],
-    more: ['Volunteer opportunity finder', 'School club toolkit', 'Public-data story'],
+    more: [
+      { title: 'Volunteer Opportunity Finder', type: 'Community tool', description: 'Organize verified public opportunities by interest, schedule, age requirement, and location.' },
+      { title: 'School Club Toolkit', type: 'Productivity app', description: 'Create a private agenda, role picker, decision log, and meeting timer for a student club.' },
+      { title: 'Public-Data Story', type: 'Data visualization', description: 'Turn one trustworthy open dataset into a clear visual argument with sources and caveats.' },
+    ],
   },
 ]
 
@@ -214,7 +234,7 @@ function ProjectIdeasPage() {
                     </section>
                     <div className="idea-extras">
                       <section><span className="idea-detail-label">LEVEL IT UP</span><ul>{idea.levelUps.map((item) => <li key={item}>{item}</li>)}</ul></section>
-                      <section><span className="idea-detail-label">TRY THIS TOO</span><ul>{idea.more.map((item) => <li key={item}>{item}</li>)}</ul></section>
+                      <section className="more-projects"><span className="idea-detail-label">MORE EXAMPLE PROJECTS</span><div>{idea.more.map((item) => <article key={item.title}><small>{item.type}</small><h3>{item.title}</h3><p>{item.description}</p></article>)}</div></section>
                     </div>
                   </div>
                 </div>

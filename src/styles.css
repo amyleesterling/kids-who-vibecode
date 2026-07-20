@@ -609,11 +609,16 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
 .idea-prompt-card button { display: flex; align-items: center; gap: 6px; border: 1px solid white; border-radius: 5px; background: transparent; color: white; padding: 6px 9px; font: inherit; font-size: 9px; font-weight: 800; cursor: pointer; }
 .idea-prompt-card button:hover, .idea-prompt-card button:focus-visible { background: white; color: var(--ink); }
 .idea-prompt-card p { margin: 0; padding: 24px 26px 28px; font-family: 'DM Mono'; font-size: 11px; line-height: 1.7; }
-.idea-extras { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; }
+.idea-extras { grid-column: 1 / -1; display: grid; grid-template-columns: .65fr 1.35fr; }
 .idea-extras section { padding: 24px 26px; }.idea-extras section + section { border-left: 1px solid var(--line); }
 .idea-extras ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .idea-extras li { position: relative; padding-left: 17px; font-size: 11px; }
 .idea-extras li::before { content: '→'; position: absolute; left: 0; font-weight: 900; }
+.more-projects > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.more-projects article { padding: 14px; border: 1px solid var(--line); border-radius: 9px; background: white; }
+.more-projects article small { display: block; color: var(--coral); font-family: 'DM Mono'; font-size: 7px; font-weight: 800; text-transform: uppercase; }
+.more-projects article h3 { margin: 7px 0 6px; font-size: 14px; line-height: 1.1; }
+.more-projects article p { margin: 0; color: var(--ink-soft); font-size: 9px; line-height: 1.45; }
 
 .ideas-grownup { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 30px; margin-block: 90px; padding: 36px 38px; border: 2px solid var(--ink); border-radius: 16px; background: var(--yellow); box-shadow: 8px 8px 0 var(--ink); }
 .ideas-grownup-icon { width: 72px; height: 72px; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 50%; background: white; }
@@ -631,6 +636,7 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
   .idea-band-inner { grid-template-columns: 1fr; gap: 35px; }
   .idea-band-lead { max-width: 560px; }
   .ideas-grownup { grid-template-columns: auto 1fr; }.ideas-grownup .button { grid-column: 2; justify-self: start; }
+  .idea-extras { grid-template-columns: 1fr; }.idea-extras section + section { border-left: 0; border-top: 1px solid var(--line); }
 }
 
 @media (max-width: 700px) {
@@ -641,7 +647,7 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
   .age-picker { padding-block: 58px; }.age-picker h2 { font-size: 35px; }.age-picker nav { margin-right: calc(var(--page-gutter) * -1); }
   .age-picker nav a { min-height: 95px; }.age-picker nav b { font-size: 25px; }
   .idea-band { padding-block: 72px; }.idea-band-details { grid-template-columns: 1fr; }.idea-prompt-card, .idea-extras { grid-column: auto; }
-  .idea-brief, .kid-leads-card { min-height: 0; }.idea-extras { grid-template-columns: 1fr; }.idea-extras section + section { border-left: 0; border-top: 1px solid var(--line); }
+  .idea-brief, .kid-leads-card { min-height: 0; }.idea-extras { grid-template-columns: 1fr; }.idea-extras section + section { border-left: 0; border-top: 1px solid var(--line); }.more-projects > div { grid-template-columns: 1fr; }
   .idea-icon { right: 4px; }.idea-band-lead h2 { max-width: 85%; }
   .ideas-grownup { grid-template-columns: 1fr; margin-block: 64px; padding: 28px; }.ideas-grownup .button { grid-column: auto; }
   .ideas-final { padding-block: 50px; }.ideas-final .page-shell { grid-template-columns: 1fr; padding: 28px; }.ideas-final .button { justify-self: start; }
