@@ -412,15 +412,6 @@ function App() {
     finally { setVoting(''); window.setTimeout(() => setNotice(''), 3200) }
   }
 
-  function openSubmission() {
-    if (!community?.acceptingSubmissions) {
-      setNotice('This build window is closed. The next challenge launches Monday morning!')
-      window.setTimeout(() => setNotice(''), 3200)
-      return
-    }
-    setShowSubmit(true)
-  }
-
   function openVoteSignup() {
     setShowVoteReminder(false)
     window.requestAnimationFrame(() => {
@@ -445,7 +436,7 @@ function App() {
           <a href="#subscribe" onClick={() => setMobileNav(false)}>Weekly email</a>
           <a href="/getting-started">Parent guide</a>
         </nav>
-        <button className="button button-small button-dark header-submit" onClick={openSubmission}>{community.acceptingSubmissions ? 'Submit a build' : 'Build window closed'} <ArrowRight size={16} /></button>
+        <a className="button button-small button-dark header-submit" href="/submit">{community.acceptingSubmissions ? 'Submit a build' : 'Build window closed'} <ArrowRight size={16} /></a>
       </header>
 
       <main>
@@ -467,10 +458,19 @@ function App() {
                 </button>
               </div>
             </div>
-            <div className="hero-actions"><a className="button button-coral" href="#challenge">See this week’s challenge <ArrowRight size={19} /></a><button className="text-link" onClick={openSubmission}>I made something! <span>↗</span></button></div>
+            <div className="hero-actions"><a className="button button-coral" href="#challenge">See this week’s challenge <ArrowRight size={19} /></a><a className="text-link" href="/submit">I made something! <span>↗</span></a></div>
             <div className="trust-note"><span className="avatar-stack"><i>🐯</i><i>🦊</i><i>🐸</i></span><p><b>Built for kids who create. Guided by grown-ups.</b></p></div>
           </div>
           <ChallengePreview challenge={community.challenge} />
+        </section>
+
+        <section className="weekly-status-strip" aria-label="This week at Vibe Code Kids">
+          <div className="page-shell weekly-status-inner">
+            <div className="weekly-status-label"><span className="status-live-dot" /> <b>This week is live</b></div>
+            <article><small>BUILD NOW</small><strong>{community.challenge.title}</strong><span>{community.acceptingSubmissions ? `Submissions close ${new Intl.DateTimeFormat(undefined, { weekday: 'long', hour: 'numeric', minute: '2-digit' }).format(new Date(community.challenge.closesAt))}` : 'Submissions are closed'}</span><a href="#challenge">View challenge <ArrowRight size={14} /></a></article>
+            <article><small>{community.votingOpen ? 'VOTE NOW' : 'VOTING'}</small><strong>{community.galleryChallenge?.title || 'Opens next Monday'}</strong><span>{community.votingOpen && community.galleryChallenge ? `Voting closes ${new Intl.DateTimeFormat(undefined, { weekday: 'long', hour: 'numeric', minute: '2-digit' }).format(new Date(community.galleryChallenge.votingClosesAt))}` : 'Last week’s gallery opens for voting on Monday'}</span>{community.votingOpen && <a href="#gallery">See the gallery <ArrowRight size={14} /></a>}</article>
+            <a className="button button-dark" href="/submit">Submit a build <ArrowRight size={16} /></a>
+          </div>
         </section>
 
         <section id="challenge" className="challenge-section">
@@ -481,7 +481,7 @@ function App() {
               <h2>{community.challenge.title}</h2>
               <p className="challenge-prompt">{community.challenge.prompt}</p>
               <p>{community.challenge.brief}</p>
-              <button className="button button-light" onClick={openSubmission}>{community.acceptingSubmissions ? 'Share your tiny world' : 'Submissions are closed'} <ArrowRight size={18} /></button>
+              <a className="button button-light" href="/submit">{community.acceptingSubmissions ? 'Share your tiny world' : 'Submissions are closed'} <ArrowRight size={18} /></a>
             </div>
             <div className="idea-board">
               <span className="tape" />

@@ -7,6 +7,8 @@ import FavoritesPage from './FavoritesPage'
 import ReviewerApp from './ReviewerApp'
 import GettingStartedPage from './GettingStartedPage'
 import ProjectIdeasPage from './ProjectIdeasPage'
+import ProjectDemoPage from './ProjectDemoPage'
+import SubmitPage from './SubmitPage'
 import VisitCounter from './VisitCounter'
 import { applyPageSeo } from './lib/seo'
 import './styles.css'
@@ -29,6 +31,8 @@ if (alternateHosts.has(window.location.hostname)) {
       : window.location.pathname.startsWith('/review') ? ReviewerApp
       : window.location.pathname.startsWith('/getting-started') ? GettingStartedPage
       : window.location.pathname.startsWith('/project-ideas') ? ProjectIdeasPage
+      : window.location.pathname.startsWith('/project-demos/') ? ProjectDemoPage
+      : window.location.pathname.startsWith('/submit') ? SubmitPage
       : window.location.pathname.startsWith('/legal') ? LegalPage
       : window.location.pathname.startsWith('/favorites') ? FavoritesPage : App
 

@@ -167,3 +167,12 @@
 .challenge-draft-card h4 { font-size: 25px; }.challenge-draft-card p { font-size: 13px; line-height: 1.5; }
 .challenge-editor-intro p { font-size: 13px; }.challenge-form-grid label > span { font-size: 10px; }.challenge-form-grid input, .challenge-form-grid textarea { font-size: 14px; }
 .admin-card-top time, .admin-card-actions > span { font-size: 10px; }.admin-card-copy > p, .idea-list > article > p { font-size: 14px; }.builder-tag { font-size: 10px; }
+
+.schedule-health-banner { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 13px; margin: 18px 0 0; padding: 14px 18px; border: 1.5px solid var(--ink); border-radius: 10px; }
+.schedule-health-banner.healthy { background: #eaffcf; }.schedule-health-banner.attention { background: #fff1c7; }
+.schedule-health-banner > svg { width: 24px; height: 24px; }.schedule-health-banner > div { display: grid; gap: 3px; }.schedule-health-banner b { font-size: 13px; }.schedule-health-banner span { color: var(--ink-soft); font-size: 11px; }
+.schedule-health-banner button { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--ink); border-radius: 6px; background: white; color: var(--ink); font: inherit; font-size: 10px; font-weight: 800; cursor: pointer; }
+
+@media (max-width: 520px) {
+  .schedule-health-banner { grid-template-columns: auto 1fr; }.schedule-health-banner button { grid-column: 2; justify-self: start; }
+}

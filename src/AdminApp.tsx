@@ -330,6 +330,8 @@ function AdminApp() {
     subscribers: dashboard?.subscribers.filter((item) => item.status === 'active').length || 0,
   }), [clock, dashboard])
   const safetyScannerEnabled = dashboard?.safetyScannerEnabled || false
+  const currentChallenge = dashboard?.schedule.currentChallenge
+  const scheduleHealthy = Boolean(currentChallenge && new Date(currentChallenge.opensAt).getTime() <= clock && new Date(currentChallenge.closesAt).getTime() > clock)
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -489,6 +491,12 @@ function AdminApp() {
         <div><span className="kicker">Private clubhouse</span><h1>Good morning, grown-up!</h1><p>Nothing becomes public until you approve it here.</p></div>
         <div className="admin-header-actions"><a className="button button-light" href="/" target="_blank">View public site <ExternalLink size={16} /></a><button className="admin-icon-button" onClick={() => loadDashboard().catch((reason) => setError(reason.message))} aria-label="Refresh inbox"><RefreshCw size={18} /></button><button className="admin-icon-button" onClick={logout} aria-label="Sign out"><LogOut size={18} /></button></div>
       </header>
+
+      <section className={`schedule-health-banner ${scheduleHealthy ? 'healthy' : 'attention'}`} role="status">
+        {scheduleHealthy ? <Check size={20} /> : <AlertTriangle size={20} />}
+        <div><b>{scheduleHealthy ? 'Weekly rollover is healthy' : 'Challenge schedule needs attention'}</b><span>{scheduleHealthy && currentChallenge ? `${currentChallenge.title} launched ${dateLabel(currentChallenge.opensAt)} and is accepting submissions until ${dateLabel(currentChallenge.closesAt)}.` : 'No currently open challenge matches the scheduled build window.'}</span></div>
+        <button onClick={() => loadDashboard().catch((reason) => setError(reason.message))}><RefreshCw size={15} /> Check now</button>
+      </section>
 
       <section className="admin-schedule-overview" aria-label="Challenge schedule overview">
         <article className="schedule-card visits"><span><Users size={17} /> Anonymous visits</span><h2>{(dashboard?.siteVisits || 0).toLocaleString()}</h2><b>Approximate browser sessions</b>{dashboard?.visitCountries.length ? <div className="visit-country-list">{dashboard.visitCountries.slice(0, 4).map((item) => <span key={item.countryCode}>{countryName(item.countryCode)} <b>{item.count.toLocaleString()}</b></span>)}</div> : <small>Country totals will appear as visits arrive</small>}</article>

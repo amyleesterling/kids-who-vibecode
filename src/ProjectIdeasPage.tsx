@@ -17,6 +17,7 @@ type ProjectIdea = {
   kidLeads: string[]
   prompt: string
   gamePrompt: { title: string; concept: string; prompt: string }
+  demoSlug: string
   levelUps: string[]
   more: { title: string; type: string; description: string }[]
 }
@@ -30,6 +31,7 @@ const ideas: ProjectIdea[] = [
     kidLeads: ['Choose what the button looks like', 'Invent three or more surprises', 'Decide which version is funniest'],
     prompt: 'Help us make a very simple, colorful webpage for a young child. Put one huge button in the middle. Every tap should show a different silly surprise: [ADD THE CHILD’S IDEAS]. Use big shapes, very little text, and no links or menus. Ask us one creative question before you build it.',
     gamePrompt: { title: 'Cloud Catcher', concept: 'Move one basket left and right to catch smiling clouds while avoiding the grumpy raincloud.', prompt: 'Make a very simple game for a young child called Cloud Catcher. The player moves one large basket left and right with big on-screen buttons. Smiling clouds fall slowly and earn one point when caught. A grumpy raincloud ends the round. Use large shapes, no reading during play, gentle motion, and a restart button.' },
+    demoSlug: 'cloud-catcher',
     levelUps: ['Add a “start over” button', 'Make the button wobble', 'Create a day and night version'],
     more: [
       { title: 'Dress-Up Potato', type: 'Interactive toy', description: 'Tap hats, shoes, faces, and costumes to style one extremely fashionable potato.' },
@@ -45,6 +47,7 @@ const ideas: ProjectIdea[] = [
     kidLeads: ['Draw or describe the pet parts', 'Write the funny introductions', 'Choose every color and label'],
     prompt: 'Build a kid-friendly alien pet maker. Let me choose a body color, number of eyes, antenna style, and favorite snack. Add a button that reveals the pet with a funny introduction. Make it bright, easy to tap, and usable without typing personal information. Use these pet ideas: [ADD THE CHILD’S IDEAS].',
     gamePrompt: { title: 'Alien Snack Dash', concept: 'Guide an alien through a tiny maze to collect its favorite snacks before the timer runs out.', prompt: 'Build a colorful maze game called Alien Snack Dash. Let the player choose one alien, move with arrow keys or large touch controls, collect five funny snacks, and reach the spaceship before a gentle timer ends. Include one easy level, a score, a restart button, and a celebratory ending. No accounts, chat, or personal information.' },
+    demoSlug: 'alien-snack-dash',
     levelUps: ['Add a randomize button', 'Give each snack a reaction', 'Make a printable pet card'],
     more: [
       { title: 'Joke Vending Machine', type: 'Comedy machine', description: 'Press a chunky vending-machine button to receive a joke, riddle, or absurd fortune.' },
@@ -60,6 +63,7 @@ const ideas: ProjectIdea[] = [
     kidLeads: ['Sketch the map and name each place', 'Write clues and wrong answers', 'Test whether the ending feels fair'],
     prompt: 'Create a one-page mystery map game with four clickable locations: [LIST THE PLACES]. Players collect three clues and then try to open a secret door. Show the clues they have found. Include a reset button and a hint if they get stuck. Keep everything on the device—no accounts, chat, or personal data.',
     gamePrompt: { title: 'Mystery Map', concept: 'Explore four locations, collect three clues, and use them to unlock a secret ending.', prompt: 'Create a one-page mystery map game with four clickable locations: [LIST THE PLACES]. Players collect three clues and then try to open a secret door. Show the clues they have found. Add a fair hint, two funny wrong answers, keyboard and touch support, and a complete reset button.' },
+    demoSlug: 'mystery-map',
     levelUps: ['Add two possible endings', 'Create a simple inventory', 'Add keyboard controls'],
     more: [
       { title: 'Creature Care Simulator', type: 'Simulation', description: 'Balance a tiny creature’s snacks, sleep, play, and mysterious magical needs.' },
@@ -75,6 +79,7 @@ const ideas: ProjectIdea[] = [
     kidLeads: ['Define the moods and visual rules', 'Design the cover styles', 'Decide what should be saved or reset'],
     prompt: 'Build a polished mood-to-music generator. Let someone choose a mood and energy level, then create an imaginary playlist title, three-color palette, and animated cover. Do not use a music service or collect data. Include accessible labels, a reset button, and a way to save the cover as an image if that can work entirely in the browser.',
     gamePrompt: { title: 'Vibe Shift', concept: 'Match incoming shapes to the right mood, color, and rhythm as the game gradually changes speed.', prompt: 'Design a polished browser game called Vibe Shift. Colored shapes arrive in a rhythm and the player sorts each one into the matching mood zone. Create three short levels, a combo meter, clear keyboard and touch controls, reduced-motion support, and an end screen showing accuracy. Use original visual assets and no external music.' },
+    demoSlug: 'vibe-shift',
     levelUps: ['Remember the last mix on this device', 'Add shareable color codes', 'Make the motion react to energy'],
     more: [
       { title: 'Personal Quiz Builder', type: 'Quiz tool', description: 'Write questions, outcomes, and scoring rules for a quiz about any delightfully niche topic.' },
@@ -90,6 +95,7 @@ const ideas: ProjectIdea[] = [
     kidLeads: ['Choose the audience and useful filters', 'Gather and verify public information', 'Interview one tester and improve the design'],
     prompt: 'Help me build a responsive local events explorer for [AUDIENCE]. Start with sample data in a separate file. Add search and filters for date, category, free/paid, and accessibility. Show an empty state when nothing matches. Do not scrape sites or collect visitor information. Cite each event’s public source and clearly label when details were last checked.',
     gamePrompt: { title: 'Signal Lost', concept: 'Run a remote research station by balancing power, communication, supplies, and crew morale through unexpected events.', prompt: 'Build a strategy game called Signal Lost. The player manages a remote research station for twelve turns with four resources: power, signal, supplies, and morale. Each turn presents an original event with two meaningful choices and visible consequences. Include multiple endings, accessible controls, an in-game explanation of every rule, deterministic tests for the resource logic, and a full reset. Store progress only on the device.' },
+    demoSlug: 'signal-lost',
     levelUps: ['Import a clean CSV file', 'Add a map using a privacy-safe approach', 'Write usability tests and fix the top issue'],
     more: [
       { title: 'Volunteer Opportunity Finder', type: 'Community tool', description: 'Organize verified public opportunities by interest, schedule, age requirement, and location.' },
@@ -144,8 +150,35 @@ const realKidExamples = [
 
 const kidsHackathonUrl = 'https://www.kidsaicoding.com/sample-projects'
 
+const categories = ['All', 'Games', 'Art & images', 'Stories', 'Useful tools'] as const
+type Category = typeof categories[number]
+
+function categoryForType(type: string): Category {
+  if (/story|comic|museum|exhibit/i.test(type)) return 'Stories'
+  if (/art|character|sound|pretend/i.test(type)) return 'Art & images'
+  if (/tool|tracker|productivity|data|community/i.test(type)) return 'Useful tools'
+  return 'Games'
+}
+
+function ageBandAnchor(age: string) {
+  const youngest = Number(age.match(/\d+/)?.[0] || 10)
+  if (youngest <= 6) return 'ages-5-6'
+  if (youngest <= 9) return 'ages-7-9'
+  if (youngest <= 12) return 'ages-10-12'
+  if (youngest <= 15) return 'ages-13-15'
+  return 'ages-16-18'
+}
+
+const catalogProjects = [
+  ...ideas.map((idea) => ({ title: idea.gamePrompt.title, age: idea.age, category: 'Games' as Category, summary: idea.gamePrompt.concept, prompt: idea.gamePrompt.prompt, demo: `/project-demos/${idea.demoSlug}` })),
+  ...visualIdeas.map((idea) => ({ title: idea.title, age: idea.age.replace('AGES ', ''), category: 'Art & images' as Category, summary: idea.build, prompt: idea.prompt, demo: '' })),
+  ...ideas.flatMap((idea) => idea.more.map((project) => ({ title: project.title, age: idea.age, category: categoryForType(project.type), summary: project.description, prompt: `Help me build ${project.title}, a kid-led ${project.type.toLowerCase()}. ${project.description} Start with one small working version, use clear touch-friendly controls, add a complete reset, and do not collect personal information. Ask me three creative questions before building.`, demo: '' }))),
+  { title: 'Local Events Explorer', age: '16–18', category: 'Useful tools' as Category, summary: 'Filter a small, verified collection of public events by date, cost, and accessibility.', prompt: 'Build a responsive local events explorer from a small hand-checked data file. Add search and filters for date, category, cost, and accessibility. Cite each event source, show when details were checked, and do not collect visitor information.', demo: '' },
+]
+
 function ProjectIdeasPage() {
   const [copied, setCopied] = useState('')
+  const [category, setCategory] = useState<Category>('All')
 
   useEffect(() => {
     const previousTitle = document.title
@@ -180,7 +213,7 @@ function ProjectIdeasPage() {
               <span className="kicker">Pick an idea. Make it wonderfully yours.</span>
               <h1>Vibe coding projects for every age.</h1>
               <p>Code a game, direct an image collection, tell a story, explore data, or invent something new. Every starting point has a doable first version and room for a kid’s imagination to take over.</p>
-              <div className="ideas-hero-actions"><a className="button button-coral" href="#pick-an-age">Find a project <ChevronDown size={18} /></a><a className="button button-dark" href="/?submit=1">Submit your project <Send size={17} /></a></div>
+              <div className="ideas-hero-actions"><a className="button button-coral" href="#browse-ideas">Find a project <ChevronDown size={18} /></a><a className="button button-dark" href="/submit">Submit your project <Send size={17} /></a></div>
             </div>
             <aside className="ideas-hero-card">
               <span className="ideas-hero-scribble">IDEA ≠ INSTRUCTIONS</span>
@@ -198,26 +231,14 @@ function ProjectIdeasPage() {
           </nav>
         </section>
 
-        <section className="visual-ideas-section">
-          <div className="page-shell">
-            <div className="visual-ideas-heading">
-              <div><span className="kicker">Not every project starts with code</span><h2>Generate an image. Then make it interactive.</h2></div>
-              <p>Kids can art-direct characters, worlds, and collections with an image generator, then use those creations inside a webpage, story, or game. A grown-up should operate accounts when age rules require it.</p>
-            </div>
-            <div className="visual-ideas-grid">
-              {visualIdeas.map((idea) => {
-                const Icon = idea.icon
-                return <article key={idea.title}>
-                  <div className="visual-idea-top"><span><Icon /></span><small>{idea.age}</small></div>
-                  <h3>{idea.title}</h3>
-                  <div className="visual-idea-step"><b>1 · GENERATE</b><p>{idea.generate}</p></div>
-                  <div className="visual-idea-step"><b>2 · BUILD</b><p>{idea.build}</p></div>
-                  <details><summary>Image prompt <ChevronDown size={15} /></summary><p>{idea.prompt}</p></details>
-                </article>
-              })}
-            </div>
-            <p className="visual-ideas-note"><ShieldCheck size={16} /> Keep full names, faces, schools, locations, and other identifying details out of prompts and generated images.</p>
-          </div>
+        <section id="browse-ideas" className="idea-browser page-shell">
+          <div className="idea-browser-heading"><div><span className="kicker">Browse by what you want to make</span><h2>Pick a direction.</h2></div><p>{catalogProjects.length} starting points · five playable demos</p></div>
+          <div className="idea-filter" role="group" aria-label="Filter project ideas">{categories.map((item) => <button key={item} className={category === item ? 'active' : ''} onClick={() => setCategory(item)} aria-pressed={category === item}>{item}</button>)}</div>
+          <div className="idea-catalog-grid">{catalogProjects.filter((project) => category === 'All' || project.category === category).map((project) => <article key={project.title}>
+            <div><span>{project.category}</span><b>Ages {project.age}</b></div><h3>{project.title}</h3><p>{project.summary}</p>
+            <div className="catalog-actions"><button onClick={() => copyPrompt(`catalog-${project.title}`, project.prompt)}><Copy size={14} /> {copied === `catalog-${project.title}` ? 'Copied!' : 'Copy prompt'}</button>{project.demo ? <a href={project.demo}><Gamepad2 size={14} /> Play demo</a> : <a href={`#${ageBandAnchor(project.age)}`}>Age guide</a>}<a href={`/submit?idea=${encodeURIComponent(project.title)}&age=${encodeURIComponent(project.age)}`}>Submit <ArrowRight size={14} /></a></div>
+          </article>)}</div>
+          <p className="idea-browser-safety"><ShieldCheck size={16} /> Keep full names, faces, schools, locations, and identifying details out of prompts and projects.</p>
         </section>
 
         <section className="ideas-list">
@@ -233,6 +254,7 @@ function ProjectIdeasPage() {
                     <h2>{idea.title}</h2>
                     <p className="idea-tagline">{idea.tagline}</p>
                     <span className="idea-time"><Clock3 size={15} /> A first version: {idea.time}</span>
+                    <a className="button button-dark idea-demo-link" href={`/project-demos/${idea.demoSlug}`}><Gamepad2 size={17} /> Play the demo</a>
                   </div>
 
                   <div className="idea-band-details">
@@ -252,10 +274,7 @@ function ProjectIdeasPage() {
                       <div className="game-prompt-heading"><span><Gamepad2 size={18} /> GAME DESIGN PROMPT</span><button onClick={() => copyPrompt(`${idea.slug}-game`, idea.gamePrompt.prompt)} aria-label={`Copy the ${idea.gamePrompt.title} game prompt`}><Copy size={15} /> {copied === `${idea.slug}-game` ? 'Copied!' : 'Copy'}</button></div>
                       <div><small>{idea.gamePrompt.title}</small><p>{idea.gamePrompt.concept}</p><blockquote>{idea.gamePrompt.prompt}</blockquote></div>
                     </section>
-                    <div className="idea-extras">
-                      <section><span className="idea-detail-label">LEVEL IT UP</span><ul>{idea.levelUps.map((item) => <li key={item}>{item}</li>)}</ul></section>
-                      <section className="more-projects"><span className="idea-detail-label">MORE EXAMPLE PROJECTS</span><div>{idea.more.map((item) => <article key={item.title}><small>{item.type}</small><h3>{item.title}</h3><p>{item.description}</p></article>)}</div></section>
-                    </div>
+                    <div className="idea-extras"><section><span className="idea-detail-label">LEVEL IT UP</span><ul>{idea.levelUps.map((item) => <li key={item}>{item}</li>)}</ul></section></div>
                   </div>
                 </div>
               </article>
@@ -263,7 +282,7 @@ function ProjectIdeasPage() {
           })}
         </section>
 
-        <section className="real-examples-section">
+        <section id="real-projects" className="real-examples-section">
           <div className="page-shell">
             <div className="real-examples-heading"><div><span className="kicker">Built by real kids</span><h2>Ideas from an international kids’ hackathon.</h2></div><p>These projects appear in the Kids AI Coding showcase. The event is for ages 8–13; individual participant ages and names were not published, so we list the credited team and location instead.</p></div>
             <div className="real-examples-grid">
@@ -288,7 +307,7 @@ function ProjectIdeasPage() {
           <div className="page-shell ideas-submit-inner">
             <span className="ideas-submit-icon"><Send /></span>
             <div><span className="kicker">Made something wonderfully weird?</span><h2>Put your project in the clubhouse gallery.</h2><p>A grown-up submits the link and approves what can be shared. Every project and link is reviewed before it appears publicly.</p></div>
-            <a className="button button-coral" href="/?submit=1">Submit a project <ArrowRight size={18} /></a>
+            <a className="button button-coral" href="/submit">Submit a project <ArrowRight size={18} /></a>
           </div>
         </section>
 

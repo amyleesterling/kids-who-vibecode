@@ -24,6 +24,12 @@ const seoByPath: Record<string, SeoEntry> = {
     description: 'Explore playful vibe coding projects for ages 5–18, with doable first versions, copyable AI prompts, and kid-led ways to level up.',
     path: '/project-ideas',
   },
+  '/submit': {
+    title: 'Submit a Kid-Built Project | Vibe Code Kids',
+    description: 'A grown-up can submit a child-led game, world, webpage, or creative coding project for review by Vibe Code Kids.',
+    path: '/submit',
+    noindex: true,
+  },
   '/legal': {
     title: 'Safety, Terms & Privacy | Vibe Code Kids',
     description: 'Read the safety rules, grown-up responsibilities, privacy notice, and participation terms for Vibe Code Kids.',
