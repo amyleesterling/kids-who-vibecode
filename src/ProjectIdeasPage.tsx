@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
-  ArrowLeft, ArrowRight, Check, ChevronDown, Clock3, Code2, Copy, Gamepad2,
-  Lightbulb, Palette, Rocket, ShieldCheck, Sparkles, WandSparkles,
+  ArrowLeft, ArrowRight, BookOpen, Brush, Check, ChevronDown, Clock3, Code2, Copy, Gamepad2,
+  Image as ImageIcon, Images, Lightbulb, Palette, Rocket, Send, ShieldCheck, Sparkles, WandSparkles,
 } from 'lucide-react'
 
 type ProjectIdea = {
@@ -81,6 +81,33 @@ const ideaIcons = {
   rocket: Rocket,
 }
 
+const visualIdeas = [
+  {
+    age: 'AGES 5–7', title: 'Silly Creature Sticker Sheet', icon: Brush,
+    generate: 'Invent one creature, then make six transparent-background stickers showing it sleepy, dancing, muddy, surprised, upside down, and wearing a giant hat.',
+    build: 'Turn the stickers into a tap-to-dress character or a digital sticker book.',
+    prompt: 'Create a child-friendly sticker sheet of the same [DESCRIBE CREATURE] in six funny poses. Keep the character design consistent. Use bold shapes, a thick white sticker border, no words, and a transparent background.',
+  },
+  {
+    age: 'AGES 7–10', title: 'Three-Page Picture Portal', icon: BookOpen,
+    generate: 'Create a hero, a strange doorway, and three connected places in one consistent picture-book style.',
+    build: 'Make a click-through story where each scene has one choice and one tiny animation.',
+    prompt: 'Design a warm picture-book character named [NAME]. First make a character reference image, then create three landscape scenes with that exact character visiting [LIST THREE PLACES]. No text inside the images.',
+  },
+  {
+    age: 'AGES 10–13', title: 'Museum of Impossible Objects', icon: Images,
+    generate: 'Make a collection of artifacts that could not exist: bottled thunderstorms, fossilized jokes, moon seeds, or your own inventions.',
+    build: 'Curate them into a museum webpage with exhibit labels, rooms, and a secret object.',
+    prompt: 'Create a museum catalog image of [IMPOSSIBLE OBJECT] on a simple display plinth. Use the same lighting, background, camera angle, and visual style for every object. Do not add labels or text to the image.',
+  },
+  {
+    age: 'AGES 13–18', title: 'Cover Art Remix Lab', icon: ImageIcon,
+    generate: 'Direct three radically different covers for an imaginary game, album, podcast, or novel.',
+    build: 'Create a comparison tool where visitors change the title, palette, mood, and layout—then choose a final direction.',
+    prompt: 'Create cover art for an imaginary [GAME / ALBUM / PODCAST / NOVEL] called [TITLE]. The mood is [MOOD]. Leave a calm, high-contrast area for us to add the title later. Do not render any words or logos.',
+  },
+]
+
 function ProjectIdeasPage() {
   const [copied, setCopied] = useState('')
 
@@ -116,8 +143,8 @@ function ProjectIdeasPage() {
             <div className="ideas-hero-copy">
               <span className="kicker">Pick an idea. Make it wonderfully yours.</span>
               <h1>Vibe coding projects for every age.</h1>
-              <p>Five playful starting points—with a doable first version, a prompt to borrow, and room for a kid’s imagination to take over.</p>
-              <a className="button button-coral" href="#pick-an-age">Find a project <ChevronDown size={18} /></a>
+              <p>Code a game, direct an image collection, tell a story, explore data, or invent something new. Every starting point has a doable first version and room for a kid’s imagination to take over.</p>
+              <div className="ideas-hero-actions"><a className="button button-coral" href="#pick-an-age">Find a project <ChevronDown size={18} /></a><a className="button button-dark" href="/?submit=1">Submit your project <Send size={17} /></a></div>
             </div>
             <aside className="ideas-hero-card">
               <span className="ideas-hero-scribble">IDEA ≠ INSTRUCTIONS</span>
@@ -125,6 +152,28 @@ function ProjectIdeasPage() {
               <h2>The best project is the one they want to keep changing.</h2>
               <p>Ages are only a rough guide. Start easier, leap ahead, or remix two ideas together.</p>
             </aside>
+          </div>
+        </section>
+
+        <section className="visual-ideas-section">
+          <div className="page-shell">
+            <div className="visual-ideas-heading">
+              <div><span className="kicker">Not every project starts with code</span><h2>Generate an image. Then make it interactive.</h2></div>
+              <p>Kids can art-direct characters, worlds, and collections with an image generator, then use those creations inside a webpage, story, or game. A grown-up should operate accounts when age rules require it.</p>
+            </div>
+            <div className="visual-ideas-grid">
+              {visualIdeas.map((idea) => {
+                const Icon = idea.icon
+                return <article key={idea.title}>
+                  <div className="visual-idea-top"><span><Icon /></span><small>{idea.age}</small></div>
+                  <h3>{idea.title}</h3>
+                  <div className="visual-idea-step"><b>1 · GENERATE</b><p>{idea.generate}</p></div>
+                  <div className="visual-idea-step"><b>2 · BUILD</b><p>{idea.build}</p></div>
+                  <details><summary>Image prompt <ChevronDown size={15} /></summary><p>{idea.prompt}</p></details>
+                </article>
+              })}
+            </div>
+            <p className="visual-ideas-note"><ShieldCheck size={16} /> Keep full names, faces, schools, locations, and other identifying details out of prompts and generated images.</p>
           </div>
         </section>
 
@@ -178,6 +227,14 @@ function ProjectIdeasPage() {
           <div className="ideas-grownup-icon"><ShieldCheck /></div>
           <div><span className="kicker">The useful grown-up role</span><h2>Hold the guardrails. Hand over the creative controls.</h2><p>Manage accounts, privacy, payments, and publishing. Let the kid choose the idea, make the weird decisions, test the result, and decide what to change next.</p></div>
           <a className="button button-dark" href="/getting-started">Read the parent guide <ArrowRight size={17} /></a>
+        </section>
+
+        <section className="ideas-submit">
+          <div className="page-shell ideas-submit-inner">
+            <span className="ideas-submit-icon"><Send /></span>
+            <div><span className="kicker">Made something wonderfully weird?</span><h2>Put your project in the clubhouse gallery.</h2><p>A grown-up submits the link and approves what can be shared. Every project and link is reviewed before it appears publicly.</p></div>
+            <a className="button button-coral" href="/?submit=1">Submit a project <ArrowRight size={18} /></a>
+          </div>
         </section>
 
         <section className="ideas-final">

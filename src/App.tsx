@@ -367,6 +367,17 @@ function App() {
 
   useEffect(() => { loadCommunity().then(setCommunity) }, [])
   useEffect(() => {
+    if (!community || new URLSearchParams(window.location.search).get('submit') !== '1') return
+    const cleanUrl = new URL(window.location.href)
+    cleanUrl.searchParams.delete('submit')
+    window.history.replaceState({}, '', `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`)
+    if (community.acceptingSubmissions) setShowSubmit(true)
+    else {
+      setNotice('This build window is closed. The next challenge launches Monday morning!')
+      window.setTimeout(() => setNotice(''), 3200)
+    }
+  }, [community])
+  useEffect(() => {
     if (!showSubmit && !showIdea && !showVoteReminder) return
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { setShowSubmit(false); setShowIdea(false); setShowVoteReminder(false) }

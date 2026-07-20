@@ -10,6 +10,7 @@
 
 ## Launch follow-ups
 
+- [ ] Build and link a working, mobile-friendly demo for every featured project on the Project Ideas by Age page; include a clear reset and avoid collecting personal information.
 - [x] Add scoped, expiring parent-reviewer links that hide challenges, subscriber data, and submitting grown-up contact details.
 - [ ] Invite one trusted parent and test the complete recommendation and revocation flow before sharing reviewer links more broadly.
 - [ ] Have the Terms, Safety & Privacy Notice reviewed by a qualified lawyer before broad promotion.
