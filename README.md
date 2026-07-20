@@ -12,6 +12,8 @@ Read the public **[Terms, Safety & Privacy Notice](https://vibecodekids.com/lega
 
 New grown-ups can use the **[Parent Guide](https://vibecodekids.com/getting-started)** for a first 20-minute project, AI-tool introductions, GitHub basics, and a pre-publish safety check.
 
+Kids and grown-ups can browse **[Project Ideas by Age](https://vibecodekids.com/project-ideas)** for flexible starter builds, copyable prompts, and age-banded ways to level up.
+
 `vibecodekids.com` is the canonical public address. The `www` address and both `vibecodeclub.org` addresses remain connected and send visitors to the primary domain.
 
 ## What is included

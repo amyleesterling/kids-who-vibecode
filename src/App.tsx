@@ -426,6 +426,7 @@ function App() {
           <a href="#challenge" onClick={() => setMobileNav(false)}>This week</a>
           <a href="#gallery" onClick={() => setMobileNav(false)}>The gallery</a>
           <a href="/favorites">Clubhouse Favorites</a>
+          <a href="/project-ideas">Project ideas</a>
           <a href="#how" onClick={() => setMobileNav(false)}>How it works</a>
           <a href="#subscribe" onClick={() => setMobileNav(false)}>Weekly email</a>
           <a href="/getting-started">Parent guide</a>
@@ -532,7 +533,7 @@ function App() {
         </section>
       </main>
 
-      <footer><div className="page-shell footer-layout"><Logo /><p>Vibe Code Kids was created by Amy Sterling, whose kids enjoy vibe coding and wanted to see what other kids were creating.</p><div><a href="/favorites">Clubhouse Favorites</a><a href="/getting-started">Parent guide</a><a href="#subscribe">Weekly email</a><a href="/legal">Terms & Privacy</a><a href="mailto:hello@vibecodekids.com">Email Amy</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING FUN</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
+      <footer><div className="page-shell footer-layout"><Logo /><p>Vibe Code Kids was created by Amy Sterling, whose kids enjoy vibe coding and wanted to see what other kids were creating.</p><div><a href="/favorites">Clubhouse Favorites</a><a href="/project-ideas">Project ideas by age</a><a href="/getting-started">Parent guide</a><a href="#subscribe">Weekly email</a><a href="/legal">Terms & Privacy</a><a href="mailto:hello@vibecodekids.com">Email Amy</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING FUN</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
       {community.source === 'offline' && <div className="offline-badge" title="The community database could not be reached">Offline mode <ChevronDown size={13} /></div>}
       {notice && <div className="toast" role="status"><Heart size={17} fill="currentColor" /> {notice}</div>}
       {showSubmit && community.acceptingSubmissions && <SubmissionModal challenge={community.challenge} onClose={() => setShowSubmit(false)} />}
