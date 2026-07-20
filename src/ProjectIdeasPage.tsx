@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   ArrowLeft, ArrowRight, BookOpen, Brush, Check, ChevronDown, Clock3, Code2, Copy, Gamepad2,
-  Image as ImageIcon, Images, Lightbulb, Palette, Rocket, Send, ShieldCheck, Sparkles, WandSparkles,
+  ExternalLink, Image as ImageIcon, Images, Lightbulb, MapPin, Palette, Rocket, Send, ShieldCheck, Sparkles, Users, WandSparkles,
 } from 'lucide-react'
 
 type ProjectIdea = {
@@ -16,6 +16,7 @@ type ProjectIdea = {
   make: string
   kidLeads: string[]
   prompt: string
+  gamePrompt: { title: string; concept: string; prompt: string }
   levelUps: string[]
   more: { title: string; type: string; description: string }[]
 }
@@ -28,6 +29,7 @@ const ideas: ProjectIdea[] = [
     make: 'A one-page toy with a big button. Each tap can change the background, reveal a goofy creature, or show a made-up word.',
     kidLeads: ['Choose what the button looks like', 'Invent three or more surprises', 'Decide which version is funniest'],
     prompt: 'Help us make a very simple, colorful webpage for a young child. Put one huge button in the middle. Every tap should show a different silly surprise: [ADD THE CHILD’S IDEAS]. Use big shapes, very little text, and no links or menus. Ask us one creative question before you build it.',
+    gamePrompt: { title: 'Cloud Catcher', concept: 'Move one basket left and right to catch smiling clouds while avoiding the grumpy raincloud.', prompt: 'Make a very simple game for a young child called Cloud Catcher. The player moves one large basket left and right with big on-screen buttons. Smiling clouds fall slowly and earn one point when caught. A grumpy raincloud ends the round. Use large shapes, no reading during play, gentle motion, and a restart button.' },
     levelUps: ['Add a “start over” button', 'Make the button wobble', 'Create a day and night version'],
     more: [
       { title: 'Dress-Up Potato', type: 'Interactive toy', description: 'Tap hats, shoes, faces, and costumes to style one extremely fashionable potato.' },
@@ -42,6 +44,7 @@ const ideas: ProjectIdea[] = [
     make: 'A playful pet creator with choices for eyes, color, antennae, and favorite snack—plus a button that introduces the finished alien.',
     kidLeads: ['Draw or describe the pet parts', 'Write the funny introductions', 'Choose every color and label'],
     prompt: 'Build a kid-friendly alien pet maker. Let me choose a body color, number of eyes, antenna style, and favorite snack. Add a button that reveals the pet with a funny introduction. Make it bright, easy to tap, and usable without typing personal information. Use these pet ideas: [ADD THE CHILD’S IDEAS].',
+    gamePrompt: { title: 'Alien Snack Dash', concept: 'Guide an alien through a tiny maze to collect its favorite snacks before the timer runs out.', prompt: 'Build a colorful maze game called Alien Snack Dash. Let the player choose one alien, move with arrow keys or large touch controls, collect five funny snacks, and reach the spaceship before a gentle timer ends. Include one easy level, a score, a restart button, and a celebratory ending. No accounts, chat, or personal information.' },
     levelUps: ['Add a randomize button', 'Give each snack a reaction', 'Make a printable pet card'],
     more: [
       { title: 'Joke Vending Machine', type: 'Comedy machine', description: 'Press a chunky vending-machine button to receive a joke, riddle, or absurd fortune.' },
@@ -56,6 +59,7 @@ const ideas: ProjectIdea[] = [
     make: 'A small choice-based adventure with four locations, three collectible clues, and a final door that opens only when the clues are found.',
     kidLeads: ['Sketch the map and name each place', 'Write clues and wrong answers', 'Test whether the ending feels fair'],
     prompt: 'Create a one-page mystery map game with four clickable locations: [LIST THE PLACES]. Players collect three clues and then try to open a secret door. Show the clues they have found. Include a reset button and a hint if they get stuck. Keep everything on the device—no accounts, chat, or personal data.',
+    gamePrompt: { title: 'Mystery Map', concept: 'Explore four locations, collect three clues, and use them to unlock a secret ending.', prompt: 'Create a one-page mystery map game with four clickable locations: [LIST THE PLACES]. Players collect three clues and then try to open a secret door. Show the clues they have found. Add a fair hint, two funny wrong answers, keyboard and touch support, and a complete reset button.' },
     levelUps: ['Add two possible endings', 'Create a simple inventory', 'Add keyboard controls'],
     more: [
       { title: 'Creature Care Simulator', type: 'Simulation', description: 'Balance a tiny creature’s snacks, sleep, play, and mysterious magical needs.' },
@@ -70,6 +74,7 @@ const ideas: ProjectIdea[] = [
     make: 'An interactive generator where a visitor chooses a mood and energy level, then gets a visual “mix” with a name, colors, and animated cover art.',
     kidLeads: ['Define the moods and visual rules', 'Design the cover styles', 'Decide what should be saved or reset'],
     prompt: 'Build a polished mood-to-music generator. Let someone choose a mood and energy level, then create an imaginary playlist title, three-color palette, and animated cover. Do not use a music service or collect data. Include accessible labels, a reset button, and a way to save the cover as an image if that can work entirely in the browser.',
+    gamePrompt: { title: 'Vibe Shift', concept: 'Match incoming shapes to the right mood, color, and rhythm as the game gradually changes speed.', prompt: 'Design a polished browser game called Vibe Shift. Colored shapes arrive in a rhythm and the player sorts each one into the matching mood zone. Create three short levels, a combo meter, clear keyboard and touch controls, reduced-motion support, and an end screen showing accuracy. Use original visual assets and no external music.' },
     levelUps: ['Remember the last mix on this device', 'Add shareable color codes', 'Make the motion react to energy'],
     more: [
       { title: 'Personal Quiz Builder', type: 'Quiz tool', description: 'Write questions, outcomes, and scoring rules for a quiz about any delightfully niche topic.' },
@@ -84,6 +89,7 @@ const ideas: ProjectIdea[] = [
     make: 'A responsive explorer built from a small hand-checked dataset. Visitors can filter by category, cost, date, and accessibility needs.',
     kidLeads: ['Choose the audience and useful filters', 'Gather and verify public information', 'Interview one tester and improve the design'],
     prompt: 'Help me build a responsive local events explorer for [AUDIENCE]. Start with sample data in a separate file. Add search and filters for date, category, free/paid, and accessibility. Show an empty state when nothing matches. Do not scrape sites or collect visitor information. Cite each event’s public source and clearly label when details were last checked.',
+    gamePrompt: { title: 'Signal Lost', concept: 'Run a remote research station by balancing power, communication, supplies, and crew morale through unexpected events.', prompt: 'Build a strategy game called Signal Lost. The player manages a remote research station for twelve turns with four resources: power, signal, supplies, and morale. Each turn presents an original event with two meaningful choices and visible consequences. Include multiple endings, accessible controls, an in-game explanation of every rule, deterministic tests for the resource logic, and a full reset. Store progress only on the device.' },
     levelUps: ['Import a clean CSV file', 'Add a map using a privacy-safe approach', 'Write usability tests and fix the top issue'],
     more: [
       { title: 'Volunteer Opportunity Finder', type: 'Community tool', description: 'Organize verified public opportunities by interest, schedule, age requirement, and location.' },
@@ -127,6 +133,16 @@ const visualIdeas = [
     prompt: 'Create cover art for an imaginary [GAME / ALBUM / PODCAST / NOVEL] called [TITLE]. The mood is [MOOD]. Leave a calm, high-contrast area for us to add the title later. Do not render any words or logos.',
   },
 ]
+
+const realKidExamples = [
+  { title: 'Sweet Creation Paradise', team: 'Candy Creators', location: 'Amsterdam, Netherlands', description: 'A game where kids design and build their own imaginary sweet treats.' },
+  { title: 'Sport Origins Explorer', team: 'Sports Historians', location: 'London, UK', description: 'An educational explorer about the history and origins of sports around the world.' },
+  { title: 'Rainbow Cuddle Shop', team: 'Cuddle Squad', location: 'Rotterdam, Netherlands', description: 'A playful shop experience for designing and customizing stuffed animals.' },
+  { title: 'Comic Fantasy Generator', team: 'Comic Creators', location: 'Brussels, Belgium', description: 'A creative tool for making original fantasy comic strips and stories.' },
+  { title: 'Word Web Weaver Puzzles', team: 'Word Wizards', location: 'Paris, France', description: 'A collection of word puzzles and vocabulary games.' },
+]
+
+const kidsHackathonUrl = 'https://www.kidsaicoding.com/sample-projects'
 
 function ProjectIdeasPage() {
   const [copied, setCopied] = useState('')
@@ -232,6 +248,10 @@ function ProjectIdeasPage() {
                       <div><span><Lightbulb size={17} /> STARTER PROMPT</span><button onClick={() => copyPrompt(idea.slug, idea.prompt)} aria-label={`Copy the ${idea.title} starter prompt`}><Copy size={15} /> {copied === idea.slug ? 'Copied!' : 'Copy'}</button></div>
                       <p>{idea.prompt}</p>
                     </section>
+                    <section className="game-prompt-card">
+                      <div className="game-prompt-heading"><span><Gamepad2 size={18} /> GAME DESIGN PROMPT</span><button onClick={() => copyPrompt(`${idea.slug}-game`, idea.gamePrompt.prompt)} aria-label={`Copy the ${idea.gamePrompt.title} game prompt`}><Copy size={15} /> {copied === `${idea.slug}-game` ? 'Copied!' : 'Copy'}</button></div>
+                      <div><small>{idea.gamePrompt.title}</small><p>{idea.gamePrompt.concept}</p><blockquote>{idea.gamePrompt.prompt}</blockquote></div>
+                    </section>
                     <div className="idea-extras">
                       <section><span className="idea-detail-label">LEVEL IT UP</span><ul>{idea.levelUps.map((item) => <li key={item}>{item}</li>)}</ul></section>
                       <section className="more-projects"><span className="idea-detail-label">MORE EXAMPLE PROJECTS</span><div>{idea.more.map((item) => <article key={item.title}><small>{item.type}</small><h3>{item.title}</h3><p>{item.description}</p></article>)}</div></section>
@@ -241,6 +261,21 @@ function ProjectIdeasPage() {
               </article>
             )
           })}
+        </section>
+
+        <section className="real-examples-section">
+          <div className="page-shell">
+            <div className="real-examples-heading"><div><span className="kicker">Built by real kids</span><h2>Ideas from an international kids’ hackathon.</h2></div><p>These projects appear in the Kids AI Coding showcase. The event is for ages 8–13; individual participant ages and names were not published, so we list the credited team and location instead.</p></div>
+            <div className="real-examples-grid">
+              {realKidExamples.map((example, index) => <article key={example.title}>
+                <span className="real-example-number">{String(index + 1).padStart(2, '0')}</span>
+                <h3>{example.title}</h3><p>{example.description}</p>
+                <div><span><Users size={14} /> Ages 8–13 · {example.team}</span><span><MapPin size={14} /> {example.location}</span></div>
+                <a href={kidsHackathonUrl} target="_blank" rel="noreferrer">View source showcase <ExternalLink size={13} /></a>
+              </article>)}
+            </div>
+            <p className="real-examples-source">Reference: Kids AI Coding’s public sample-project showcase. Project descriptions, team credits, and locations are reproduced in shortened form; exact individual ages were not provided.</p>
+          </div>
         </section>
 
         <section className="ideas-grownup page-shell">

@@ -528,6 +528,22 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
 .visual-ideas-note { display: flex; align-items: center; gap: 8px; margin: 30px 0 0; color: #ffffffb8; font-size: 10px; }
 .visual-ideas-note svg { flex: 0 0 auto; color: var(--yellow); }
 
+.real-examples-section { padding-block: 100px; border-top: 2px solid var(--ink); background: var(--paper-deep); }
+.real-examples-heading { display: grid; grid-template-columns: 1.25fr .75fr; align-items: end; gap: 60px; margin-bottom: 42px; }
+.real-examples-heading h2 { max-width: 700px; margin: 8px 0 0; font-size: clamp(42px, 5vw, 62px); line-height: .98; }
+.real-examples-heading > p { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.65; }
+.real-examples-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 13px; }
+.real-examples-grid > article { display: flex; flex-direction: column; min-height: 310px; padding: 22px 19px; border: 1.5px solid var(--ink); border-radius: 13px; background: var(--paper); box-shadow: 4px 4px 0 var(--ink); }
+.real-examples-grid > article:nth-child(1) { border-top: 9px solid var(--coral); }.real-examples-grid > article:nth-child(2) { border-top: 9px solid var(--blue); }.real-examples-grid > article:nth-child(3) { border-top: 9px solid var(--green); }.real-examples-grid > article:nth-child(4) { border-top: 9px solid var(--yellow); }.real-examples-grid > article:nth-child(5) { border-top: 9px solid #d6b8ff; }
+.real-example-number { font-family: 'DM Mono'; font-size: 9px; font-weight: 800; }
+.real-examples-grid h3 { margin: 17px 0 9px; font-size: 22px; line-height: 1.06; }
+.real-examples-grid > article > p { margin: 0 0 20px; color: var(--ink-soft); font-size: 10px; line-height: 1.55; }
+.real-examples-grid article > div { display: grid; gap: 8px; margin-top: auto; padding-top: 15px; border-top: 1px solid var(--line); }
+.real-examples-grid article > div span { display: flex; align-items: flex-start; gap: 6px; font-size: 8px; font-weight: 800; line-height: 1.35; }
+.real-examples-grid article > div svg { flex: 0 0 auto; }
+.real-examples-grid a { display: flex; align-items: center; gap: 6px; margin-top: 16px; font-size: 8px; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.real-examples-source { margin: 28px 0 0; font-family: 'DM Mono'; color: var(--ink-soft); font-size: 8px; line-height: 1.55; }
+
 .ideas-submit { padding-block: 80px; border-top: 2px solid var(--ink); background: var(--green); }
 .ideas-submit-inner { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 30px; padding: 36px 40px; border: 2px solid var(--ink); border-radius: 17px; background: var(--paper); box-shadow: 9px 9px 0 var(--ink); }
 .ideas-submit-icon { width: 74px; height: 74px; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 50%; background: var(--blue); }
@@ -538,6 +554,7 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
 @media (max-width: 980px) {
   .visual-ideas-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
   .visual-ideas-grid h3 { min-height: 0; }
+  .real-examples-grid { grid-template-columns: repeat(2, 1fr); gap: 18px; }.real-examples-grid > article { min-height: 280px; }
   .ideas-submit-inner { grid-template-columns: auto 1fr; }.ideas-submit .button { grid-column: 2; justify-self: start; }
 }
 
@@ -545,6 +562,7 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
   .ideas-hero-actions { align-items: stretch; }.ideas-hero-actions .button { justify-content: center; }
   .visual-ideas-section { padding-block: 72px; }.visual-ideas-heading { grid-template-columns: 1fr; gap: 20px; }.visual-ideas-grid { grid-template-columns: 1fr; }
   .visual-ideas-grid h3 { font-size: 27px; }.visual-ideas-note { align-items: flex-start; }
+  .real-examples-section { padding-block: 72px; }.real-examples-heading { grid-template-columns: 1fr; gap: 20px; }.real-examples-grid { grid-template-columns: 1fr; }.real-examples-grid > article { min-height: 0; }
   .ideas-submit { padding-block: 55px; }.ideas-submit-inner { grid-template-columns: 1fr; padding: 28px; }.ideas-submit .button { grid-column: auto; }
 }
 
@@ -609,6 +627,15 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
 .idea-prompt-card button { display: flex; align-items: center; gap: 6px; border: 1px solid white; border-radius: 5px; background: transparent; color: white; padding: 6px 9px; font: inherit; font-size: 9px; font-weight: 800; cursor: pointer; }
 .idea-prompt-card button:hover, .idea-prompt-card button:focus-visible { background: white; color: var(--ink); }
 .idea-prompt-card p { margin: 0; padding: 24px 26px 28px; font-family: 'DM Mono'; font-size: 11px; line-height: 1.7; }
+.game-prompt-card { grid-column: 1 / -1; overflow: hidden; display: grid; grid-template-columns: 190px 1fr; background: var(--idea-accent) !important; box-shadow: 6px 6px 0 var(--ink); }
+.game-prompt-heading { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 24px; border-right: 1.5px solid var(--ink); }
+.game-prompt-heading > span { display: flex; align-items: center; gap: 8px; font-family: 'DM Mono'; font-size: 9px; font-weight: 800; }
+.game-prompt-heading button { display: flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid var(--ink); border-radius: 5px; background: var(--paper); color: var(--ink); font: inherit; font-size: 9px; font-weight: 800; cursor: pointer; }
+.game-prompt-heading button:hover, .game-prompt-heading button:focus-visible { background: var(--ink); color: white; }
+.game-prompt-card > div:last-child { padding: 23px 26px; }
+.game-prompt-card > div:last-child > small { font-family: 'Paytone One', sans-serif; font-size: 22px; }
+.game-prompt-card > div:last-child > p { margin: 5px 0 15px; font-size: 11px; font-weight: 700; }
+.game-prompt-card blockquote { margin: 0; padding: 14px 16px; border: 1px solid var(--ink); border-radius: 8px; background: #ffffffb8; font-family: 'DM Mono'; font-size: 9px; line-height: 1.55; }
 .idea-extras { grid-column: 1 / -1; display: grid; grid-template-columns: .65fr 1.35fr; }
 .idea-extras section { padding: 24px 26px; }.idea-extras section + section { border-left: 1px solid var(--line); }
 .idea-extras ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
@@ -646,7 +673,8 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
   .ideas-hero-card { max-width: 420px; padding: 34px 27px 28px; }
   .age-picker { padding-block: 58px; }.age-picker h2 { font-size: 35px; }.age-picker nav { margin-right: calc(var(--page-gutter) * -1); }
   .age-picker nav a { min-height: 95px; }.age-picker nav b { font-size: 25px; }
-  .idea-band { padding-block: 72px; }.idea-band-details { grid-template-columns: 1fr; }.idea-prompt-card, .idea-extras { grid-column: auto; }
+  .idea-band { padding-block: 72px; }.idea-band-details { grid-template-columns: 1fr; }.idea-prompt-card, .game-prompt-card, .idea-extras { grid-column: auto; }
+  .game-prompt-card { grid-template-columns: 1fr; }.game-prompt-heading { flex-direction: row; align-items: center; border-right: 0; border-bottom: 1.5px solid var(--ink); }
   .idea-brief, .kid-leads-card { min-height: 0; }.idea-extras { grid-template-columns: 1fr; }.idea-extras section + section { border-left: 0; border-top: 1px solid var(--line); }.more-projects > div { grid-template-columns: 1fr; }
   .idea-icon { right: 4px; }.idea-band-lead h2 { max-width: 85%; }
   .ideas-grownup { grid-template-columns: 1fr; margin-block: 64px; padding: 28px; }.ideas-grownup .button { grid-column: auto; }
