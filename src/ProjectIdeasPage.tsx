@@ -191,6 +191,13 @@ function ProjectIdeasPage() {
           </div>
         </section>
 
+        <section id="pick-an-age" className="age-picker page-shell" aria-labelledby="age-picker-title">
+          <div><span className="kicker">Jump to a starting point</span><h2 id="age-picker-title">What sounds fun today?</h2></div>
+          <nav aria-label="Project age groups">
+            {ideas.map((idea) => <a href={`#${idea.slug}`} key={idea.slug}><b>{idea.age}</b><span>{idea.label}</span></a>)}
+          </nav>
+        </section>
+
         <section className="visual-ideas-section">
           <div className="page-shell">
             <div className="visual-ideas-heading">
@@ -211,13 +218,6 @@ function ProjectIdeasPage() {
             </div>
             <p className="visual-ideas-note"><ShieldCheck size={16} /> Keep full names, faces, schools, locations, and other identifying details out of prompts and generated images.</p>
           </div>
-        </section>
-
-        <section id="pick-an-age" className="age-picker page-shell" aria-labelledby="age-picker-title">
-          <div><span className="kicker">Jump to a starting point</span><h2 id="age-picker-title">What sounds fun today?</h2></div>
-          <nav aria-label="Project age groups">
-            {ideas.map((idea) => <a href={`#${idea.slug}`} key={idea.slug}><b>{idea.age}</b><span>{idea.label}</span></a>)}
-          </nav>
         </section>
 
         <section className="ideas-list">
