@@ -80,7 +80,8 @@ function ChallengePreview({ challenge }: { challenge: Challenge }) {
       <aside className="challenge-preview">
         <div className="window-bar"><span /><span /><span /><small>THIS_WEEK.vibe</small></div>
         <div className="challenge-art hero-makers-art">
-          <img className="hero-makers-image" src="/hero-kids-banner.webp" alt="Two kids creating together on a laptop with the club cat" />
+          <img className="hero-makers-layer hero-makers-tail" src="/hero-kids-tail.png" alt="" aria-hidden="true" />
+          <img className="hero-makers-layer hero-makers-body" src="/hero-kids-body.png" alt="Two kids creating together on a laptop with the club cat" />
         </div>
         <div className="challenge-preview-copy">
           <span className="kicker">{challenge.weekLabel}</span>
@@ -313,13 +314,15 @@ function WeeklySignup() {
   const [email, setEmail] = useState('')
   const [adultConsent, setAdultConsent] = useState(false)
   const [status, setStatus] = useState<'idle' | 'saving' | 'done' | 'error'>('idle')
+  const [confirmationSent, setConfirmationSent] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!adultConsent) { setStatus('error'); return }
     setStatus('saving')
     try {
-      await subscribeWeeklyChallenge(email, adultConsent)
+      const result = await subscribeWeeklyChallenge(email, adultConsent)
+      setConfirmationSent(result.confirmationSent)
       setStatus('done')
       setEmail('')
       setAdultConsent(false)
@@ -338,7 +341,7 @@ function WeeklySignup() {
           <p>One playful coding prompt every Monday. No kid emails, no spam, and one-click unsubscribe anytime.</p>
         </div>
         {status === 'done' ? (
-          <div className="newsletter-success" role="status"><Check size={25} /><div><b>You’re on the grown-up list!</b><span>The next challenge will head your way. New here? <a href="/getting-started">Read the Parent Guide / Getting started</a>.</span></div></div>
+          <div className="newsletter-success" role="status"><Check size={25} /><div><b>You’re on the grown-up list!</b><span>{confirmationSent ? 'Check your inbox for a welcome email. ' : 'The next challenge will head your way. '}New here? <a href="/getting-started">Read the Parent Guide / Getting started</a>.</span></div></div>
         ) : (
           <form className="newsletter-form" onSubmit={handleSubmit}>
             <label htmlFor="newsletter-email">Grown-up email</label>
@@ -441,7 +444,7 @@ function App() {
             <HeroCountdown challenge={community.challenge} />
             <h1 className="hero-title-direct">Weekly challenge.<br />Share your build.<br /><span>Get inspired by kids around the world.</span></h1>
             <div className="hero-intro-row">
-              <p className="hero-lede">Vibe Code Kids is a free creative coding club running Summer 2026. Participation requires guidance from a grown-up.</p>
+              <p className="hero-lede">Vibe Code Kids is a free, grown-up-guided vibe coding club running Summer 2026. Kids create games, worlds, and webpages with AI.</p>
               <div className="mobile-mascot-wrap">
                 <button className="mobile-mascot" type="button" onClick={() => setMascotMessage((current) => current === null ? 0 : (current + 1) % mascotMessages.length)} aria-label="Club cat">
                   {mascotMessage !== null && <span className="mascot-bubble" key={`bubble-${mascotMessage}`}>{mascotMessages[mascotMessage]}</span>}
@@ -533,7 +536,7 @@ function App() {
         </section>
       </main>
 
-      <footer><div className="page-shell footer-layout"><Logo /><p>Vibe Code Kids was created by Amy Sterling, whose kids enjoy vibe coding and wanted to see what other kids were creating.</p><div><a href="/favorites">Clubhouse Favorites</a><a href="/project-ideas">Project ideas by age</a><a href="/getting-started">Parent guide</a><a href="#subscribe">Weekly email</a><a href="/legal">Terms & Privacy</a><a href="mailto:hello@vibecodekids.com">Email Amy</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING FUN</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
+      <footer><div className="page-shell footer-layout"><Logo /><p>Vibe Code Kids was created for fun by <a href="https://x.com/amyneurons" target="_blank" rel="noreferrer">Amy Sterling</a>, whose kids enjoy vibe coding and wanted to see what other kids were creating. Please use it responsibly!</p><div><a href="/favorites">Clubhouse Favorites</a><a href="/project-ideas">Project ideas by age</a><a href="/getting-started">Parent guide</a><a href="#subscribe">Weekly email</a><a href="/legal">Terms & Privacy</a><a href="mailto:hello@vibecodekids.com?subject=Vibe%20Code%20Kids%20contact">Contact us</a><a href="#top">Back to top ↑</a></div></div><div className="footer-ticker"><span>MAKE SOMETHING FUN</span><i>✦</i><span>BREAK IT ON PURPOSE</span><i>✦</i><span>SHOW US WHAT YOU BUILT</span><i>✦</i></div></footer>
       {community.source === 'offline' && <div className="offline-badge" title="The community database could not be reached">Offline mode <ChevronDown size={13} /></div>}
       {notice && <div className="toast" role="status"><Heart size={17} fill="currentColor" /> {notice}</div>}
       {showSubmit && community.acceptingSubmissions && <SubmissionModal challenge={community.challenge} onClose={() => setShowSubmit(false)} />}

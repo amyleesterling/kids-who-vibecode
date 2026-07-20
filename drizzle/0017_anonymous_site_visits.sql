@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS site_metrics (
+  metric TEXT PRIMARY KEY,
+  value INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL
+);

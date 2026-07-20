@@ -72,35 +72,47 @@ const escapeHtml = (value: unknown) => String(value ?? '')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;')
 
-async function sendOwnerNotification(env: Env, kind: 'project' | 'idea') {
+type OwnerNotification = {
+  kind: 'project' | 'idea'
+  id: string
+  title: string
+  creator: string
+  grownupEmail: string
+}
+
+async function sendOwnerNotification(env: Env, notification: OwnerNotification) {
   const recipient = validEmail(env.OWNER_NOTIFICATION_EMAIL)
-  if (!recipient) return
+  if (!recipient || !env.RESEND_API_KEY || !env.NEWSLETTER_FROM_EMAIL) {
+    console.error('Owner notification email is not configured')
+    return false
+  }
 
-  const project = kind === 'project'
-  const form = new URLSearchParams({
-    _subject: project
-      ? 'New Vibe Code Kids project waiting for review'
-      : 'New Vibe Code Kids challenge idea waiting for review',
-    _template: 'table',
-    _captcha: 'false',
-    _url: 'https://vibecodekids.com/clubhouse-admin',
-    Alert: project ? 'A new project was submitted.' : 'A new challenge idea was submitted.',
-    'Next step': 'Open the private Clubhouse Admin to review it.',
-    Clubhouse: 'https://vibecodekids.com/clubhouse-admin',
-    'Submitted at': new Date().toISOString(),
-  })
-
-  const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, {
+  const project = notification.kind === 'project'
+  const label = project ? 'project submission' : 'challenge idea'
+  const subject = project
+    ? `New project submission: ${notification.title}`
+    : `New challenge idea: ${notification.title}`
+  const clubhouseUrl = `https://vibecodekids.com/clubhouse-admin?tab=${project ? 'submissions' : 'ideas'}`
+  const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      accept: 'application/json',
-      'content-type': 'application/x-www-form-urlencoded',
-      origin: 'https://vibecodekids.com',
-      referer: 'https://vibecodekids.com/',
+      authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'content-type': 'application/json',
+      'idempotency-key': `owner-${notification.kind}-${notification.id}`,
     },
-    body: form.toString(),
+    body: JSON.stringify({
+      from: env.NEWSLETTER_FROM_EMAIL,
+      to: [recipient],
+      subject,
+      html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#211d38"><p style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#ff5b55">New ${label}</p><h1 style="font-size:32px;line-height:1.1">${escapeHtml(notification.title)}</h1><p style="font-size:16px;line-height:1.6"><strong>Submitted by:</strong> ${escapeHtml(notification.creator)}<br><strong>Grown-up contact:</strong> ${escapeHtml(notification.grownupEmail)}</p><p style="margin:30px 0"><a href="${clubhouseUrl}" style="background:#211d38;color:#fff;padding:14px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Review in the Clubhouse →</a></p><p style="font-size:12px;color:#666">This private alert was sent because a new ${label} arrived at Vibe Code Kids.</p></div>`,
+      text: `New ${label}\n\n${notification.title}\nSubmitted by: ${notification.creator}\nGrown-up contact: ${notification.grownupEmail}\n\nReview it in the Clubhouse: ${clubhouseUrl}`,
+    }),
   })
-  if (!response.ok) console.error('Owner notification delivery failed', response.status)
+  if (!response.ok) {
+    console.error('Owner notification delivery failed', response.status, await response.text())
+    return false
+  }
+  return true
 }
 
 const adminCookieName = 'clubhouse_admin'
@@ -164,6 +176,29 @@ async function reviewerAccess(db: ClubDatabase, request: Request, touch = true) 
 async function initialize(db: ClubDatabase) {
   await ensureDatabase(db)
   await seedDatabase(db)
+}
+
+async function recordAnonymousVisit(db: ClubDatabase, request: Request) {
+  const now = new Date().toISOString()
+  const countryCode = text((request as Request & { cf?: { country?: string } }).cf?.country).toUpperCase()
+  const statements = [db.prepare(`
+    INSERT INTO site_metrics (metric, value, updated_at)
+    VALUES ('anonymous_visits', 1, ?)
+    ON CONFLICT(metric) DO UPDATE SET
+      value = value + 1,
+      updated_at = excluded.updated_at
+  `).bind(now)]
+  if (/^[A-Z]{2}$/.test(countryCode) && countryCode !== 'XX') {
+    statements.push(db.prepare(`
+      INSERT INTO site_metrics (metric, value, updated_at)
+      VALUES (?, 1, ?)
+      ON CONFLICT(metric) DO UPDATE SET
+        value = value + 1,
+        updated_at = excluded.updated_at
+    `).bind(`country:${countryCode}`, now))
+  }
+  await db.batch(statements)
+  return new Response(null, { status: 204, headers: { 'cache-control': 'no-store' } })
 }
 
 async function community(db: ClubDatabase, request: Request) {
@@ -422,7 +457,13 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request, 
     if (imageKey) await uploads.delete(imageKey).catch(() => undefined)
     throw error
   }
-  context.waitUntil(sendOwnerNotification(env, 'project').catch((error) => console.error('Owner notification failed', error)))
+  context.waitUntil(sendOwnerNotification(env, {
+    kind: 'project',
+    id,
+    title: projectTitle,
+    creator: `${childNickname} · age ${ageBand}`,
+    grownupEmail: parentEmail,
+  }).catch((error) => console.error('Owner notification failed', error)))
   return json({ ok: true }, 201)
 }
 
@@ -443,20 +484,54 @@ async function submitChallengeIdea(db: ClubDatabase, request: Request, env: Env,
     return json({ error: 'Please complete every required field, permission box, and terms box.' }, 400)
   }
 
+  const id = crypto.randomUUID()
   await db.prepare(`
     INSERT INTO challenge_ideas (
       id, idea_title, idea_prompt, starter_spark, creator_nickname,
       creator_group, grownup_email, consent, terms_accepted, terms_version, status, created_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, ?, 'pending', ?)
   `).bind(
-    crypto.randomUUID(), ideaTitle, ideaPrompt, starterSpark, creatorNickname,
+    id, ideaTitle, ideaPrompt, starterSpark, creatorNickname,
     creatorGroup, grownupEmail.toLowerCase(), legalTermsVersion, new Date().toISOString(),
   ).run()
-  context.waitUntil(sendOwnerNotification(env, 'idea').catch((error) => console.error('Owner notification failed', error)))
+  context.waitUntil(sendOwnerNotification(env, {
+    kind: 'idea',
+    id,
+    title: ideaTitle,
+    creator: `${creatorNickname} · ${creatorGroup}`,
+    grownupEmail: grownupEmail.toLowerCase(),
+  }).catch((error) => console.error('Owner notification failed', error)))
   return json({ ok: true }, 201)
 }
 
-async function subscribe(db: ClubDatabase, request: Request) {
+async function sendWelcomeEmail(email: string, unsubscribeToken: string, env: Env) {
+  if (!env.RESEND_API_KEY || !env.NEWSLETTER_FROM_EMAIL) return false
+
+  const unsubscribeUrl = `https://vibecodekids.com/api/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'content-type': 'application/json',
+      'idempotency-key': `welcome-${unsubscribeToken}`,
+    },
+    body: JSON.stringify({
+      from: env.NEWSLETTER_FROM_EMAIL,
+      to: [email],
+      subject: 'Welcome to Vibe Code Club',
+      html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#211d38"><p style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#ff5b55">You’re on the grown-up list</p><h1 style="font-size:36px;line-height:1.05">Welcome to Vibe Code Club.</h1><p style="font-size:17px;line-height:1.6">Every Monday, we’ll send you one playful coding challenge to explore with your kid.</p><p style="font-size:17px;line-height:1.6">New here? The Parent Guide walks you through getting started, keeping your child in the director’s chair, and building one small thing together.</p><p style="margin:32px 0"><a href="https://vibecodekids.com/getting-started" style="background:#211d38;color:#fff;padding:14px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Open the Parent Guide →</a></p><hr style="border:0;border-top:1px solid #ddd"><p style="font-size:12px;color:#666">You’re receiving this grown-up newsletter because this address subscribed at Vibe Code Club. <a href="${unsubscribeUrl}">Unsubscribe</a>.</p></div>`,
+      text: `Welcome to Vibe Code Club.\n\nEvery Monday, we’ll send you one playful coding challenge to explore with your kid.\n\nStart with the Parent Guide: https://vibecodekids.com/getting-started\n\nUnsubscribe: ${unsubscribeUrl}`,
+    }),
+  })
+
+  if (!response.ok) {
+    console.error('Welcome email failed', response.status, await response.text())
+    return false
+  }
+  return true
+}
+
+async function subscribe(db: ClubDatabase, request: Request, env: Env) {
   const body = await request.json().catch(() => null) as Record<string, unknown> | null
   if (!body || text(body.website)) return json({ error: 'Invalid signup' }, 400)
 
@@ -467,7 +542,8 @@ async function subscribe(db: ClubDatabase, request: Request) {
   }
 
   const now = new Date().toISOString()
-  const existing = await db.prepare(`SELECT id FROM subscribers WHERE email = ?`).bind(email).first<{ id: string }>()
+  const existing = await db.prepare(`SELECT id, unsubscribe_token AS unsubscribeToken FROM subscribers WHERE email = ?`).bind(email).first<{ id: string; unsubscribeToken: string }>()
+  const unsubscribeToken = existing?.unsubscribeToken || crypto.randomUUID()
   if (existing) {
     await db.prepare(`
       UPDATE subscribers
@@ -479,10 +555,14 @@ async function subscribe(db: ClubDatabase, request: Request) {
       INSERT INTO subscribers (
         id, email, adult_consent, status, unsubscribe_token, source, created_at, updated_at
       ) VALUES (?, ?, 1, 'active', ?, 'website', ?, ?)
-    `).bind(crypto.randomUUID(), email, crypto.randomUUID(), now, now).run()
+    `).bind(crypto.randomUUID(), email, unsubscribeToken, now, now).run()
   }
 
-  return json({ ok: true }, 201)
+  const confirmationSent = await sendWelcomeEmail(email, unsubscribeToken, env).catch((error) => {
+    console.error('Welcome email failed', error)
+    return false
+  })
+  return json({ ok: true, confirmationSent }, 201)
 }
 
 async function unsubscribe(db: ClubDatabase, request: Request) {
@@ -802,6 +882,16 @@ async function reviewerReview(db: ClubDatabase, request: Request) {
 async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
   if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
   const now = new Date().toISOString()
+  const visitMetric = await db.prepare(`
+    SELECT value, updated_at AS updatedAt FROM site_metrics WHERE metric = 'anonymous_visits'
+  `).first<{ value: number; updatedAt: string }>()
+  const { results: visitCountryRows } = await db.prepare(`
+    SELECT SUBSTR(metric, 9) AS countryCode, value AS count
+    FROM site_metrics
+    WHERE metric LIKE 'country:%'
+    ORDER BY value DESC, metric
+    LIMIT 20
+  `).all<{ countryCode: string; count: number }>()
   const { results: submissions } = await db.prepare(`
     SELECT s.id, challenge_id AS challengeId, child_nickname AS childNickname,
       age_band AS ageBand, country_code AS countryCode, project_title AS projectTitle, description, repo_url AS repoUrl,
@@ -889,6 +979,9 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
   }))
 
   return json({
+    siteVisits: Number(visitMetric?.value || 0),
+    lastVisitAt: visitMetric?.updatedAt || null,
+    visitCountries: visitCountryRows.map((item) => ({ countryCode: item.countryCode, count: Number(item.count) })),
     submissions: submissions.map((item) => ({
       ...item,
       childLed: Boolean(item.childLed),
@@ -1171,12 +1264,13 @@ export default {
     try {
       await initialize(env.DB)
       if (request.method === 'GET' && url.pathname === '/api/community') return community(env.DB, request)
+      if (request.method === 'POST' && url.pathname === '/api/visits') return recordAnonymousVisit(env.DB, request)
       if (request.method === 'GET' && url.pathname === '/api/favorites') return favorites(env.DB)
       if (request.method === 'GET' && url.pathname.startsWith('/api/project-images/')) return projectImage(env.DB, env.UPLOADS, request)
       if (request.method === 'POST' && url.pathname === '/api/vote') return vote(env.DB, request)
       if (request.method === 'POST' && url.pathname === '/api/submissions') return submit(env.DB, env.UPLOADS, request, env, context)
       if (request.method === 'POST' && url.pathname === '/api/challenge-ideas') return submitChallengeIdea(env.DB, request, env, context)
-      if (request.method === 'POST' && url.pathname === '/api/subscribers') return subscribe(env.DB, request)
+      if (request.method === 'POST' && url.pathname === '/api/subscribers') return subscribe(env.DB, request, env)
       if (request.method === 'GET' && url.pathname === '/api/unsubscribe') return unsubscribe(env.DB, request)
       if (request.method === 'POST' && url.pathname === '/api/newsletter/send-weekly') return sendWeeklyChallenge(env.DB, request, env)
       if (request.method === 'GET' && url.pathname === '/api/safety/queue') return claimSafetyScans(env.DB, request, env)

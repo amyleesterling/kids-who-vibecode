@@ -7,6 +7,8 @@ import FavoritesPage from './FavoritesPage'
 import ReviewerApp from './ReviewerApp'
 import GettingStartedPage from './GettingStartedPage'
 import ProjectIdeasPage from './ProjectIdeasPage'
+import VisitCounter from './VisitCounter'
+import { applyPageSeo } from './lib/seo'
 import './styles.css'
 import './admin.css'
 import './reviewer.css'
@@ -21,6 +23,7 @@ if (alternateHosts.has(window.location.hostname)) {
   primaryUrl.port = ''
   window.location.replace(primaryUrl)
 } else {
+  applyPageSeo(window.location.pathname)
   const Page = window.location.pathname.startsWith('/clubhouse-admin')
     ? AdminApp
       : window.location.pathname.startsWith('/review') ? ReviewerApp
@@ -32,6 +35,7 @@ if (alternateHosts.has(window.location.hostname)) {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <Page />
+      {!window.location.pathname.startsWith('/clubhouse-admin') && !window.location.pathname.startsWith('/review') && <VisitCounter />}
     </StrictMode>,
   )
 }

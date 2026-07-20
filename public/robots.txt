@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /clubhouse-admin/
+Disallow: /review
+Disallow: /api/
+
+Sitemap: https://vibecodekids.com/sitemap.xml
