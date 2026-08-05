@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
   ArrowRight, CalendarDays, Check, ChevronDown, Clock3, Code2, ExternalLink, Github, Heart, Lightbulb,
@@ -44,6 +44,83 @@ function Logo() {
       <span className="logo-mark"><span /> <span /> <span /></span>
       <span>VIBE CODE<br /><b>CLUB</b></span>
     </a>
+  )
+}
+
+function ScrollCat3D() {
+  const hostRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const host = hostRef.current
+    if (!host) return
+
+    let viewer: HTMLElement | null = null
+    let animationFrame = 0
+    let disposed = false
+    let trackingScroll = false
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+    const update = () => {
+      animationFrame = 0
+      if (!viewer) return
+      const rect = host.getBoundingClientRect()
+      const progress = Math.min(1, Math.max(0, (window.innerHeight - rect.top) / (window.innerHeight + rect.height)))
+      const angle = reducedMotion.matches ? 0 : -7.5 + progress * 15
+      viewer.setAttribute('camera-orbit', `${angle.toFixed(2)}deg 75deg 105%`)
+    }
+
+    const scheduleUpdate = () => {
+      if (!animationFrame) animationFrame = window.requestAnimationFrame(update)
+    }
+
+    const loadViewer = () => {
+      void import('@google/model-viewer').then(() => {
+        if (disposed) return
+        viewer = document.createElement('model-viewer')
+        viewer.className = 'how-cat-model'
+        viewer.setAttribute('src', '/club-cat-3d.glb')
+        viewer.setAttribute('poster', '/how-it-works-cat.jpg')
+        viewer.setAttribute('alt', 'A chubby 3D clubhouse cat')
+        viewer.setAttribute('loading', 'lazy')
+        viewer.setAttribute('reveal', 'auto')
+        viewer.setAttribute('interaction-prompt', 'none')
+        viewer.setAttribute('shadow-intensity', '0.75')
+        viewer.setAttribute('environment-image', 'neutral')
+        viewer.setAttribute('exposure', '1.05')
+        viewer.setAttribute('field-of-view', '30deg')
+        viewer.addEventListener('load', () => host.classList.add('is-model-ready'), { once: true })
+        host.replaceChildren(viewer)
+        update()
+        if (!reducedMotion.matches) {
+          trackingScroll = true
+          window.addEventListener('scroll', scheduleUpdate, { passive: true })
+          window.addEventListener('resize', scheduleUpdate)
+        }
+      })
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return
+      observer.disconnect()
+      loadViewer()
+    }, { rootMargin: '350px 0px' })
+    observer.observe(host)
+
+    return () => {
+      disposed = true
+      observer.disconnect()
+      window.cancelAnimationFrame(animationFrame)
+      if (trackingScroll) {
+        window.removeEventListener('scroll', scheduleUpdate)
+        window.removeEventListener('resize', scheduleUpdate)
+      }
+    }
+  }, [])
+
+  return (
+    <div className="how-mascot-card" aria-hidden="true">
+      <div ref={hostRef} className="how-cat-model-host" />
+    </div>
   )
 }
 
@@ -518,7 +595,7 @@ function App() {
 
         <section id="how" className="how-section">
           <div className="page-shell">
-            <div className="how-intro"><div className="section-heading compact"><div><span className="kicker">Zero pressure. Maximum curiosity.</span><h2>How the club works</h2></div><p>Every Monday brings two adventures: a brand-new build challenge and a chance to vote for last week’s Clubhouse Favorite.</p></div><div className="how-mascot-card"><img src="/how-it-works-cat.jpg" alt="Orange clubhouse cat wearing glasses" /></div></div>
+            <div className="how-intro"><div className="section-heading compact"><div><span className="kicker">Zero pressure. Maximum curiosity.</span><h2>How the club works</h2></div><p>Every Monday brings two adventures: a brand-new build challenge and a chance to vote for last week’s Clubhouse Favorite.</p></div><ScrollCat3D /></div>
             <div className="steps-grid">
               <article><span className="step-icon coral"><MousePointer2 /></span><small>01 · MONDAY</small><h3>A new prompt drops</h3><p>We reveal a playful mission. Use any tool, language, or creative shortcut you like.</p></article>
               <article><span className="step-icon blue"><Code2 /></span><small>02 · ALL WEEK</small><h3>Build and submit</h3><p>Vibe at your own pace. A grown-up can submit your project any time before Sunday night.</p></article>
