@@ -66,7 +66,7 @@ function ScrollCat3D() {
       const rect = host.getBoundingClientRect()
       const progress = Math.min(1, Math.max(0, (window.innerHeight - rect.top) / (window.innerHeight + rect.height)))
       const angle = reducedMotion.matches ? 0 : -7.5 + progress * 15
-      viewer.setAttribute('camera-orbit', `${angle.toFixed(2)}deg 75deg 105%`)
+      viewer.setAttribute('camera-orbit', `${angle.toFixed(2)}deg 75deg 86%`)
     }
 
     const scheduleUpdate = () => {
@@ -79,15 +79,15 @@ function ScrollCat3D() {
         viewer = document.createElement('model-viewer')
         viewer.className = 'how-cat-model'
         viewer.setAttribute('src', '/club-cat-3d.glb')
-        viewer.setAttribute('poster', '/how-it-works-cat.jpg')
         viewer.setAttribute('alt', 'A chubby 3D clubhouse cat')
         viewer.setAttribute('loading', 'lazy')
         viewer.setAttribute('reveal', 'auto')
         viewer.setAttribute('interaction-prompt', 'none')
-        viewer.setAttribute('shadow-intensity', '0.75')
+        viewer.setAttribute('shadow-intensity', '0.9')
+        viewer.setAttribute('shadow-softness', '0.85')
         viewer.setAttribute('environment-image', 'neutral')
         viewer.setAttribute('exposure', '1.05')
-        viewer.setAttribute('field-of-view', '30deg')
+        viewer.setAttribute('field-of-view', '26deg')
         viewer.addEventListener('load', () => host.classList.add('is-model-ready'), { once: true })
         host.replaceChildren(viewer)
         update()
