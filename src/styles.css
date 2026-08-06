@@ -537,16 +537,54 @@ footer { background: var(--ink); color: white; padding: 55px 0 0; overflow: hidd
 .weekly-status-inner > .button { white-space: nowrap; }
 
 /* Dedicated submission page */
-.submit-page { min-height: 100vh; background: var(--paper); }
+.submit-page {
+  --ink: #102b59;
+  --ink-soft: #365477;
+  --paper: #edf8ff;
+  --paper-deep: #d8efff;
+  --blue: #70d3ff;
+  --green: #70d3ff;
+  --yellow: #f2c34a;
+  --coral: #f2c34a;
+  --line: rgba(16, 43, 89, .22);
+  min-height: 100vh;
+  color: var(--ink);
+  background: var(--paper);
+}
 .submit-page-header { min-height: 86px; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
-.submit-page-hero { padding-block: 65px; border-block: 2px solid var(--ink); background: var(--green); }.submit-page-hero h1 { margin: 9px 0 10px; font-size: clamp(52px, 7vw, 88px); line-height: .92; }.submit-page-hero p { margin: 0; font-size: 16px; }
+.submit-page .logo { font-size: 12px; }
+.submit-page .logo-mark::before { background: var(--yellow); }
+.submit-page .button { font-size: 16px; }
+.submit-page-hero {
+  padding-block: 65px;
+  border-block: 2px solid var(--ink);
+  background-color: var(--blue);
+  background-image: linear-gradient(135deg, rgba(255,255,255,.22), transparent 58%);
+}
+.submit-page-hero h1 { margin: 9px 0 10px; font-size: clamp(52px, 7vw, 88px); line-height: .92; }
+.submit-page-hero p { margin: 0; font-size: 18px; }
 .submit-page-form { display: grid; grid-template-columns: 180px minmax(0, 820px); justify-content: center; gap: 42px; padding-block: 75px 110px; }
-.submit-progress { align-self: start; position: sticky; top: 24px; display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 13px 10px; }.submit-progress span { width: 42px; height: 42px; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 50%; background: var(--yellow); font-family: 'DM Mono'; font-size: 11px; font-weight: 800; }.submit-progress b { font-size: 13px; }
-.submit-fields { min-width: 0; }.submit-fields fieldset { margin: 0 0 22px; padding: 30px; border: 1.5px solid var(--ink); border-radius: 14px; background: white; box-shadow: 5px 5px 0 var(--ink); }.submit-fields legend { padding: 0 10px; font-size: 19px; font-weight: 900; }.submit-fields legend span { width: 31px; height: 31px; display: inline-grid; place-items: center; margin-right: 8px; border: 1px solid var(--ink); border-radius: 50%; background: var(--yellow); font-size: 11px; }
-.submit-fields label { display: grid; gap: 7px; margin-bottom: 17px; font-size: 12px; font-weight: 800; }.submit-fields label small { color: var(--ink-soft); font-size: 10px; font-weight: 500; }.submit-fields input:not([type="checkbox"]), .submit-fields select, .submit-fields textarea { width: 100%; padding: 12px 13px; border: 1.5px solid var(--ink); border-radius: 7px; background: var(--paper); color: var(--ink); font: inherit; font-size: 13px; }.submit-fields textarea { min-height: 110px; resize: vertical; }.submit-fields .checkbox-row { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font-weight: 600; }.submit-fields .checkbox-row input { margin-top: 3px; }
+.submit-progress { align-self: start; position: sticky; top: 24px; display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 13px 10px; }.submit-progress span { width: 42px; height: 42px; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 50%; background: var(--yellow); font-family: 'DM Mono'; font-size: 14px; font-weight: 800; }.submit-progress b { font-size: 16px; }
+.submit-fields { min-width: 0; }.submit-fields fieldset { margin: 0 0 22px; padding: 30px; border: 1.5px solid var(--ink); border-radius: 14px; background: white; box-shadow: 5px 5px 0 var(--ink); }.submit-fields legend { padding: 0 10px; font-size: 20px; font-weight: 900; }.submit-fields legend span { width: 34px; height: 34px; display: inline-grid; place-items: center; margin-right: 8px; border: 1px solid var(--ink); border-radius: 50%; background: var(--yellow); font-size: 14px; }
+.submit-fields label { display: grid; gap: 7px; margin-bottom: 17px; font-size: 14px; font-weight: 800; }.submit-fields label small { color: var(--ink-soft); font-size: 14px; font-weight: 500; line-height: 1.45; }.submit-fields input:not([type="checkbox"]), .submit-fields select, .submit-fields textarea { width: 100%; padding: 13px 14px; border: 1.5px solid var(--ink); border-radius: 7px; background: var(--paper); color: var(--ink); font: inherit; font-size: 16px; }.submit-fields textarea { min-height: 120px; resize: vertical; }.submit-fields .checkbox-row { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 11px; padding: 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 16px; font-weight: 600; line-height: 1.5; }.submit-fields .checkbox-row input { width: 19px; height: 19px; margin-top: 3px; accent-color: var(--ink); }
+.submit-fields input:not([type="checkbox"]):focus-visible, .submit-fields select:focus-visible, .submit-fields textarea:focus-visible { outline: 4px solid rgba(112, 211, 255, .7); outline-offset: 2px; }
 .submit-fields .image-upload { grid-template-columns: auto 1fr; align-items: center; padding: 16px; border: 1.5px dashed var(--ink); border-radius: 10px; cursor: pointer; }.submit-fields .image-upload input { grid-column: 2; }.submit-fields .image-upload img { grid-column: 1 / -1; max-width: 220px; max-height: 140px; border-radius: 8px; }
 .submission-closed { display: grid; gap: 4px; margin-bottom: 22px; padding: 18px; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--coral); }.submission-closed span { font-size: 12px; }
 .submit-page-success { min-height: 540px; display: flex; align-items: center; justify-content: center; gap: 28px; }.submit-page-success > span { width: 78px; height: 78px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 50%; background: var(--green); box-shadow: 4px 4px 0 var(--ink); }.submit-page-success h2 { max-width: 650px; margin: 7px 0 12px; font-size: 46px; }.submit-page-success p { max-width: 580px; font-size: 14px; }.submit-loading { min-height: 100vh; display: grid; place-items: center; align-content: center; gap: 8px; }
+.submit-page .grownup-fieldset { background: #dff3ff !important; border-color: var(--ink) !important; }
+.submit-page .image-upload { background: #f5fbff !important; }
+.submit-page .image-upload:hover { background: #fff3c6 !important; }
+.submit-page .image-upload b { font-size: 16px; }
+.submit-page .image-upload small, .submit-page .child-led-check small { font-size: 14px; line-height: 1.5; }
+.submit-page .child-led-check b { font-size: 16px; }
+.submit-page .terms-check { background: #fff3c6; }
+.submit-page .terms-check a { text-decoration-color: var(--ink); }
+.submit-page .submit-row p { font-size: 14px; line-height: 1.5; }
+.submit-page .form-error { padding: 14px; color: #7b1831; background: #fff0f3; border-color: #7b1831; font-size: 16px; }
+.submit-page .submission-closed span { font-size: 14px; }
+.submit-page .button-coral { background: var(--yellow); color: var(--ink); }
+.submit-page .button-dark { color: white; background: var(--ink); box-shadow: 4px 4px 0 var(--yellow); }
+.submit-page-success p { font-size: 16px; }
 
 /* Playable project demos */
 .project-demo-page { min-height: 100vh; background: var(--demo-accent); }
