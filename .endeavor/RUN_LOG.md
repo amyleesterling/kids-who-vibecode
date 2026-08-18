@@ -24,3 +24,12 @@ Append concise session records. Do not rewrite older entries.
 - Dissent preserved: current browser execution is not a hardened network namespace; image/source/mobile/time-of-check gaps mean ordinary submissions should remain yellow; public GitHub makes source drafts discoverable.
 - Next action: commit/push/open draft PR, then obtain CI and independent review. Before deployment, inspect production D1 migrations/schema and run staging Admin/submission flows with synthetic data.
 - Approval needed: merge/deploy, all bonus scheduling, production D1 migration, legal/privacy conclusions, any live email/social/account connection, auto-approval, campaigns, and spending.
+
+### Publication handoff
+
+- Published: branch `agent/year-round-challenges-and-agent-operations` at remote commit `079884f`; opened draft PR [#1](https://github.com/amyleesterling/kids-who-vibecode/pull/1). The content-equivalent local commit is `8f64689` because the connected GitHub publisher created the remote commit object.
+- Evidence checked before publication: clean intentional diff; `git diff --cached --check`; complete `npm run check` gate described above; GitHub confirmed 41 changed files, 3,285 additions, 42 deletions, draft state, and the expected base/head.
+- Environment: local scratch checkout for implementation/tests; connected GitHub repository for branch, commit, and draft PR creation. No deployment or target D1 access occurred.
+- Unverified: GitHub CI/check results, independent review, production D1 inventory, staging behavior, and real-submission shadow performance.
+- Exact next action: inspect draft PR #1 checks and feedback; keep every live authority off while preparing the read-only production inventory and synthetic staging plan.
+- Approval boundary: merge, deployment, migrations against production, live publishing/email/social accounts, auto-approval, cultural scheduling, legal changes, advertising, and spending remain withheld.

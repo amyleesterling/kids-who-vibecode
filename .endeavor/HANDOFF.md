@@ -8,11 +8,11 @@ Build the complete private-draft 2027 challenge program and the first reversible
 
 ## Current truthful state
 
-Implementation is locally checked on `agent/year-round-challenges-and-agent-operations` from baseline `6345f35`. The branch contains the complete 2027 private-application draft curriculum, additive operational sidecar, versioned Admin workflow, review shadow mode, dry-run editorial queue, tests, policies, and handoff. No production state, deployment, live account, public post/email, automatic publication, campaign, spending, legal terms, or private/production data changed.
+Implementation is checked and published for review on `agent/year-round-challenges-and-agent-operations` from baseline `6345f35`. Draft PR [#1](https://github.com/amyleesterling/kids-who-vibecode/pull/1) is open at remote commit `079884f` (the content-equivalent local commit is `8f64689`). The branch contains the complete 2027 private-application draft curriculum, additive operational sidecar, versioned Admin workflow, review shadow mode, dry-run editorial queue, tests, policies, and handoff. No production state, deployment, live account, public post/email, automatic publication, campaign, spending, legal terms, or private/production data changed.
 
 ## What changed most recently
 
-Added the Human Steward version-bound primary scheduling seam after content approval, retained bonus scheduling as unsupported, minimized owner-alert payloads, and completed the final local gate.
+Added the Human Steward version-bound primary scheduling seam after content approval, retained bonus scheduling as unsupported, minimized owner-alert payloads, completed the final local gate, pushed the authorized branch, and opened draft PR #1.
 
 ## Challenge-calendar progress
 
@@ -44,15 +44,15 @@ See `OPEN_QUESTIONS.md`: public-source secrecy, verifiable parental consent, ret
 
 ## Risks and blockers
 
-No branch/PR blocker. Production activation remains blocked by target migration/staging evidence, legal/privacy review, Human Steward decisions, cultural approvals, and provider/channel policies. Ordinary external demos and images cannot satisfy the current green evidence requirements.
+No branch/PR blocker. GitHub reports the new draft PR open; its checks and independent review remain unverified. Production activation remains blocked by target migration/staging evidence, legal/privacy review, Human Steward decisions, cultural approvals, and provider/channel policies. Ordinary external demos and images cannot satisfy the current green evidence requirements.
 
 ## Next justified action
 
-Push the intentional commit and open a draft PR. Then review CI. Before any deploy, capture a read-only production D1 schema/migration inventory and exercise migrations plus Admin/submission/reviewer flows in staging with synthetic/adversarial fixtures.
+Review draft PR #1 CI and independent feedback. Before any deploy, capture a read-only production D1 schema/migration inventory and exercise migrations plus Admin/submission/reviewer flows in staging with synthetic/adversarial fixtures.
 
 ## Human approval needed
 
-None for commit/push/draft-PR. Amy/counsel/specialist approval remains required for merge, deploy, D1 migration, cultural bonuses, legal/notice decisions, Phase 3, live organic posts/emails/accounts, every paid campaign, targeting, and spending.
+None for continued draft-PR review. Amy/counsel/specialist approval remains required for merge, deploy, D1 migration, cultural bonuses, legal/notice decisions, Phase 3, live organic posts/emails/accounts, every paid campaign, targeting, and spending.
 
 ## Resume here
 
