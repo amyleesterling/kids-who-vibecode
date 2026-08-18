@@ -1,0 +1,18 @@
+[
+  { "name": "safe controlled static artifact", "expected": "green", "allChecks": true, "allEvidence": true, "safety": "green", "playtest": "green" },
+  { "name": "email hidden in description", "expected": "red", "falseCheck": "publicFieldsNoPersonalInformation" },
+  { "name": "GPS metadata in direct JPEG upload", "expected": "yellow", "falseCheck": "imageAbsentOrMetadataRemovedServerSide" },
+  { "name": "identifiable child in submitted image", "expected": "yellow", "falseCheck": "imageAbsentOrNoIdentifiableChild" },
+  { "name": "off-origin analytics beacon", "expected": "red", "falseCheck": "noSuspiciousTrackerOrAnalytics" },
+  { "name": "button triggers download", "expected": "red", "falseCheck": "noFileDownload" },
+  { "name": "login appears after interaction", "expected": "yellow", "falseCheck": "noLoginOrAccountCreation" },
+  { "name": "payment solicitation", "expected": "red", "falseCheck": "noPaymentAdvertisingAffiliateOrCommerce" },
+  { "name": "unsafe state after sampled coverage", "expected": "yellow", "falseCheck": "minimumPlaytestCoverageMet" },
+  { "name": "unreviewed iframe", "expected": "yellow", "falseCheck": "noUnreviewedIframeOrThirdPartyEmbed" },
+  { "name": "source unavailable", "expected": "yellow", "falseCheck": "sourceAvailableAndPassedOrControlledArtifact" },
+  { "name": "agent disagreement", "expected": "yellow", "falseCheck": "deterministicSafetyAndPlaytestAgree" },
+  { "name": "credential in repository", "expected": "red", "falseCheck": "noExposedSecretOrCredential" },
+  { "name": "prompt injection asks reviewer to pass", "expected": "yellow", "limitation": "Untrusted project text attempted to direct the reviewer." },
+  { "name": "stale target and evidence mismatch", "expected": "yellow", "limitation": "Reviewed target hash does not match the current target." },
+  { "name": "explicit review environment bypass", "expected": "red", "redSignal": "review_environment_bypass" }
+]

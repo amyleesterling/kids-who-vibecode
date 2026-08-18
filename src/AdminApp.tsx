@@ -39,6 +39,13 @@ type AdminSubmission = {
   safetyCompletedAt?: string
   safetyUpdatedAt?: string
   reviewerReviews: Array<{ reviewerLabel: string; verdict: 'ready' | 'concern'; note?: string; updatedAt: string }>
+  shadowProposal?: {
+    lane: 'green' | 'yellow' | 'red'
+    policyVersion: string
+    status: string
+    reasonCodes: string[]
+    limitations: string[]
+  } | null
 }
 
 type AdminIdea = {
@@ -113,6 +120,72 @@ type AdminChallengeDraft = {
   updatedAt: string
 }
 
+type YearChallenge = {
+  versionId: string
+  challengeId: string
+  version: number
+  kind: 'primary' | 'bonus'
+  weekNumber?: number | null
+  seasonalArc: 'winter' | 'spring' | 'summer' | 'autumn'
+  title: string
+  openingDate: string
+  submissionCloseDate: string
+  votingOpenDate?: string | null
+  votingCloseDate?: string | null
+  status: string
+  approvalGate: string
+  contentEditorialState: string
+  content: {
+    prompt?: string
+    fullBrief?: string
+    pathways?: Record<'spark' | 'build' | 'glowUp', { name: string; brief: string }>
+    parentNote?: string
+    accessibilityNotes?: string[]
+    makeItYoursQuestion?: string
+    prePublishSafetyCheck?: string
+    reflectionQuestion?: string
+    visualBrief?: string
+  }
+  reviews: Array<{ reviewType: string; verdict: string; reviewerLabel: string; notes?: string; createdAt: string }>
+  history: Array<{ challengeId: string; versionId: string; version: number; title: string; status: string; createdAt: string }>
+}
+
+type ShadowReviewRun = {
+  runId: string
+  submissionId: string
+  projectTitle: string
+  status: string
+  proposedLane: 'green' | 'yellow' | 'red'
+  policyVersion: string
+  playthroughCoverage: Record<string, unknown>
+  networkFindings: Array<Record<string, unknown>>
+  limitations: string[]
+  modelVersions: Record<string, string>
+  promptVersions: Record<string, string>
+  reasonCodes: string[]
+  publicationAllowed: boolean
+  humanAction?: string | null
+  agreement?: string | null
+  overrideReason?: string | null
+  createdAt: string
+  completedAt?: string | null
+}
+
+type OperationControl = { controlKey: string; controlValue: string; reason: string; changedBy: string; changedAt: string }
+type ContentQueueItem = {
+  id: string
+  challengeId: string
+  title: string
+  kind: 'primary' | 'bonus'
+  editorialState: string
+  publicationMode: 'dry_run'
+  scheduledFor?: string | null
+  socialApprovalState: string
+  socialContentId?: string | null
+  socialPublicationMode: 'dry_run'
+  updatedAt: string
+}
+
 type Dashboard = {
   siteVisits: number
   lastVisitAt?: string | null
@@ -125,6 +198,10 @@ type Dashboard = {
   activity: Array<{ id: string; itemType: string; itemId: string; action: string; createdAt: string }>
   safetyScannerEnabled: boolean
   challengeDrafts: AdminChallengeDraft[]
+  yearProgram: YearChallenge[]
+  shadowReviews: ShadowReviewRun[]
+  operationControls: OperationControl[]
+  contentQueue: ContentQueueItem[]
   schedule: {
     now: string
     currentChallenge: AdminChallenge | null
@@ -166,7 +243,7 @@ function SafetyReview({ item, enabled, busy, onQueue }: {
   )
 }
 
-type AdminTab = 'challenges' | 'submissions' | 'ideas' | 'reviewers' | 'vote-alerts' | 'subscribers'
+type AdminTab = 'challenges' | 'year-2027' | 'submissions' | 'review-center' | 'content-queue' | 'ideas' | 'reviewers' | 'vote-alerts' | 'subscribers'
 
 function dateLabel(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
@@ -283,13 +360,68 @@ function ChallengeDraftEditor({ draft, busy, onSave, onClose }: {
   </form>
 }
 
+type YearChallengeRevision = {
+  title: string
+  prompt: string
+  fullBrief: string
+  sparkBrief: string
+  buildBrief: string
+  glowUpBrief: string
+  parentNote: string
+  makeItYoursQuestion: string
+  prePublishSafetyCheck: string
+  reflectionQuestion: string
+}
+
+function YearChallengeStudio({ item, busy, onSave, onDuplicate, onSchedule, onClose }: {
+  item: YearChallenge
+  busy: boolean
+  onSave: (versionId: string, revision: YearChallengeRevision) => Promise<void>
+  onDuplicate: (versionId: string) => Promise<void>
+  onSchedule: (item: YearChallenge) => Promise<void>
+  onClose: () => void
+}) {
+  const [form, setForm] = useState<YearChallengeRevision>(() => ({
+    title: item.title,
+    prompt: item.content.prompt || '',
+    fullBrief: item.content.fullBrief || '',
+    sparkBrief: item.content.pathways?.spark.brief || '',
+    buildBrief: item.content.pathways?.build.brief || '',
+    glowUpBrief: item.content.pathways?.glowUp.brief || '',
+    parentNote: item.content.parentNote || '',
+    makeItYoursQuestion: item.content.makeItYoursQuestion || '',
+    prePublishSafetyCheck: item.content.prePublishSafetyCheck || '',
+    reflectionQuestion: item.content.reflectionQuestion || '',
+  }))
+  const update = (name: keyof YearChallengeRevision, value: string) => setForm((current) => ({ ...current, [name]: value }))
+  return <form className="challenge-studio" onSubmit={(event) => { event.preventDefault(); onSave(item.versionId, form) }}>
+    <div className="challenge-studio-heading"><div><span className="kicker">Challenge Studio · {item.challengeId} · v{item.version}</span><h2>{item.title}</h2><p>Saving creates a new private version and resets every review gate. This version remains in history.</p></div><div className="studio-heading-actions"><button type="button" disabled={busy} onClick={() => onDuplicate(item.versionId)}><Copy size={16} /> {busy ? 'Working…' : 'Copy version'}</button><button type="button" onClick={onClose}><X size={16} /> Close</button></div></div>
+    <div className="challenge-form-grid">
+      <label className="wide"><span>Title</span><input required minLength={3} maxLength={100} value={form.title} onChange={(event) => update('title', event.target.value)} /></label>
+      <label className="wide"><span>One-sentence prompt</span><textarea required minLength={10} maxLength={400} rows={2} value={form.prompt} onChange={(event) => update('prompt', event.target.value)} /></label>
+      <label className="wide"><span>Full brief</span><textarea required minLength={30} maxLength={2400} rows={4} value={form.fullBrief} onChange={(event) => update('fullBrief', event.target.value)} /></label>
+      <label className="wide"><span>Spark · 15–30 minutes</span><textarea required minLength={10} maxLength={1200} rows={3} value={form.sparkBrief} onChange={(event) => update('sparkBrief', event.target.value)} /></label>
+      <label className="wide"><span>Build · 45–120 minutes</span><textarea required minLength={10} maxLength={1200} rows={3} value={form.buildBrief} onChange={(event) => update('buildBrief', event.target.value)} /></label>
+      <label className="wide"><span>Glow-Up · optional stretch</span><textarea required minLength={10} maxLength={1200} rows={3} value={form.glowUpBrief} onChange={(event) => update('glowUpBrief', event.target.value)} /></label>
+      <label className="wide"><span>Parent note</span><textarea required minLength={20} maxLength={1800} rows={3} value={form.parentNote} onChange={(event) => update('parentNote', event.target.value)} /></label>
+      <label><span>Make it yours</span><textarea required minLength={10} maxLength={500} rows={3} value={form.makeItYoursQuestion} onChange={(event) => update('makeItYoursQuestion', event.target.value)} /></label>
+      <label><span>Reflection</span><textarea required minLength={10} maxLength={500} rows={3} value={form.reflectionQuestion} onChange={(event) => update('reflectionQuestion', event.target.value)} /></label>
+      <label className="wide"><span>Pre-publish safety check</span><textarea required minLength={20} maxLength={1200} rows={3} value={form.prePublishSafetyCheck} onChange={(event) => update('prePublishSafetyCheck', event.target.value)} /></label>
+    </div>
+    <div className="studio-review-list"><h3>Review history for v{item.version}</h3>{item.reviews.map((review) => <div key={`${review.reviewType}-${review.createdAt}`}><span className={`admin-status status-${review.verdict}`}>{review.verdict}</span><b>{review.reviewType}</b><span>{review.reviewerLabel}</span><p>{review.notes}</p></div>)}</div>
+    <div className="version-history"><h3>Version history</h3>{item.history.map((version) => <div key={version.versionId}><span>v{version.version}</span><b>{version.title}</b><span>{version.status}</span><time>{dateLabel(version.createdAt)}</time></div>)}</div>
+    <div className="studio-gate"><AlertTriangle size={19} /><div><b>Approval gate: {item.approvalGate}</b><p>New versions are application-private and their copied social package is marked for editorial refresh. Scheduling is a separate Human Steward action, available only to the latest primary after its content package reaches approved.</p></div></div>
+    <div className="challenge-editor-actions"><button className="admin-save-challenge" disabled={busy} type="submit"><Save size={17} /> {busy ? 'Working…' : 'Save as new version'}</button>{item.kind === 'primary' && <button className="admin-schedule-challenge" disabled={busy || item.contentEditorialState !== 'approved' || item.status !== 'draft'} type="button" onClick={() => onSchedule(item)}><CalendarDays size={17} /> {item.status === 'scheduled' ? 'Scheduled' : item.contentEditorialState === 'approved' ? 'Human Steward: schedule' : 'Approve content package first'}</button>}<button className="admin-close-editor" type="button" onClick={onClose}><X size={16} /> Close without saving</button></div>
+  </form>
+}
+
 function AdminApp() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null)
   const [dashboard, setDashboard] = useState<Dashboard | null>(null)
   const [password, setPassword] = useState('')
   const [tab, setTab] = useState<AdminTab>(() => {
     const requested = new URLSearchParams(window.location.search).get('tab')
-    return requested && ['challenges', 'submissions', 'ideas', 'reviewers', 'vote-alerts', 'subscribers'].includes(requested)
+    return requested && ['challenges', 'year-2027', 'submissions', 'review-center', 'content-queue', 'ideas', 'reviewers', 'vote-alerts', 'subscribers'].includes(requested)
       ? requested as AdminTab
       : 'challenges'
   })
@@ -298,9 +430,12 @@ function AdminApp() {
   const [clock, setClock] = useState(Date.now())
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null)
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null)
+  const [selectedYearVersionId, setSelectedYearVersionId] = useState<string | null>(null)
+  const [yearArc, setYearArc] = useState<'all' | 'winter' | 'spring' | 'summer' | 'autumn'>('all')
   const [reviewerLabel, setReviewerLabel] = useState('')
   const [reviewerInviteUrl, setReviewerInviteUrl] = useState('')
   const [inviteCopied, setInviteCopied] = useState(false)
+  const [revealedRedSubmissions, setRevealedRedSubmissions] = useState<string[]>([])
 
   const loadDashboard = useCallback(async () => {
     setError('')
@@ -323,11 +458,14 @@ function AdminApp() {
 
   const counts = useMemo(() => ({
     challenges: dashboard?.schedule.challenges.filter((item) => item.status === 'upcoming').length || 0,
+    yearProgram: dashboard?.yearProgram.filter((item) => item.status === 'draft').length || 0,
     submissions: dashboard?.submissions.filter((item) => item.status === 'pending').length || 0,
     ideas: dashboard?.ideas.filter((item) => item.status === 'pending').length || 0,
     reviewers: dashboard?.reviewerInvites.filter((item) => !item.revokedAt && new Date(item.expiresAt).getTime() > clock).length || 0,
     voteAlerts: dashboard?.voteAlerts.filter((item) => item.status === 'open').length || 0,
     subscribers: dashboard?.subscribers.filter((item) => item.status === 'active').length || 0,
+    reviewCenter: dashboard?.shadowReviews.filter((item) => !item.humanAction).length || 0,
+    contentQueue: dashboard?.contentQueue.filter((item) => item.editorialState === 'draft').length || 0,
   }), [clock, dashboard])
   const safetyScannerEnabled = dashboard?.safetyScannerEnabled || false
   const currentChallenge = dashboard?.schedule.currentChallenge
@@ -358,15 +496,22 @@ function AdminApp() {
     setDashboard(null)
   }
 
-  async function moderate(type: 'submission' | 'idea' | 'voteAlert' | 'subscriber', id: string, action: string, label: string, safetyOverride = false) {
+  async function moderate(type: 'submission' | 'idea' | 'voteAlert' | 'subscriber', id: string, action: string, label: string, safetyOverride = false, reasonRequired = false) {
     if (!window.confirm(label)) return
+    const decisionReason = reasonRequired
+      ? window.prompt('Record why the grown-up decision differs from the automated evidence. This becomes part of the private audit trail.')?.trim() || ''
+      : ''
+    if (reasonRequired && decisionReason.length < 10) {
+      setError('A specific grown-up reason of at least 10 characters is required for this override.')
+      return
+    }
     const key = `${type}:${id}`
     setBusy(key)
     setError('')
     const response = await fetch('/api/admin/moderate', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ type, id, action, safetyOverride }),
+      body: JSON.stringify({ type, id, action, safetyOverride, decisionReason }),
     })
     if (!response.ok) setError(await readError(response))
     else await loadDashboard().catch((reason) => setError(reason.message))
@@ -424,6 +569,74 @@ function AdminApp() {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(draft),
     })
+    if (!response.ok) setError(await readError(response))
+    else await loadDashboard().catch((reason) => setError(reason.message))
+    setBusy('')
+  }
+
+  async function duplicateYearChallenge(versionId: string) {
+    if (!window.confirm('Create a new private version with fresh review gates? The current version stays in history.')) return
+    const key = `year-version:${versionId}`
+    setBusy(key)
+    setError('')
+    const response = await fetch(`/api/admin/year-challenges/${encodeURIComponent(versionId)}/duplicate`, { method: 'POST' })
+    if (!response.ok) setError(await readError(response))
+    else {
+      const result = await response.json() as { versionId: string }
+      await loadDashboard().catch((reason) => setError(reason.message))
+      setSelectedYearVersionId(result.versionId)
+    }
+    setBusy('')
+  }
+
+  async function saveYearChallenge(versionId: string, revision: YearChallengeRevision) {
+    if (!window.confirm('Save these edits as a new private version with fresh curriculum, age-fit, accessibility, and inclusion reviews?')) return
+    const key = `year-version:${versionId}`
+    setBusy(key)
+    setError('')
+    const response = await fetch(`/api/admin/year-challenges/${encodeURIComponent(versionId)}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(revision),
+    })
+    if (!response.ok) setError(await readError(response))
+    else {
+      const result = await response.json() as { versionId: string }
+      await loadDashboard().catch((reason) => setError(reason.message))
+      setSelectedYearVersionId(result.versionId)
+    }
+    setBusy('')
+  }
+
+  async function reviewContentPackage(item: ContentQueueItem, action: 'curriculum-review' | 'safety-review' | 'approve' | 'reset') {
+    const warning = action === 'approve'
+      ? 'Approve this package only for the dry-run queue? This does not schedule or publish anything.'
+      : `${action.replaceAll('-', ' ')} “${item.title}”?`
+    if (!window.confirm(warning)) return
+    const key = `content:${item.id}`
+    setBusy(key)
+    setError('')
+    const response = await fetch(`/api/admin/content-packages/${encodeURIComponent(item.id)}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action }),
+    })
+    if (!response.ok) setError(await readError(response))
+    else await loadDashboard().catch((reason) => setError(reason.message))
+    setBusy('')
+  }
+
+  async function scheduleYearChallenge(item: YearChallenge) {
+    if (!window.confirm(`Human Steward approval: schedule this exact private version of “${item.title}” for ${dateLabel(item.openingDate)}? The public API will still withhold its copy until it becomes active. This cannot be undone from this screen.`)) return
+    const confirmation = window.prompt(`Type the challenge ID to confirm the schedule:\n${item.challengeId}`)?.trim()
+    if (confirmation !== item.challengeId) {
+      setError('Scheduling cancelled: the challenge ID did not match.')
+      return
+    }
+    const key = `year-version:${item.versionId}`
+    setBusy(key)
+    setError('')
+    const response = await fetch(`/api/admin/year-challenges/${encodeURIComponent(item.versionId)}/schedule`, { method: 'POST' })
     if (!response.ok) setError(await readError(response))
     else await loadDashboard().catch((reason) => setError(reason.message))
     setBusy('')
@@ -507,7 +720,10 @@ function AdminApp() {
 
       <nav className="admin-tabs" aria-label="Clubhouse inbox sections">
         <button className={tab === 'challenges' ? 'active' : ''} onClick={() => setTab('challenges')}><CalendarDays size={18} /> Challenges <b>{counts.challenges}</b></button>
+        <button className={tab === 'year-2027' ? 'active' : ''} onClick={() => setTab('year-2027')}><BookOpen size={18} /> 2027 program <b>{counts.yearProgram}</b></button>
         <button className={tab === 'submissions' ? 'active' : ''} onClick={() => setTab('submissions')}><Inbox size={18} /> Projects <b>{counts.submissions}</b></button>
+        <button className={tab === 'review-center' ? 'active' : ''} onClick={() => setTab('review-center')}><Bot size={18} /> Review center <b>{counts.reviewCenter}</b></button>
+        <button className={tab === 'content-queue' ? 'active' : ''} onClick={() => setTab('content-queue')}><Mail size={18} /> Content queue <b>{counts.contentQueue}</b></button>
         <button className={tab === 'ideas' ? 'active' : ''} onClick={() => setTab('ideas')}><Lightbulb size={18} /> Challenge ideas <b>{counts.ideas}</b></button>
         <button className={tab === 'reviewers' ? 'active' : ''} onClick={() => setTab('reviewers')}><Users size={18} /> Parent reviewers <b>{counts.reviewers}</b></button>
         <button className={tab === 'vote-alerts' ? 'active' : ''} onClick={() => setTab('vote-alerts')}><AlertTriangle size={18} /> Vote alerts <b>{counts.voteAlerts}</b></button>
@@ -530,6 +746,33 @@ function AdminApp() {
           {selectedDraftId && dashboard?.challengeDrafts.find((draft) => draft.id === selectedDraftId) && <ChallengeDraftEditor key={selectedDraftId} draft={dashboard.challengeDrafts.find((draft) => draft.id === selectedDraftId)!} busy={busy === `challenge-draft:${selectedDraftId}`} onSave={saveChallengeDraft} onClose={() => setSelectedDraftId(null)} />}
         </section>}
 
+        {tab === 'year-2027' && <section>
+          <div className="admin-section-heading"><div><span className="kicker">Application-private drafts · source-visible</span><h2>2027 Year Calendar</h2></div><p>52 primaries and 12 optional bonuses are versioned beside—not inside—the live 2026 schedule. Human approval is required before promotion.</p></div>
+          <div className="ops-stop-banner"><ShieldCheck size={23} /><div><b>No automatic scheduling path</b><p>These records cannot become public challenges from this screen. Culturally specific bonuses remain blocked by their named review gate.</p></div></div>
+          <label className="year-filter"><span>Seasonal arc</span><select value={yearArc} onChange={(event) => setYearArc(event.target.value as typeof yearArc)}><option value="all">All four arcs</option><option value="winter">Winter</option><option value="spring">Spring</option><option value="summer">Summer</option><option value="autumn">Autumn</option></select></label>
+          <div className="year-calendar-grid">
+            {dashboard?.yearProgram.filter((item) => yearArc === 'all' || item.seasonalArc === yearArc).map((item) => <button key={item.versionId} type="button" className={`year-calendar-card kind-${item.kind} ${selectedYearVersionId === item.versionId ? 'selected' : ''}`} aria-expanded={selectedYearVersionId === item.versionId} onClick={() => setSelectedYearVersionId((current) => current === item.versionId ? null : item.versionId)}><span><b>{item.kind === 'primary' ? `Week ${String(item.weekNumber).padStart(2, '0')}` : 'Bonus'}</b><small>{item.seasonalArc}</small></span><h3>{item.title}</h3><p>{dateLabel(item.openingDate)}</p><span className="admin-status">{item.status}</span></button>)}
+          </div>
+          {selectedYearVersionId && dashboard?.yearProgram.find((item) => item.versionId === selectedYearVersionId) && <YearChallengeStudio key={selectedYearVersionId} item={dashboard.yearProgram.find((item) => item.versionId === selectedYearVersionId)!} busy={busy === `year-version:${selectedYearVersionId}`} onSave={saveYearChallenge} onDuplicate={duplicateYearChallenge} onSchedule={scheduleYearChallenge} onClose={() => setSelectedYearVersionId(null)} />}
+        </section>}
+
+        {tab === 'review-center' && <section>
+          <div className="admin-section-heading"><div><span className="kicker">Advisory evidence only</span><h2>Automated Review Center</h2></div><p>Every new submission gets a versioned shadow proposal. The table cannot publish, and Clubhouse grown-ups remain authoritative.</p></div>
+          <div className="control-grid">{dashboard?.operationControls.filter((control) => ['review_mode', 'auto_approval_enabled', 'auto_publication_enabled'].includes(control.controlKey)).map((control) => <article key={control.controlKey}><span>{control.controlKey.replaceAll('_', ' ')}</span><b>{control.controlValue}</b><p>{control.reason}</p></article>)}</div>
+          <div className="lane-summary">{(['green', 'yellow', 'red'] as const).map((lane) => <article className={`lane-${lane}`} key={lane}><b>{dashboard?.shadowReviews.filter((review) => review.proposedLane === lane).length || 0}</b><span>{lane} proposals</span></article>)}</div>
+          <div className="review-run-list">{dashboard?.shadowReviews.map((review) => <article className={`review-run lane-${review.proposedLane}`} key={review.runId}><div className="review-run-heading"><span className="admin-status">{review.proposedLane}</span><div><b>{review.projectTitle}</b><small>{review.policyVersion} · {dateLabel(review.createdAt)}</small></div><span>{review.publicationAllowed ? 'unexpected publication permission' : 'publication blocked'}</span></div><p>{review.reasonCodes.join(' · ') || 'No reason codes recorded.'}</p>{!!review.limitations.length && <details><summary>Limitations ({review.limitations.length})</summary><ul>{review.limitations.map((limit) => <li key={limit}>{limit}</li>)}</ul></details>}<div className="review-version-grid"><span>Models: {Object.values(review.modelVersions).join(' · ') || 'none'}</span><span>Prompts: {Object.values(review.promptVersions).join(' · ') || 'none'}</span><span>Network observations: {review.networkFindings.length}</span><span>Human result: {review.humanAction || 'pending'}</span></div>{review.overrideReason && <blockquote>Recorded reason: {review.overrideReason}</blockquote>}</article>)}{!dashboard?.shadowReviews.length && <div className="admin-empty"><Bot size={35} /><h3>No shadow runs yet.</h3><p>New submissions will appear here without changing the human queue.</p></div>}</div>
+        </section>}
+
+        {tab === 'content-queue' && <section>
+          <div className="admin-section-heading"><div><span className="kicker">Adult-facing · no connected accounts</span><h2>Content and Social Queue</h2></div><p>Each 2027 challenge has a website, newsletter, educator, social, visual, alt-text, and privacy-safe link package in dry-run mode.</p></div>
+          <div className="control-grid">{dashboard?.operationControls.filter((control) => ['social_mode', 'social_global_pause', 'paid_campaign_activation_enabled', 'public_email_expansion_enabled'].includes(control.controlKey)).map((control) => <article key={control.controlKey}><span>{control.controlKey.replaceAll('_', ' ')}</span><b>{control.controlValue}</b><p>{control.reason}</p></article>)}</div>
+          <div className="content-queue-list">{dashboard?.contentQueue.map((item) => {
+            const nextAction = item.editorialState === 'draft' ? 'curriculum-review' : item.editorialState === 'curriculum_reviewed' ? 'safety-review' : item.editorialState === 'safety_accuracy_reviewed' ? 'approve' : 'reset'
+            const nextLabel = nextAction === 'curriculum-review' ? 'Mark curriculum reviewed' : nextAction === 'safety-review' ? 'Mark safety/accuracy reviewed' : nextAction === 'approve' ? 'Approve dry-run package' : 'Return to draft'
+            return <article key={item.id}><span className="admin-status">{item.kind}</span><div><b>{item.title}</b><small>{item.challengeId}</small></div><div><span>Editorial</span><b>{item.editorialState}</b></div><div><span>Social</span><b>{item.socialApprovalState}</b></div><div><span>Mode</span><b>{item.publicationMode}</b></div><button disabled={busy === `content:${item.id}`} type="button" onClick={() => reviewContentPackage(item, nextAction)}>{busy === `content:${item.id}` ? 'Saving…' : nextLabel}</button></article>
+          })}</div>
+        </section>}
+
         {tab === 'submissions' && <section>
           <div className="admin-section-heading"><div><span className="kicker">Human + AI moderation</span><h2>Project submissions</h2></div><p>AI explores each playable experience first. A clubhouse grown-up always makes the final decision.</p></div>
           <div className={`safety-system-banner ${safetyScannerEnabled ? 'enabled' : 'setup'}`}><Bot size={25} /><div><b>{safetyScannerEnabled ? 'AI playthrough runner connected' : 'AI review dashboard installed'}</b><p>{safetyScannerEnabled ? 'New playable links are queued automatically. Approval waits for a pass or a recorded grown-up override.' : 'Add the private runner secrets to begin automatic playthroughs. Until then, approvals continue as manual grown-up reviews.'}</p></div></div>
@@ -537,11 +780,14 @@ function AdminApp() {
             {dashboard?.submissions.map((item) => {
               const waitingForScan = safetyScannerEnabled && ['queued', 'running'].includes(item.safetyStatus || '')
               const needsOverride = safetyScannerEnabled && !waitingForScan && item.safetyStatus !== 'passed'
+              const shadowNeedsReason = Boolean(item.shadowProposal && item.shadowProposal.lane !== 'green')
+              const redQuarantined = item.shadowProposal?.lane === 'red'
+              const redRevealed = revealedRedSubmissions.includes(item.id)
               return <article className={`admin-card submission-card status-${item.status}`} key={item.id}>
               <div className="admin-card-top"><span className="admin-status">{item.status}</span><time>{dateLabel(item.createdAt)}</time></div>
               <div className="submission-review-grid">
                 <div className="admin-image-panel">
-                  {item.hasImage && item.imageUrl ? <img src={item.imageUrl} alt={`Submitted preview for ${item.projectTitle}`} /> : <div className="admin-image-empty"><ImageIcon size={32} /><span>No picture submitted</span></div>}
+                  {redQuarantined && !redRevealed ? <div className="admin-image-empty quarantine"><AlertTriangle size={32} /><span>Red-lane media is collapsed</span><button type="button" onClick={() => { if (window.confirm('Reveal untrusted media and links for this red-lane submission in the private Admin?')) setRevealedRedSubmissions((current) => [...current, item.id]) }}>Reveal deliberately</button></div> : item.hasImage && item.imageUrl ? <img src={item.imageUrl} alt={`Submitted preview for ${item.projectTitle}`} /> : <div className="admin-image-empty"><ImageIcon size={32} /><span>No picture submitted</span></div>}
                   {item.hasImage && <small>{item.imageName} · {fileSize(item.imageSize)}</small>}
                   <label className="admin-image-upload">
                     <ImagePlus size={16} />
@@ -564,13 +810,18 @@ function AdminApp() {
                   {item.childLed ? <span className="child-led-badge"><ShieldCheck size={15} /> Grown-up attested: child-led project</span> : <span className="child-led-badge missing"><X size={15} /> No child-led attestation on this older submission</span>}
                   <h3>{item.projectTitle}</h3>
                   <p>{item.description}</p>
-                  <div className="admin-links"><a href={item.repoUrl} target="_blank" rel="noreferrer"><Github size={16} /> Check the code</a>{item.demoUrl && <a href={item.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Open playable link</a>}</div>
+                  {(!redQuarantined || redRevealed) ? <div className="admin-links"><a href={item.repoUrl} target="_blank" rel="noreferrer"><Github size={16} /> Check the code</a>{item.demoUrl && <a href={item.demoUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Open playable link</a>}</div> : <p className="quarantine-note"><AlertTriangle size={15} /> Untrusted links are collapsed. Review the sanitized evidence before revealing them.</p>}
                   <SafetyReview item={item} enabled={safetyScannerEnabled} busy={busy === `safety:${item.safetyScanId}`} onQueue={queueSafetyScan} />
+                  {item.shadowProposal && <section className={`shadow-proposal lane-${item.shadowProposal.lane}`} aria-label={`Shadow review proposal: ${item.shadowProposal.lane}`}>
+                    <div><b>Shadow proposal: {item.shadowProposal.lane}</b><span>{item.shadowProposal.policyVersion} · cannot publish</span></div>
+                    {!!item.shadowProposal.reasonCodes.length && <p>{item.shadowProposal.reasonCodes.join(' · ')}</p>}
+                    {!!item.shadowProposal.limitations.length && <details><summary>Evidence limits ({item.shadowProposal.limitations.length})</summary><ul>{item.shadowProposal.limitations.map((limit) => <li key={limit}>{limit}</li>)}</ul></details>}
+                  </section>}
                   {!!item.reviewerReviews.length && <div className="reviewer-recommendations"><b>Parent reviewer notes</b>{item.reviewerReviews.map((review) => <div className={`reviewer-recommendation ${review.verdict}`} key={`${review.reviewerLabel}-${review.updatedAt}`}><span>{review.verdict === 'ready' ? <Check size={15} /> : <AlertTriangle size={15} />}{review.reviewerLabel}: {review.verdict === 'ready' ? 'Looks ready' : 'Needs attention'}</span>{review.note && <p>{review.note}</p>}<small>{dateLabel(review.updatedAt)}</small></div>)}</div>}
                   <div className="private-contact"><ShieldCheck size={16} /><span><b>Private grown-up contact</b>{item.parentName} · <a href={`mailto:${item.parentEmail}`}>{item.parentEmail}</a></span></div>
                 </div>
               </div>
-              <div className="admin-card-actions"><span>Challenge: {item.challengeId}</span><div><button disabled={busy === `submission:${item.id}`} className="admin-reject" onClick={() => moderate('submission', item.id, 'reject', `Reject “${item.projectTitle}” and keep it out of the gallery?`)}><X size={16} /> Reject</button><button disabled={busy === `submission:${item.id}` || waitingForScan} className={needsOverride ? 'admin-override' : 'admin-approve'} onClick={() => moderate('submission', item.id, 'approve', needsOverride ? `The AI playthrough did not pass. Approve “${item.projectTitle}” with a recorded grown-up safety override?` : `Approve “${item.projectTitle}” for its scheduled gallery week?`, needsOverride)}>{waitingForScan ? <><Bot size={16} /> Awaiting AI</> : needsOverride ? <><AlertTriangle size={16} /> Override & approve</> : <><Check size={16} /> Approve for gallery</>}</button></div></div>
+              <div className="admin-card-actions"><span>Challenge: {item.challengeId}</span><div><button disabled={busy === `submission:${item.id}`} className="admin-reject" onClick={() => moderate('submission', item.id, 'reject', `Reject “${item.projectTitle}” and keep it out of the gallery?`, false, item.shadowProposal?.lane === 'green')}><X size={16} /> Reject</button><button disabled={busy === `submission:${item.id}` || waitingForScan} className={needsOverride || shadowNeedsReason ? 'admin-override' : 'admin-approve'} onClick={() => moderate('submission', item.id, 'approve', needsOverride || shadowNeedsReason ? `Automated evidence is not green. Approve “${item.projectTitle}” with a recorded grown-up reason?` : `Approve “${item.projectTitle}” for its scheduled gallery week?`, needsOverride, shadowNeedsReason || needsOverride)}>{waitingForScan ? <><Bot size={16} /> Awaiting AI</> : needsOverride || shadowNeedsReason ? <><AlertTriangle size={16} /> Record reason & approve</> : <><Check size={16} /> Approve for gallery</>}</button></div></div>
             </article>})}
             {!dashboard?.submissions.length && <div className="admin-empty"><Inbox size={35} /><h3>The project inbox is empty.</h3></div>}
           </div>

@@ -1,0 +1,233 @@
+-- Additive, reversible sidecar for the private 2027 program, review shadow mode,
+-- and dry-run adult content operations. It does not alter or delete 2026 rows.
+
+CREATE TABLE challenge_programs (
+  id TEXT PRIMARY KEY,
+  year INTEGER NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  age_band TEXT NOT NULL,
+  editorial_timezone TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('private_draft', 'reviewed', 'approved', 'scheduled', 'archived')),
+  version INTEGER NOT NULL,
+  policy_version TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE challenge_versions (
+  id TEXT PRIMARY KEY,
+  program_id TEXT NOT NULL REFERENCES challenge_programs(id),
+  challenge_id TEXT NOT NULL,
+  version INTEGER NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('primary', 'bonus')),
+  week_number INTEGER,
+  seasonal_arc TEXT NOT NULL CHECK (seasonal_arc IN ('winter', 'spring', 'summer', 'autumn')),
+  title TEXT NOT NULL,
+  opening_date TEXT NOT NULL,
+  submission_close_date TEXT NOT NULL,
+  voting_open_date TEXT,
+  voting_close_date TEXT,
+  status TEXT NOT NULL CHECK (status IN ('draft', 'curriculum_reviewed', 'inclusion_reviewed', 'approved', 'scheduled', 'live', 'archived')),
+  approval_gate TEXT NOT NULL,
+  content_json TEXT NOT NULL CHECK (json_valid(content_json)),
+  created_at TEXT NOT NULL,
+  UNIQUE (challenge_id, version),
+  UNIQUE (program_id, week_number, kind, version)
+);
+
+CREATE TABLE challenge_reviews (
+  id TEXT PRIMARY KEY,
+  challenge_version_id TEXT NOT NULL REFERENCES challenge_versions(id),
+  review_type TEXT NOT NULL CHECK (review_type IN ('curriculum', 'age_fit', 'accessibility', 'inclusion', 'safety_accuracy', 'editorial', 'human_steward')),
+  verdict TEXT NOT NULL CHECK (verdict IN ('pending', 'changes_requested', 'reviewed', 'approved', 'blocked')),
+  reviewer_kind TEXT NOT NULL CHECK (reviewer_kind IN ('agent', 'human')),
+  reviewer_label TEXT NOT NULL,
+  notes TEXT,
+  evidence_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(evidence_json)),
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE challenge_content_packages (
+  id TEXT PRIMARY KEY,
+  challenge_version_id TEXT NOT NULL REFERENCES challenge_versions(id),
+  version INTEGER NOT NULL,
+  editorial_state TEXT NOT NULL CHECK (editorial_state IN ('draft', 'curriculum_reviewed', 'safety_accuracy_reviewed', 'approved', 'scheduled', 'published', 'verified', 'archived')),
+  publication_mode TEXT NOT NULL CHECK (publication_mode = 'dry_run'),
+  package_json TEXT NOT NULL CHECK (json_valid(package_json)),
+  approved_by TEXT,
+  scheduled_for TEXT,
+  published_at TEXT,
+  verified_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE (challenge_version_id, version)
+);
+
+CREATE TABLE review_policy_versions (
+  id TEXT PRIMARY KEY,
+  policy_version TEXT NOT NULL UNIQUE,
+  mode TEXT NOT NULL CHECK (mode = 'shadow'),
+  policy_json TEXT NOT NULL CHECK (json_valid(policy_json)),
+  policy_hash TEXT NOT NULL,
+  approved_by TEXT,
+  effective_at TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE review_runs (
+  id TEXT PRIMARY KEY,
+  submission_id TEXT NOT NULL REFERENCES submissions(id),
+  legacy_scan_id TEXT REFERENCES safety_scans(id),
+  legacy_attempt INTEGER,
+  target_url_hash TEXT NOT NULL,
+  policy_version TEXT NOT NULL REFERENCES review_policy_versions(policy_version),
+  status TEXT NOT NULL CHECK (status IN ('awaiting_evidence', 'evaluated', 'failed', 'superseded')),
+  proposed_lane TEXT NOT NULL CHECK (proposed_lane IN ('green', 'yellow', 'red')),
+  deterministic_checks_json TEXT NOT NULL CHECK (json_valid(deterministic_checks_json)),
+  playthrough_coverage_json TEXT NOT NULL CHECK (json_valid(playthrough_coverage_json)),
+  network_findings_json TEXT NOT NULL CHECK (json_valid(network_findings_json)),
+  text_moderation_json TEXT NOT NULL CHECK (json_valid(text_moderation_json)),
+  image_moderation_json TEXT NOT NULL CHECK (json_valid(image_moderation_json)),
+  source_scan_json TEXT NOT NULL CHECK (json_valid(source_scan_json)),
+  safety_agent_report_json TEXT NOT NULL CHECK (json_valid(safety_agent_report_json)),
+  technical_playtest_report_json TEXT NOT NULL CHECK (json_valid(technical_playtest_report_json)),
+  limitations_json TEXT NOT NULL CHECK (json_valid(limitations_json)),
+  model_versions_json TEXT NOT NULL CHECK (json_valid(model_versions_json)),
+  prompt_versions_json TEXT NOT NULL CHECK (json_valid(prompt_versions_json)),
+  final_publication_state TEXT NOT NULL CHECK (final_publication_state IN ('unchanged_pending_human', 'human_approved', 'human_rejected', 'human_hidden')),
+  created_at TEXT NOT NULL,
+  completed_at TEXT
+);
+
+CREATE TABLE review_evidence (
+  id TEXT PRIMARY KEY,
+  review_run_id TEXT NOT NULL REFERENCES review_runs(id),
+  evidence_kind TEXT NOT NULL CHECK (evidence_kind IN ('deterministic', 'text_moderation', 'image_moderation', 'source_scan', 'safety_agent', 'technical_playtest', 'network', 'console')),
+  producer TEXT NOT NULL,
+  model_version TEXT,
+  prompt_version TEXT,
+  payload_hash TEXT NOT NULL,
+  payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
+  limitations_json TEXT NOT NULL CHECK (json_valid(limitations_json)),
+  created_at TEXT NOT NULL,
+  UNIQUE (review_run_id, evidence_kind, payload_hash)
+);
+
+CREATE TABLE automated_decisions (
+  id TEXT PRIMARY KEY,
+  review_run_id TEXT NOT NULL UNIQUE REFERENCES review_runs(id),
+  policy_version TEXT NOT NULL REFERENCES review_policy_versions(policy_version),
+  mode TEXT NOT NULL CHECK (mode = 'shadow'),
+  proposed_lane TEXT NOT NULL CHECK (proposed_lane IN ('green', 'yellow', 'red')),
+  reason_codes_json TEXT NOT NULL CHECK (json_valid(reason_codes_json)),
+  evidence_ids_json TEXT NOT NULL CHECK (json_valid(evidence_ids_json)),
+  model_versions_json TEXT NOT NULL CHECK (json_valid(model_versions_json)),
+  prompt_versions_json TEXT NOT NULL CHECK (json_valid(prompt_versions_json)),
+  confidence_and_limitations_json TEXT NOT NULL CHECK (json_valid(confidence_and_limitations_json)),
+  publication_allowed INTEGER NOT NULL DEFAULT 0 CHECK (publication_allowed = 0),
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE human_audits (
+  id TEXT PRIMARY KEY,
+  review_run_id TEXT NOT NULL REFERENCES review_runs(id),
+  automated_decision_id TEXT NOT NULL REFERENCES automated_decisions(id),
+  human_action TEXT NOT NULL CHECK (human_action IN ('approved', 'rejected', 'hidden', 'needs_more_review')),
+  agreement TEXT NOT NULL CHECK (agreement IN ('agreed', 'disagreed', 'not_comparable')),
+  override_reason TEXT,
+  auditor_label TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE operation_controls (
+  control_key TEXT PRIMARY KEY,
+  control_value TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  changed_by TEXT NOT NULL,
+  changed_at TEXT NOT NULL
+);
+
+CREATE TABLE social_content (
+  id TEXT PRIMARY KEY,
+  challenge_version_id TEXT NOT NULL REFERENCES challenge_versions(id),
+  channel TEXT NOT NULL,
+  content_type TEXT NOT NULL,
+  content_json TEXT NOT NULL CHECK (json_valid(content_json)),
+  approval_state TEXT NOT NULL CHECK (approval_state IN ('draft', 'reviewed', 'approved', 'blocked', 'archived')),
+  publication_mode TEXT NOT NULL CHECK (publication_mode = 'dry_run'),
+  scheduled_for TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE (challenge_version_id, channel, content_type)
+);
+
+CREATE TABLE social_approvals (
+  id TEXT PRIMARY KEY,
+  social_content_id TEXT NOT NULL REFERENCES social_content(id),
+  decision TEXT NOT NULL CHECK (decision IN ('approved', 'changes_requested', 'rejected')),
+  approver_label TEXT NOT NULL,
+  reason TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE social_publications (
+  id TEXT PRIMARY KEY,
+  social_content_id TEXT NOT NULL REFERENCES social_content(id),
+  mode TEXT NOT NULL CHECK (mode = 'dry_run'),
+  status TEXT NOT NULL CHECK (status IN ('previewed', 'simulated', 'failed', 'cancelled')),
+  platform_response_json TEXT NOT NULL CHECK (json_valid(platform_response_json)),
+  external_post_id TEXT,
+  attempted_at TEXT NOT NULL,
+  verified_at TEXT
+);
+
+CREATE TABLE campaign_drafts (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  adult_audience_json TEXT NOT NULL CHECK (json_valid(adult_audience_json)),
+  proposal_json TEXT NOT NULL CHECK (json_valid(proposal_json)),
+  approval_state TEXT NOT NULL CHECK (approval_state IN ('draft', 'human_review', 'approved_for_setup', 'rejected')),
+  activation_allowed INTEGER NOT NULL DEFAULT 0 CHECK (activation_allowed = 0),
+  approved_by TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE aggregate_metrics (
+  id TEXT PRIMARY KEY,
+  period_start TEXT NOT NULL,
+  period_end TEXT NOT NULL,
+  metric_name TEXT NOT NULL,
+  dimension_json TEXT NOT NULL CHECK (json_valid(dimension_json)),
+  metric_value REAL NOT NULL,
+  minimum_group_size INTEGER NOT NULL DEFAULT 10,
+  created_at TEXT NOT NULL,
+  UNIQUE (period_start, period_end, metric_name, dimension_json)
+);
+
+CREATE TABLE agent_runs (
+  id TEXT PRIMARY KEY,
+  agent_role TEXT NOT NULL,
+  work_package TEXT NOT NULL,
+  capability_mode TEXT NOT NULL CHECK (capability_mode IN ('single', 'delegated', 'orchestrated')),
+  input_refs_json TEXT NOT NULL CHECK (json_valid(input_refs_json)),
+  output_refs_json TEXT NOT NULL CHECK (json_valid(output_refs_json)),
+  limitations_json TEXT NOT NULL CHECK (json_valid(limitations_json)),
+  approval_boundary TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('started', 'completed', 'blocked', 'failed')),
+  started_at TEXT NOT NULL,
+  completed_at TEXT
+);
+
+CREATE INDEX challenge_versions_program_schedule_idx ON challenge_versions (program_id, opening_date, kind);
+CREATE INDEX challenge_versions_status_idx ON challenge_versions (status, opening_date);
+CREATE INDEX challenge_reviews_version_type_idx ON challenge_reviews (challenge_version_id, review_type, created_at);
+CREATE INDEX challenge_content_state_idx ON challenge_content_packages (editorial_state, updated_at);
+CREATE INDEX review_runs_submission_created_idx ON review_runs (submission_id, created_at);
+CREATE INDEX review_runs_lane_created_idx ON review_runs (proposed_lane, created_at);
+CREATE INDEX review_evidence_run_kind_idx ON review_evidence (review_run_id, evidence_kind);
+CREATE INDEX human_audits_run_created_idx ON human_audits (review_run_id, created_at);
+CREATE INDEX social_content_state_schedule_idx ON social_content (approval_state, scheduled_for);
+CREATE INDEX social_publications_status_attempt_idx ON social_publications (status, attempted_at);
+CREATE INDEX aggregate_metrics_name_period_idx ON aggregate_metrics (metric_name, period_start, period_end);
+CREATE INDEX agent_runs_role_started_idx ON agent_runs (agent_role, started_at);

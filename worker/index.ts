@@ -1,4 +1,5 @@
 import { ensureDatabase, seedDatabase } from '../db/schema'
+import { evaluateShadowReview, REQUIRED_GREEN_CHECKS, REVIEW_POLICY_VERSION } from '../scripts/review-policy.mjs'
 
 type D1Statement = {
   bind(...values: unknown[]): D1Statement
@@ -75,9 +76,6 @@ const escapeHtml = (value: unknown) => String(value ?? '')
 type OwnerNotification = {
   kind: 'project' | 'idea'
   id: string
-  title: string
-  creator: string
-  grownupEmail: string
 }
 
 async function sendOwnerNotification(env: Env, notification: OwnerNotification) {
@@ -89,10 +87,9 @@ async function sendOwnerNotification(env: Env, notification: OwnerNotification) 
 
   const project = notification.kind === 'project'
   const label = project ? 'project submission' : 'challenge idea'
-  const subject = project
-    ? `New project submission: ${notification.title}`
-    : `New challenge idea: ${notification.title}`
+  const subject = project ? 'New project submission' : 'New challenge idea'
   const clubhouseUrl = `https://vibecodekids.com/clubhouse-admin?tab=${project ? 'submissions' : 'ideas'}`
+  const receivedAt = new Date().toISOString()
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -104,8 +101,8 @@ async function sendOwnerNotification(env: Env, notification: OwnerNotification) 
       from: env.NEWSLETTER_FROM_EMAIL,
       to: [recipient],
       subject,
-      html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#211d38"><p style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#ff5b55">New ${label}</p><h1 style="font-size:32px;line-height:1.1">${escapeHtml(notification.title)}</h1><p style="font-size:16px;line-height:1.6"><strong>Submitted by:</strong> ${escapeHtml(notification.creator)}<br><strong>Grown-up contact:</strong> ${escapeHtml(notification.grownupEmail)}</p><p style="margin:30px 0"><a href="${clubhouseUrl}" style="background:#211d38;color:#fff;padding:14px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Review in the Clubhouse →</a></p><p style="font-size:12px;color:#666">This private alert was sent because a new ${label} arrived at Vibe Code Kids.</p></div>`,
-      text: `New ${label}\n\n${notification.title}\nSubmitted by: ${notification.creator}\nGrown-up contact: ${notification.grownupEmail}\n\nReview it in the Clubhouse: ${clubhouseUrl}`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#211d38"><p style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#ff5b55">New ${label}</p><h1 style="font-size:32px;line-height:1.1">A private clubhouse item is waiting</h1><p style="font-size:16px;line-height:1.6"><strong>Received:</strong> ${escapeHtml(receivedAt)}<br><strong>Private record:</strong> ${escapeHtml(notification.id)}</p><p style="margin:30px 0"><a href="${clubhouseUrl}" style="background:#211d38;color:#fff;padding:14px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Review in the Clubhouse →</a></p><p style="font-size:12px;color:#666">Child-facing copy and grown-up contact stay in Clubhouse Admin and are not included in this email.</p></div>`,
+      text: `New ${label}\n\nReceived: ${receivedAt}\nPrivate record: ${notification.id}\n\nReview it in the Clubhouse: ${clubhouseUrl}\n\nChild-facing copy and grown-up contact are not included in this email.`,
     }),
   })
   if (!response.ok) {
@@ -432,6 +429,13 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request, 
   try {
     const now = new Date().toISOString()
     const scanId = crypto.randomUUID()
+    const shadowStatements = await initialShadowReviewStatements(db, {
+      submissionId: id,
+      scanId,
+      targetUrl: demoUrl || repoUrl,
+      hasImage,
+      now,
+    })
     await db.batch([db.prepare(`
       INSERT INTO submissions (
         id, challenge_id, child_nickname, age_band, country_code, project_title, description,
@@ -452,7 +456,7 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request, 
     `).bind(
       scanId, id, demoUrl || repoUrl, demoUrl ? 'playable' : 'repository',
       demoUrl ? 'queued' : 'manual', now, now,
-    )])
+    ), ...shadowStatements])
   } catch (error) {
     if (imageKey) await uploads.delete(imageKey).catch(() => undefined)
     throw error
@@ -460,9 +464,6 @@ async function submit(db: ClubDatabase, uploads: ClubUploads, request: Request, 
   context.waitUntil(sendOwnerNotification(env, {
     kind: 'project',
     id,
-    title: projectTitle,
-    creator: `${childNickname} · age ${ageBand}`,
-    grownupEmail: parentEmail,
   }).catch((error) => console.error('Owner notification failed', error)))
   return json({ ok: true }, 201)
 }
@@ -497,9 +498,6 @@ async function submitChallengeIdea(db: ClubDatabase, request: Request, env: Env,
   context.waitUntil(sendOwnerNotification(env, {
     kind: 'idea',
     id,
-    title: ideaTitle,
-    creator: `${creatorNickname} · ${creatorGroup}`,
-    grownupEmail: grownupEmail.toLowerCase(),
   }).catch((error) => console.error('Owner notification failed', error)))
   return json({ ok: true }, 201)
 }
@@ -650,6 +648,202 @@ function safeJsonArray(value: unknown, maxLength: number) {
   return serialized.length <= maxLength ? serialized : '[]'
 }
 
+function safeRecord(value: unknown, maxLength = 40_000) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  const serialized = JSON.stringify(value)
+  return serialized.length <= maxLength ? value as Record<string, unknown> : {}
+}
+
+function allowedBooleanChecks(value: unknown) {
+  const source = safeRecord(value)
+  return Object.fromEntries(REQUIRED_GREEN_CHECKS.flatMap((key) => (
+    typeof source[key] === 'boolean' ? [[key, source[key]]] : []
+  )))
+}
+
+async function payloadHash(value: unknown) {
+  return sha256Hex(JSON.stringify(value))
+}
+
+async function initialShadowReviewStatements(db: ClubDatabase, input: {
+  submissionId: string
+  scanId: string
+  targetUrl: string
+  hasImage: boolean
+  now: string
+}) {
+  const checks: Record<string, boolean> = {
+    grownUpSubmissionPresent: true,
+    currentLegalAcceptancePresent: true,
+    playableUrlHttps: true,
+  }
+  if (!input.hasImage) {
+    checks.imageAbsentOrModerationPassed = true
+    checks.imageAbsentOrNoIdentifiableChild = true
+    checks.imageAbsentOrMetadataRemovedServerSide = true
+  }
+  const limitations = [
+    'Safety Agent, Technical Playtest, image, network, and source evidence are not complete.',
+    'Shadow mode cannot publish; a grown-up remains authoritative.',
+  ]
+  const decision = evaluateShadowReview({
+    checks,
+    evidenceKinds: ['deterministic'],
+    safetyAgent: { classification: 'yellow', limitations: [limitations[0]] },
+    technicalPlaytest: { classification: 'yellow', limitations: [limitations[0]] },
+    limitations,
+  })
+  const runId = crypto.randomUUID()
+  const decisionId = crypto.randomUUID()
+  const evidenceId = crypto.randomUUID()
+  const deterministicPayload = { checks, source: 'submission_intake', termsVersion: legalTermsVersion }
+  const empty = '{}'
+  return [
+    db.prepare(`
+      INSERT INTO review_runs (
+        id, submission_id, legacy_scan_id, legacy_attempt, target_url_hash, policy_version,
+        status, proposed_lane, deterministic_checks_json, playthrough_coverage_json,
+        network_findings_json, text_moderation_json, image_moderation_json, source_scan_json,
+        safety_agent_report_json, technical_playtest_report_json, limitations_json,
+        model_versions_json, prompt_versions_json, final_publication_state, created_at, completed_at
+      ) VALUES (?, ?, ?, 0, ?, ?, 'awaiting_evidence', ?, ?, '{}', '[]', '{}', ?, '{}', '{}', '{}', ?, '{}', '{}', 'unchanged_pending_human', ?, NULL)
+    `).bind(
+      runId, input.submissionId, input.scanId, await sha256Hex(input.targetUrl), REVIEW_POLICY_VERSION,
+      decision.proposedLane, JSON.stringify(checks),
+      JSON.stringify({ status: input.hasImage ? 'pending' : 'not_applicable' }),
+      JSON.stringify(limitations), input.now,
+    ),
+    db.prepare(`
+      INSERT INTO review_evidence (
+        id, review_run_id, evidence_kind, producer, model_version, prompt_version,
+        payload_hash, payload_json, limitations_json, created_at
+      ) VALUES (?, ?, 'deterministic', 'worker_submission_intake', NULL, 'intake-2027.1', ?, ?, ?, ?)
+    `).bind(evidenceId, runId, await payloadHash(deterministicPayload), JSON.stringify(deterministicPayload), JSON.stringify(limitations), input.now),
+    db.prepare(`
+      INSERT INTO automated_decisions (
+        id, review_run_id, policy_version, mode, proposed_lane, reason_codes_json,
+        evidence_ids_json, model_versions_json, prompt_versions_json,
+        confidence_and_limitations_json, publication_allowed, created_at
+      ) VALUES (?, ?, ?, 'shadow', ?, ?, ?, ?, ?, ?, 0, ?)
+    `).bind(
+      decisionId, runId, REVIEW_POLICY_VERSION, decision.proposedLane,
+      JSON.stringify(decision.reasonCodes), JSON.stringify([evidenceId]), empty,
+      JSON.stringify({ deterministic: 'intake-2027.1' }),
+      JSON.stringify({ confidenceIsEvidence: false, limitations }), input.now,
+    ),
+  ]
+}
+
+async function completedShadowReviewStatements(db: ClubDatabase, input: {
+  scan: { id: string; submissionId: string; targetUrl: string; attempt: number; hasImage: number; termsVersion: string; termsAccepted: number; consent: number; publicSharing: number; childLed: number }
+  body: Record<string, unknown>
+  status: string
+  screenshots: number
+  now: string
+}) {
+  const shadow = safeRecord(input.body.shadowReview)
+  const suppliedChecks = allowedBooleanChecks(shadow.checks)
+  const technicalFlags = Array.isArray(input.body.technicalFlags) ? input.body.technicalFlags : []
+  const categories = Array.isArray(input.body.categories) ? input.body.categories : []
+  const checks: Record<string, boolean> = {
+    ...suppliedChecks,
+    grownUpSubmissionPresent: Boolean(input.scan.consent && input.scan.publicSharing && input.scan.childLed),
+    currentLegalAcceptancePresent: Boolean(input.scan.termsAccepted && input.scan.termsVersion === legalTermsVersion),
+    playableUrlHttps: input.scan.targetUrl.startsWith('https://'),
+    destinationReachable: input.status !== 'failed' && input.screenshots > 0,
+    descriptionModerationPassed: categories.length === 0,
+    visibleTextAndScreensModerationPassed: categories.length === 0,
+  }
+  if (!input.scan.hasImage) {
+    checks.imageAbsentOrModerationPassed = true
+    checks.imageAbsentOrNoIdentifiableChild = true
+    checks.imageAbsentOrMetadataRemovedServerSide = true
+  }
+  const safetyAgent = safeRecord(shadow.safetyAgent)
+  const technicalPlaytest = safeRecord(shadow.technicalPlaytest)
+  const networkFindings = Array.isArray(shadow.networkFindings) ? shadow.networkFindings.slice(0, 200) : []
+  const consoleFindings = Array.isArray(shadow.consoleFindings) ? shadow.consoleFindings.slice(0, 100) : []
+  const coverage = safeRecord(shadow.coverage)
+  const sourceScan = safeRecord(shadow.sourceScan)
+  const imageModeration = input.scan.hasImage ? { status: 'missing', reason: 'Uploaded submission image was not inspected by the browser runner.' } : { status: 'not_applicable' }
+  const textModeration = { categories, screenshotsReviewed: input.screenshots }
+  const limitations = [
+    ...(Array.isArray(shadow.limitations) ? shadow.limitations.map(String).slice(0, 40) : []),
+    ...technicalFlags.map(String).slice(0, 40),
+    ...(Object.keys(sourceScan).length ? [] : ['Source inspection evidence is missing.']),
+    ...(input.scan.hasImage ? ['Uploaded image moderation and server-side metadata normalization are missing.'] : []),
+  ]
+  const evidenceKinds = ['deterministic', 'text_moderation', 'image_moderation', 'safety_agent', 'technical_playtest', 'network']
+  if (sourceScan.status === 'passed') evidenceKinds.push('source_scan')
+  const decision = evaluateShadowReview({
+    checks,
+    evidenceKinds,
+    safetyAgent,
+    technicalPlaytest,
+    limitations,
+    redSignals: Array.isArray(shadow.redSignals) ? shadow.redSignals : [],
+  })
+  const runId = crypto.randomUUID()
+  const decisionId = crypto.randomUUID()
+  const modelVersions = safeRecord(shadow.modelVersions)
+  const promptVersions = safeRecord(shadow.promptVersions)
+  const reports = [
+    ['deterministic', 'worker_shadow_coordinator', { checks }, []],
+    ['text_moderation', 'openai_moderation', textModeration, []],
+    ['image_moderation', 'worker_shadow_coordinator', imageModeration, input.scan.hasImage ? [limitations.at(-1)] : []],
+    ['safety_agent', 'safety_agent', safetyAgent, Array.isArray(safetyAgent.limitations) ? safetyAgent.limitations : []],
+    ['technical_playtest', 'technical_playtest_agent', { ...technicalPlaytest, coverage }, Array.isArray(technicalPlaytest.limitations) ? technicalPlaytest.limitations : []],
+    ['network', 'technical_playtest_agent', networkFindings, []],
+    ['console', 'technical_playtest_agent', consoleFindings, []],
+  ] as const
+  if (Object.keys(sourceScan).length) reports.push(['source_scan', 'source_scanner', sourceScan, []])
+  const evidenceRows = await Promise.all(reports.map(async ([kind, producer, payload, evidenceLimitations]) => ({
+    id: crypto.randomUUID(), kind, producer, payload, limitations: evidenceLimitations,
+    hash: await payloadHash(payload),
+  })))
+  return [
+    db.prepare(`
+      INSERT INTO review_runs (
+        id, submission_id, legacy_scan_id, legacy_attempt, target_url_hash, policy_version,
+        status, proposed_lane, deterministic_checks_json, playthrough_coverage_json,
+        network_findings_json, text_moderation_json, image_moderation_json, source_scan_json,
+        safety_agent_report_json, technical_playtest_report_json, limitations_json,
+        model_versions_json, prompt_versions_json, final_publication_state, created_at, completed_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unchanged_pending_human', ?, ?)
+    `).bind(
+      runId, input.scan.submissionId, input.scan.id, input.scan.attempt, await sha256Hex(input.scan.targetUrl),
+      REVIEW_POLICY_VERSION, input.status === 'failed' ? 'failed' : 'evaluated', decision.proposedLane,
+      JSON.stringify(checks), JSON.stringify(coverage), JSON.stringify(networkFindings),
+      JSON.stringify(textModeration), JSON.stringify(imageModeration), JSON.stringify(sourceScan),
+      JSON.stringify(safetyAgent), JSON.stringify(technicalPlaytest), JSON.stringify(limitations),
+      JSON.stringify(modelVersions), JSON.stringify(promptVersions), input.now, input.now,
+    ),
+    ...evidenceRows.map((evidence) => db.prepare(`
+      INSERT INTO review_evidence (
+        id, review_run_id, evidence_kind, producer, model_version, prompt_version,
+        payload_hash, payload_json, limitations_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      evidence.id, runId, evidence.kind, evidence.producer,
+      text(modelVersions[evidence.kind]) || null, text(promptVersions[evidence.kind]) || null,
+      evidence.hash, JSON.stringify(evidence.payload), JSON.stringify(evidence.limitations), input.now,
+    )),
+    db.prepare(`
+      INSERT INTO automated_decisions (
+        id, review_run_id, policy_version, mode, proposed_lane, reason_codes_json,
+        evidence_ids_json, model_versions_json, prompt_versions_json,
+        confidence_and_limitations_json, publication_allowed, created_at
+      ) VALUES (?, ?, ?, 'shadow', ?, ?, ?, ?, ?, ?, 0, ?)
+    `).bind(
+      decisionId, runId, REVIEW_POLICY_VERSION, decision.proposedLane,
+      JSON.stringify(decision.reasonCodes), JSON.stringify(evidenceRows.map(({ id }) => id)),
+      JSON.stringify(modelVersions), JSON.stringify(promptVersions),
+      JSON.stringify({ confidenceIsEvidence: false, limitations, missingChecks: decision.missingChecks, missingEvidence: decision.missingEvidence }),
+      input.now,
+    ),
+  ]
+}
+
 async function claimSafetyScans(db: ClubDatabase, request: Request, env: Env) {
   if (!env.SAFETY_SCAN_SECRET) return json({ error: 'Safety playthroughs are not configured.' }, 503)
   if (!isSafetyRunner(request, env)) return json({ error: 'Unauthorized' }, 401)
@@ -663,7 +857,7 @@ async function claimSafetyScans(db: ClubDatabase, request: Request, env: Env) {
   `).bind(now, stale).run()
 
   const { results } = await db.prepare(`
-    SELECT sc.id, sc.submission_id AS submissionId, sc.target_url AS targetUrl,
+    SELECT sc.id, sc.attempt, sc.submission_id AS submissionId, sc.target_url AS targetUrl,
       s.project_title AS projectTitle, s.description
     FROM safety_scans sc
     JOIN submissions s ON s.id = sc.submission_id
@@ -680,7 +874,7 @@ async function claimSafetyScans(db: ClubDatabase, request: Request, env: Env) {
     `).bind(now, now, scan.id)))
   }
 
-  return json({ scans: results })
+  return json({ scans: results.map((scan) => ({ ...scan, attempt: Number(scan.attempt || 0) + 1 })) })
 }
 
 async function recordSafetyScanResult(db: ClubDatabase, request: Request, env: Env) {
@@ -694,22 +888,41 @@ async function recordSafetyScanResult(db: ClubDatabase, request: Request, env: E
   const model = validText(body?.model, 100) || null
   const error = validText(body?.error, 1000) || null
   const screenshots = Number(body?.screenshotsReviewed)
-  if (!id || !status || !Number.isInteger(screenshots) || screenshots < 0 || screenshots > 20) {
+  const attempt = Number(body?.attempt)
+  if (!id || !status || !Number.isInteger(attempt) || attempt < 1 || !Number.isInteger(screenshots) || screenshots < 0 || screenshots > 20) {
     return json({ error: 'Invalid safety result.' }, 400)
   }
   const now = new Date().toISOString()
-  const existing = await db.prepare(`SELECT id FROM safety_scans WHERE id = ?`).bind(id).first<{ id: string }>()
-  if (!existing) return json({ error: 'Safety scan not found.' }, 404)
+  const existing = await db.prepare(`
+    SELECT sc.id, sc.submission_id AS submissionId, sc.target_url AS targetUrl, sc.attempt,
+      CASE WHEN s.image_key IS NULL OR s.image_key = '' THEN 0 ELSE 1 END AS hasImage,
+      s.terms_version AS termsVersion, s.terms_accepted AS termsAccepted,
+      s.consent, s.public_sharing AS publicSharing, s.child_led AS childLed
+    FROM safety_scans sc
+    JOIN submissions s ON s.id = sc.submission_id
+    WHERE sc.id = ? AND sc.status = 'running' AND sc.attempt = ?
+  `).bind(id, attempt).first<{
+    id: string; submissionId: string; targetUrl: string; attempt: number; hasImage: number
+    termsVersion: string; termsAccepted: number; consent: number; publicSharing: number; childLed: number
+  }>()
+  if (!existing) return json({ error: 'Safety scan is stale, already completed, or not found.' }, 409)
 
-  await db.prepare(`
+  const shadowStatements = await completedShadowReviewStatements(db, {
+    scan: existing,
+    body,
+    status,
+    screenshots,
+    now,
+  })
+  await db.batch([db.prepare(`
     UPDATE safety_scans SET status = ?, verdict = ?, summary = ?, categories = ?,
       actions = ?, technical_flags = ?, screenshots_reviewed = ?, model = ?, error = ?,
-      completed_at = ?, updated_at = ? WHERE id = ?
+      completed_at = ?, updated_at = ? WHERE id = ? AND status = 'running' AND attempt = ?
   `).bind(
     status, verdict, summary, safeJsonArray(body?.categories, 4000),
     safeJsonArray(body?.actions, 16_000), safeJsonArray(body?.technicalFlags, 4000),
-    screenshots, model, error, now, now, id,
-  ).run()
+    screenshots, model, error, now, now, id, attempt,
+  ), ...shadowStatements])
   return json({ ok: true })
 }
 
@@ -830,6 +1043,10 @@ async function reviewerSubmissions(db: ClubDatabase, request: Request) {
     LEFT JOIN safety_scans sc ON sc.submission_id = s.id
     LEFT JOIN reviewer_reviews rr ON rr.submission_id = s.id AND rr.invite_id = ?
     WHERE s.status = 'pending'
+      AND COALESCE((
+        SELECT proposed_lane FROM review_runs
+        WHERE submission_id = s.id ORDER BY created_at DESC LIMIT 1
+      ), 'yellow') != 'red'
     ORDER BY s.created_at
     LIMIT 200
   `).bind(invite.id).all<Record<string, unknown>>()
@@ -848,7 +1065,11 @@ async function reviewerSubmissionImage(db: ClubDatabase, uploads: ClubUploads, r
   const invite = await reviewerAccess(db, request, false)
   if (!invite) return new Response('Unauthorized', { status: 401 })
   const id = decodeURIComponent(new URL(request.url).pathname.split('/').pop() || '')
-  const submission = await db.prepare(`SELECT image_key AS imageKey FROM submissions WHERE id = ? AND status = 'pending'`)
+  const submission = await db.prepare(`
+    SELECT image_key AS imageKey FROM submissions s
+    WHERE id = ? AND status = 'pending'
+      AND COALESCE((SELECT proposed_lane FROM review_runs WHERE submission_id = s.id ORDER BY created_at DESC LIMIT 1), 'yellow') != 'red'
+  `)
     .bind(id).first<{ imageKey: string | null }>()
   if (!submission?.imageKey) return new Response('Image not found', { status: 404 })
   return serveUpload(uploads, submission.imageKey)
@@ -862,7 +1083,10 @@ async function reviewerReview(db: ClubDatabase, request: Request) {
   const verdict = text(body?.verdict)
   const note = text(body?.note)
   if (!submissionId || !['ready', 'concern'].includes(verdict) || note.length > 500) return json({ error: 'Invalid review.' }, 400)
-  const submission = await db.prepare(`SELECT id FROM submissions WHERE id = ? AND status = 'pending'`)
+  const submission = await db.prepare(`
+    SELECT id FROM submissions s WHERE id = ? AND status = 'pending'
+      AND COALESCE((SELECT proposed_lane FROM review_runs WHERE submission_id = s.id ORDER BY created_at DESC LIMIT 1), 'yellow') != 'red'
+  `)
     .bind(submissionId).first<{ id: string }>()
   if (!submission) return json({ error: 'This submission is no longer waiting for review.' }, 409)
   const now = new Date().toISOString()
@@ -977,6 +1201,90 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
     starterIdeas: JSON.parse(String(draft.starterIdeas || '[]')),
     tools: JSON.parse(String(draft.tools || '[]')),
   }))
+  const { results: yearChallengeRows } = await db.prepare(`
+    SELECT cv.id AS versionId, cv.challenge_id AS challengeId, cv.version, cv.kind,
+      cv.week_number AS weekNumber, cv.seasonal_arc AS seasonalArc, cv.title,
+      cv.opening_date AS openingDate, cv.submission_close_date AS submissionCloseDate,
+      cv.voting_open_date AS votingOpenDate, cv.voting_close_date AS votingCloseDate,
+      cv.status, cv.approval_gate AS approvalGate, cv.content_json AS contentJson,
+      ccp.editorial_state AS contentEditorialState
+    FROM challenge_versions cv
+    JOIN challenge_programs cp ON cp.id = cv.program_id
+    LEFT JOIN challenge_content_packages ccp ON ccp.challenge_version_id = cv.id
+    WHERE cp.year = 2027
+      AND cv.version = (SELECT MAX(newer.version) FROM challenge_versions newer WHERE newer.challenge_id = cv.challenge_id)
+    ORDER BY cv.opening_date, cv.kind
+  `).all<Record<string, unknown>>()
+  const { results: yearReviewRows } = await db.prepare(`
+    SELECT cr.challenge_version_id AS challengeVersionId, cr.review_type AS reviewType,
+      cr.verdict, cr.reviewer_kind AS reviewerKind, cr.reviewer_label AS reviewerLabel,
+      cr.notes, cr.created_at AS createdAt
+    FROM challenge_reviews cr
+    JOIN challenge_versions cv ON cv.id = cr.challenge_version_id
+    JOIN challenge_programs cp ON cp.id = cv.program_id
+    WHERE cp.year = 2027
+    ORDER BY cr.created_at
+  `).all<Record<string, unknown>>()
+  const { results: yearHistoryRows } = await db.prepare(`
+    SELECT cv.challenge_id AS challengeId, cv.id AS versionId, cv.version, cv.title,
+      cv.status, cv.created_at AS createdAt
+    FROM challenge_versions cv
+    JOIN challenge_programs cp ON cp.id = cv.program_id
+    WHERE cp.year = 2027
+    ORDER BY cv.challenge_id, cv.version DESC
+  `).all<Record<string, unknown>>()
+  const yearHistoryByChallenge = new Map<string, Record<string, unknown>[]>()
+  for (const version of yearHistoryRows) {
+    const challengeId = String(version.challengeId)
+    const list = yearHistoryByChallenge.get(challengeId) || []
+    list.push(version)
+    yearHistoryByChallenge.set(challengeId, list)
+  }
+  const yearReviewsByVersion = new Map<string, Record<string, unknown>[]>()
+  for (const review of yearReviewRows) {
+    const versionId = String(review.challengeVersionId)
+    const list = yearReviewsByVersion.get(versionId) || []
+    list.push(review)
+    yearReviewsByVersion.set(versionId, list)
+  }
+  const { results: shadowReviewRows } = await db.prepare(`
+    SELECT rr.id AS runId, rr.submission_id AS submissionId, s.project_title AS projectTitle,
+      rr.status, rr.proposed_lane AS proposedLane, rr.policy_version AS policyVersion,
+      rr.playthrough_coverage_json AS playthroughCoverage,
+      rr.network_findings_json AS networkFindings, rr.limitations_json AS limitations,
+      rr.model_versions_json AS modelVersions, rr.prompt_versions_json AS promptVersions,
+      rr.created_at AS createdAt, rr.completed_at AS completedAt,
+      ad.id AS decisionId, ad.reason_codes_json AS reasonCodes,
+      ad.confidence_and_limitations_json AS confidenceAndLimitations,
+      ad.publication_allowed AS publicationAllowed,
+      ha.human_action AS humanAction, ha.agreement, ha.override_reason AS overrideReason
+    FROM review_runs rr
+    JOIN submissions s ON s.id = rr.submission_id
+    LEFT JOIN automated_decisions ad ON ad.review_run_id = rr.id
+    LEFT JOIN human_audits ha ON ha.review_run_id = rr.id
+    ORDER BY rr.created_at DESC LIMIT 300
+  `).all<Record<string, unknown>>()
+  const latestShadowBySubmission = new Map<string, Record<string, unknown>>()
+  for (const review of shadowReviewRows) {
+    const submissionId = String(review.submissionId)
+    if (!latestShadowBySubmission.has(submissionId)) latestShadowBySubmission.set(submissionId, review)
+  }
+  const { results: operationControls } = await db.prepare(`
+    SELECT control_key AS controlKey, control_value AS controlValue, reason,
+      changed_by AS changedBy, changed_at AS changedAt
+    FROM operation_controls ORDER BY control_key
+  `).all<Record<string, unknown>>()
+  const { results: contentQueueRows } = await db.prepare(`
+    SELECT ccp.id, cv.challenge_id AS challengeId, cv.title, cv.kind,
+      ccp.editorial_state AS editorialState, ccp.publication_mode AS publicationMode,
+      ccp.scheduled_for AS scheduledFor, ccp.updated_at AS updatedAt,
+      sc.id AS socialContentId, sc.approval_state AS socialApprovalState,
+      sc.publication_mode AS socialPublicationMode
+    FROM challenge_content_packages ccp
+    JOIN challenge_versions cv ON cv.id = ccp.challenge_version_id
+    LEFT JOIN social_content sc ON sc.challenge_version_id = cv.id
+    ORDER BY cv.opening_date, cv.kind
+  `).all<Record<string, unknown>>()
 
   return json({
     siteVisits: Number(visitMetric?.value || 0),
@@ -992,6 +1300,13 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
       safetyTechnicalFlags: JSON.parse(String(item.safetyTechnicalFlags || '[]')),
       safetyScreenshotsReviewed: Number(item.safetyScreenshotsReviewed || 0),
       reviewerReviews: reviewsBySubmission.get(String(item.id)) || [],
+      shadowProposal: latestShadowBySubmission.has(String(item.id)) ? {
+        lane: latestShadowBySubmission.get(String(item.id))?.proposedLane,
+        policyVersion: latestShadowBySubmission.get(String(item.id))?.policyVersion,
+        status: latestShadowBySubmission.get(String(item.id))?.status,
+        reasonCodes: JSON.parse(String(latestShadowBySubmission.get(String(item.id))?.reasonCodes || '[]')),
+        limitations: JSON.parse(String(latestShadowBySubmission.get(String(item.id))?.limitations || '[]')),
+      } : null,
     })),
     ideas,
     subscribers,
@@ -999,6 +1314,26 @@ async function adminDashboard(db: ClubDatabase, request: Request, env: Env) {
     reviewerInvites,
     activity,
     challengeDrafts,
+    yearProgram: yearChallengeRows.map((challenge) => ({
+      ...challenge,
+      content: JSON.parse(String(challenge.contentJson || '{}')),
+      contentJson: undefined,
+      reviews: yearReviewsByVersion.get(String(challenge.versionId)) || [],
+      history: yearHistoryByChallenge.get(String(challenge.challengeId)) || [],
+    })),
+    shadowReviews: shadowReviewRows.map((review) => ({
+      ...review,
+      publicationAllowed: Boolean(review.publicationAllowed),
+      playthroughCoverage: JSON.parse(String(review.playthroughCoverage || '{}')),
+      networkFindings: JSON.parse(String(review.networkFindings || '[]')),
+      limitations: JSON.parse(String(review.limitations || '[]')),
+      modelVersions: JSON.parse(String(review.modelVersions || '{}')),
+      promptVersions: JSON.parse(String(review.promptVersions || '{}')),
+      reasonCodes: JSON.parse(String(review.reasonCodes || '[]')),
+      confidenceAndLimitations: JSON.parse(String(review.confidenceAndLimitations || '{}')),
+    })),
+    operationControls,
+    contentQueue: contentQueueRows,
     safetyScannerEnabled: Boolean(env.SAFETY_SCAN_SECRET),
     schedule: {
       now,
@@ -1136,6 +1471,211 @@ async function adminUpdateChallengeDraft(db: ClubDatabase, request: Request, env
   return json({ ok: true })
 }
 
+async function adminDuplicateYearChallenge(db: ClubDatabase, request: Request, env: Env) {
+  if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
+  const parts = new URL(request.url).pathname.split('/').filter(Boolean)
+  const duplicateOnly = parts.at(-1) === 'duplicate'
+  const versionId = decodeURIComponent(parts.at(duplicateOnly ? -2 : -1) || '')
+  if (!versionId) return json({ error: 'Challenge version not found.' }, 404)
+  const source = await db.prepare(`
+    SELECT cv.*, ccp.package_json AS packageJson, sc.content_json AS socialJson
+    FROM challenge_versions cv
+    LEFT JOIN challenge_content_packages ccp ON ccp.challenge_version_id = cv.id
+    LEFT JOIN social_content sc ON sc.challenge_version_id = cv.id
+    WHERE cv.id = ?
+  `).bind(versionId).first<Record<string, unknown>>()
+  if (!source) return json({ error: 'Challenge version not found.' }, 404)
+  const latest = await db.prepare(`SELECT MAX(version) AS version FROM challenge_versions WHERE challenge_id = ?`)
+    .bind(source.challenge_id).first<{ version: number }>()
+  const nextVersion = Number(latest?.version || 0) + 1
+  const nextId = `${source.challenge_id}-v${nextVersion}`
+  const now = new Date().toISOString()
+  const content = JSON.parse(String(source.content_json || '{}')) as Record<string, unknown>
+  let title = String(source.title)
+  if (!duplicateOnly) {
+    const body = await request.json().catch(() => null) as Record<string, unknown> | null
+    const revisedTitle = validText(body?.title, 100, 3)
+    const prompt = validText(body?.prompt, 400, 10)
+    const fullBrief = validText(body?.fullBrief, 2400, 30)
+    const sparkBrief = validText(body?.sparkBrief, 1200, 10)
+    const buildBrief = validText(body?.buildBrief, 1200, 10)
+    const glowUpBrief = validText(body?.glowUpBrief, 1200, 10)
+    const parentNote = validText(body?.parentNote, 1800, 20)
+    const makeItYoursQuestion = validText(body?.makeItYoursQuestion, 500, 10)
+    const prePublishSafetyCheck = validText(body?.prePublishSafetyCheck, 1200, 20)
+    const reflectionQuestion = validText(body?.reflectionQuestion, 500, 10)
+    if (!revisedTitle || !prompt || !fullBrief || !sparkBrief || !buildBrief || !glowUpBrief || !parentNote || !makeItYoursQuestion || !prePublishSafetyCheck || !reflectionQuestion) {
+      return json({ error: 'Complete every Challenge Studio field within its length limit.' }, 400)
+    }
+    title = revisedTitle
+    content.title = revisedTitle
+    content.prompt = prompt
+    content.fullBrief = fullBrief
+    content.pathways = {
+      spark: { name: 'Spark', brief: sparkBrief },
+      build: { name: 'Build', brief: buildBrief },
+      glowUp: { name: 'Glow-Up', brief: glowUpBrief },
+    }
+    content.parentNote = parentNote
+    content.makeItYoursQuestion = makeItYoursQuestion
+    content.prePublishSafetyCheck = prePublishSafetyCheck
+    content.reflectionQuestion = reflectionQuestion
+  }
+  content.version = nextVersion
+  content.status = 'draft'
+  const packageJson = JSON.parse(String(source.packageJson || '{}')) as Record<string, unknown>
+  packageJson.website = content.fullBrief
+  packageJson.needsEditorialRefresh = !duplicateOnly
+  packageJson.sourceVersion = nextVersion
+  const socialJson = JSON.parse(String(source.socialJson || '{}')) as Record<string, unknown>
+  socialJson.needsEditorialRefresh = !duplicateOnly
+  socialJson.sourceVersion = nextVersion
+  const pendingReviews = ['curriculum', 'age_fit', 'accessibility', 'inclusion']
+  await db.batch([
+    db.prepare(`
+      INSERT INTO challenge_versions (
+        id, program_id, challenge_id, version, kind, week_number, seasonal_arc, title,
+        opening_date, submission_close_date, voting_open_date, voting_close_date,
+        status, approval_gate, content_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)
+    `).bind(
+      nextId, source.program_id, source.challenge_id, nextVersion, source.kind,
+      source.week_number, source.seasonal_arc, title, source.opening_date,
+      source.submission_close_date, source.voting_open_date, source.voting_close_date,
+      source.approval_gate, JSON.stringify(content), now,
+    ),
+    db.prepare(`
+      INSERT INTO challenge_content_packages (
+        id, challenge_version_id, version, editorial_state, publication_mode,
+        package_json, approved_by, scheduled_for, published_at, verified_at, created_at, updated_at
+      ) VALUES (?, ?, ?, 'draft', 'dry_run', ?, NULL, NULL, NULL, NULL, ?, ?)
+    `).bind(`content-${source.challenge_id}-v${nextVersion}`, nextId, nextVersion, JSON.stringify(packageJson), now, now),
+    db.prepare(`
+      INSERT INTO social_content (
+        id, challenge_version_id, channel, content_type, content_json, approval_state,
+        publication_mode, scheduled_for, created_at, updated_at
+      ) VALUES (?, ?, 'adult-organic', 'weekly-package', ?, 'draft', 'dry_run', NULL, ?, ?)
+    `).bind(`social-${source.challenge_id}-v${nextVersion}`, nextId, JSON.stringify(socialJson), now, now),
+    ...pendingReviews.map((reviewType) => db.prepare(`
+      INSERT INTO challenge_reviews (
+        id, challenge_version_id, review_type, verdict, reviewer_kind,
+        reviewer_label, notes, evidence_json, created_at
+      ) VALUES (?, ?, ?, 'pending', 'human', 'unassigned', 'New private version requires fresh review.', '[]', ?)
+    `).bind(`${nextId}-${reviewType}`, nextId, reviewType, now)),
+    db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'challenge_version', ?, ?, ?)`)
+      .bind(crypto.randomUUID(), nextId, duplicateOnly ? 'duplicated_private_draft' : 'revised_private_draft', now),
+  ])
+  return json({ ok: true, versionId: nextId, version: nextVersion }, 201)
+}
+
+async function adminReviewContentPackage(db: ClubDatabase, request: Request, env: Env) {
+  if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
+  const id = decodeURIComponent(new URL(request.url).pathname.split('/').pop() || '')
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null
+  const action = text(body?.action)
+  if (!id || !['curriculum-review', 'safety-review', 'approve', 'reset'].includes(action)) return json({ error: 'Invalid content review action.' }, 400)
+  const item = await db.prepare(`
+    SELECT ccp.id, ccp.editorial_state AS editorialState, sc.id AS socialContentId
+    FROM challenge_content_packages ccp
+    LEFT JOIN social_content sc ON sc.challenge_version_id = ccp.challenge_version_id
+    WHERE ccp.id = ?
+  `).bind(id).first<{ id: string; editorialState: string; socialContentId: string | null }>()
+  if (!item) return json({ error: 'Content package not found.' }, 404)
+  const transitions: Record<string, { from: string[]; editorial: string; social: string }> = {
+    'curriculum-review': { from: ['draft'], editorial: 'curriculum_reviewed', social: 'reviewed' },
+    'safety-review': { from: ['curriculum_reviewed'], editorial: 'safety_accuracy_reviewed', social: 'reviewed' },
+    approve: { from: ['safety_accuracy_reviewed'], editorial: 'approved', social: 'approved' },
+    reset: { from: ['draft', 'curriculum_reviewed', 'safety_accuracy_reviewed', 'approved'], editorial: 'draft', social: 'draft' },
+  }
+  const transition = transitions[action]
+  if (!transition.from.includes(item.editorialState)) return json({ error: `Cannot ${action} from ${item.editorialState}.` }, 409)
+  const now = new Date().toISOString()
+  const statements = [
+    db.prepare(`UPDATE challenge_content_packages SET editorial_state = ?, approved_by = ?, updated_at = ? WHERE id = ?`)
+      .bind(transition.editorial, action === 'approve' ? 'clubhouse_admin' : null, now, id),
+    db.prepare(`UPDATE social_content SET approval_state = ?, updated_at = ? WHERE id = ?`)
+      .bind(transition.social, now, item.socialContentId),
+    db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'content_package', ?, ?, ?)`)
+      .bind(crypto.randomUUID(), id, action, now),
+  ]
+  if (item.socialContentId && ['approve', 'reset'].includes(action)) {
+    statements.push(db.prepare(`
+      INSERT INTO social_approvals (id, social_content_id, decision, approver_label, reason, created_at)
+      VALUES (?, ?, ?, 'clubhouse_admin', ?, ?)
+    `).bind(
+      crypto.randomUUID(), item.socialContentId,
+      action === 'approve' ? 'approved' : 'changes_requested',
+      action === 'approve' ? 'Approved only for the dry-run queue; no account or publication authority is connected.' : 'Returned to draft.',
+      now,
+    ))
+  }
+  await db.batch(statements)
+  return json({ ok: true, editorialState: transition.editorial, publicationMode: 'dry_run' })
+}
+
+async function adminScheduleYearChallenge(db: ClubDatabase, request: Request, env: Env) {
+  if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
+  const parts = new URL(request.url).pathname.split('/').filter(Boolean)
+  const versionId = decodeURIComponent(parts.at(-2) || '')
+  const source = await db.prepare(`
+    SELECT cv.*, ccp.editorial_state AS editorialState
+    FROM challenge_versions cv
+    JOIN challenge_content_packages ccp ON ccp.challenge_version_id = cv.id
+    WHERE cv.id = ?
+      AND cv.version = (SELECT MAX(newer.version) FROM challenge_versions newer WHERE newer.challenge_id = cv.challenge_id)
+  `).bind(versionId).first<Record<string, unknown>>()
+  if (!source) return json({ error: 'Only the latest challenge version can be scheduled.' }, 404)
+  if (source.kind !== 'primary') return json({ error: 'Bonus scheduling needs its own inclusion-reviewed public surface and is not supported here.' }, 409)
+  if (source.status !== 'draft' || source.editorialState !== 'approved') {
+    return json({ error: 'The latest private draft needs an approved dry-run content package before scheduling.' }, 409)
+  }
+  const now = new Date().toISOString()
+  if (String(source.opening_date) <= now) return json({ error: 'A challenge cannot be scheduled after its opening time.' }, 409)
+  const conflict = await db.prepare(`
+    SELECT id, title FROM challenges
+    WHERE (opens_at < ? AND closes_at > ?)
+       OR (voting_opens_at < ? AND voting_closes_at > ?)
+    LIMIT 1
+  `).bind(
+    source.submission_close_date, source.opening_date,
+    source.voting_close_date, source.voting_open_date,
+  ).first<{ id: string; title: string }>()
+  if (conflict) return json({ error: `Schedule conflict with “${conflict.title}” (${conflict.id}).` }, 409)
+  const content = JSON.parse(String(source.content_json || '{}')) as Record<string, unknown>
+  const starterIdeas = Array.isArray(content.starterIdeas) ? content.starterIdeas : []
+  const tools = Array.isArray(content.recommendedTools) ? content.recommendedTools : []
+  const weekNumber = Number(source.week_number)
+  await db.batch([
+    db.prepare(`
+      INSERT INTO challenges (
+        id, week_label, title, eyebrow, prompt, brief, opens_at, closes_at,
+        voting_opens_at, voting_closes_at, status, starter_ideas, tools
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', ?, ?)
+    `).bind(
+      source.challenge_id, `2027 Week ${String(weekNumber).padStart(2, '0')}`, source.title,
+      text(content.eyebrow) || `2027 creative coding · week ${String(weekNumber).padStart(2, '0')}`,
+      content.prompt, content.fullBrief, source.opening_date, source.submission_close_date,
+      source.voting_open_date, source.voting_close_date, JSON.stringify(starterIdeas), JSON.stringify(tools),
+    ),
+    db.prepare(`UPDATE challenge_versions SET status = 'scheduled' WHERE id = ?`).bind(versionId),
+    db.prepare(`
+      UPDATE challenge_content_packages
+      SET editorial_state = 'scheduled', scheduled_for = ?, updated_at = ?
+      WHERE challenge_version_id = ?
+    `).bind(source.opening_date, now, versionId),
+    db.prepare(`
+      INSERT INTO challenge_reviews (
+        id, challenge_version_id, review_type, verdict, reviewer_kind,
+        reviewer_label, notes, evidence_json, created_at
+      ) VALUES (?, ?, 'human_steward', 'approved', 'human', 'clubhouse_admin',
+        'Human Steward approved this exact version and schedule. Merge/deploy approval remains separate.', '[]', ?)
+    `).bind(`${versionId}-human-steward-${crypto.randomUUID()}`, versionId, now),
+    db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'challenge_version', ?, 'scheduled_by_human_steward', ?)`)
+      .bind(crypto.randomUUID(), versionId, now),
+  ])
+  return json({ ok: true, challengeId: source.challenge_id, scheduledFor: source.opening_date })
+}
+
 async function adminQueueSafetyScan(db: ClubDatabase, request: Request, env: Env) {
   if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
   if (!env.SAFETY_SCAN_SECRET) return json({ error: 'Connect the safety runner before starting a playthrough.' }, 503)
@@ -1161,6 +1701,39 @@ async function adminQueueSafetyScan(db: ClubDatabase, request: Request, env: Env
   return json({ ok: true })
 }
 
+async function latestShadowDecision(db: ClubDatabase, submissionId: string) {
+  return db.prepare(`
+    SELECT rr.id AS runId, ad.id AS decisionId, ad.proposed_lane AS proposedLane
+    FROM automated_decisions ad
+    JOIN review_runs rr ON rr.id = ad.review_run_id
+    WHERE rr.submission_id = ?
+    ORDER BY ad.created_at DESC LIMIT 1
+  `).bind(submissionId).first<{ runId: string; decisionId: string; proposedLane: 'green' | 'yellow' | 'red' }>()
+}
+
+function shadowAgreement(lane: 'green' | 'yellow' | 'red', humanAction: 'approved' | 'rejected') {
+  if (humanAction === 'approved') return lane === 'green' ? 'agreed' : 'disagreed'
+  if (lane === 'red') return 'agreed'
+  return lane === 'green' ? 'disagreed' : 'not_comparable'
+}
+
+function humanAuditStatements(db: ClubDatabase, shadow: { runId: string; decisionId: string; proposedLane: 'green' | 'yellow' | 'red' } | null, humanAction: 'approved' | 'rejected', reason: string | null, now: string) {
+  if (!shadow) return []
+  const finalState = humanAction === 'approved' ? 'human_approved' : 'human_rejected'
+  return [
+    db.prepare(`
+      INSERT INTO human_audits (
+        id, review_run_id, automated_decision_id, human_action, agreement,
+        override_reason, auditor_label, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, 'clubhouse_admin', ?)
+    `).bind(
+      crypto.randomUUID(), shadow.runId, shadow.decisionId, humanAction,
+      shadowAgreement(shadow.proposedLane, humanAction), reason, now,
+    ),
+    db.prepare(`UPDATE review_runs SET final_publication_state = ? WHERE id = ?`).bind(finalState, shadow.runId),
+  ]
+}
+
 async function adminModerate(db: ClubDatabase, request: Request, env: Env) {
   if (!await isAdmin(request, env)) return json({ error: 'Unauthorized' }, 401)
   const body = await request.json().catch(() => null) as Record<string, unknown> | null
@@ -1168,10 +1741,12 @@ async function adminModerate(db: ClubDatabase, request: Request, env: Env) {
   const id = validText(body?.id, 100)
   const action = text(body?.action)
   const safetyOverride = body?.safetyOverride === true
+  const decisionReason = validText(body?.decisionReason, 500, 10)
   if (!id) return json({ error: 'Invalid moderation request' }, 400)
   const now = new Date().toISOString()
 
   if (type === 'submission' && action === 'approve') {
+    const shadow = await latestShadowDecision(db, id)
     const submission = await db.prepare(`
       SELECT id, challenge_id AS challengeId, child_nickname AS childNickname,
         age_band AS ageBand, country_code AS countryCode, project_title AS projectTitle, description,
@@ -1186,6 +1761,9 @@ async function adminModerate(db: ClubDatabase, request: Request, env: Env) {
       .bind(id).first<{ status: string }>()
     if (env.SAFETY_SCAN_SECRET && scan?.status !== 'passed' && !safetyOverride) {
       return json({ error: 'This project needs a passed AI playthrough or an explicit grown-up safety override.' }, 409)
+    }
+    if ((safetyOverride || (shadow && shadow.proposedLane !== 'green')) && !decisionReason) {
+      return json({ error: 'Record a grown-up reason before overriding a safety or shadow recommendation.' }, 409)
     }
     const scenes = ['space', 'ocean', 'garden', 'monster']
     const accents = ['#b9f44a', '#65d9ff', '#ffb3c7', '#ffcb45']
@@ -1209,16 +1787,22 @@ async function adminModerate(db: ClubDatabase, request: Request, env: Env) {
       db.prepare(`UPDATE submissions SET status = 'approved' WHERE id = ?`).bind(id),
       db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'submission', ?, ?, ?)`)
         .bind(crypto.randomUUID(), id, safetyOverride ? 'approved_safety_override' : 'approved', now),
+      ...humanAuditStatements(db, shadow, 'approved', decisionReason, now),
     ])
     return json({ ok: true })
   }
 
   if (type === 'submission' && action === 'reject') {
+    const shadow = await latestShadowDecision(db, id)
+    if (shadow?.proposedLane === 'green' && !decisionReason) {
+      return json({ error: 'Record a grown-up reason before overriding a green shadow proposal.' }, 409)
+    }
     await db.batch([
       db.prepare(`UPDATE submissions SET status = 'rejected' WHERE id = ?`).bind(id),
       db.prepare(`UPDATE projects SET status = 'hidden' WHERE id = ?`).bind(`community-${id}`),
       db.prepare(`INSERT INTO moderation_events (id, item_type, item_id, action, created_at) VALUES (?, 'submission', ?, 'rejected', ?)`)
         .bind(crypto.randomUUID(), id, now),
+      ...humanAuditStatements(db, shadow, 'rejected', decisionReason, now),
     ])
     return json({ ok: true })
   }
@@ -1283,6 +1867,10 @@ export default {
       if (request.method === 'GET' && url.pathname.startsWith('/api/admin/submission-images/')) return adminSubmissionImage(env.DB, env.UPLOADS, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/submission-images/')) return adminUploadSubmissionImage(env.DB, env.UPLOADS, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/challenge-drafts/')) return adminUpdateChallengeDraft(env.DB, request, env)
+      if (request.method === 'POST' && url.pathname.startsWith('/api/admin/year-challenges/') && url.pathname.endsWith('/duplicate')) return adminDuplicateYearChallenge(env.DB, request, env)
+      if (request.method === 'POST' && url.pathname.startsWith('/api/admin/year-challenges/') && url.pathname.endsWith('/schedule')) return adminScheduleYearChallenge(env.DB, request, env)
+      if (request.method === 'POST' && url.pathname.startsWith('/api/admin/year-challenges/')) return adminDuplicateYearChallenge(env.DB, request, env)
+      if (request.method === 'POST' && url.pathname.startsWith('/api/admin/content-packages/')) return adminReviewContentPackage(env.DB, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/challenges/')) return adminUpdateChallenge(env.DB, request, env)
       if (request.method === 'POST' && url.pathname.startsWith('/api/admin/safety-scans/')) return adminQueueSafetyScan(env.DB, request, env)
       if (request.method === 'POST' && url.pathname === '/api/admin/moderate') return adminModerate(env.DB, request, env)
