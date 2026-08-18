@@ -44,11 +44,11 @@ See `OPEN_QUESTIONS.md`: public-source secrecy, verifiable parental consent, ret
 
 ## Risks and blockers
 
-No branch/PR blocker. GitHub reports the new draft PR open; its checks and independent review remain unverified. Production activation remains blocked by target migration/staging evidence, legal/privacy review, Human Steward decisions, cultural approvals, and provider/channel policies. Ordinary external demos and images cannot satisfy the current green evidence requirements.
+No branch/PR blocker. GitHub reports the new draft PR open, but returned no workflow runs or commit statuses for the head at the final check; CI coverage and independent review therefore remain unverified. Production activation remains blocked by target migration/staging evidence, legal/privacy review, Human Steward decisions, cultural approvals, and provider/channel policies. Ordinary external demos and images cannot satisfy the current green evidence requirements.
 
 ## Next justified action
 
-Review draft PR #1 CI and independent feedback. Before any deploy, capture a read-only production D1 schema/migration inventory and exercise migrations plus Admin/submission/reviewer flows in staging with synthetic/adversarial fixtures.
+Obtain independent review of draft PR #1 and determine whether repository CI should be configured for the existing `npm run check` gate. Before any deploy, capture a read-only production D1 schema/migration inventory and exercise migrations plus Admin/submission/reviewer flows in staging with synthetic/adversarial fixtures.
 
 ## Human approval needed
 
