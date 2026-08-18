@@ -8,7 +8,7 @@ Build the complete private-draft 2027 challenge program and the first reversible
 
 ## Current truthful state
 
-Implementation is checked and published for review on `agent/year-round-challenges-and-agent-operations` from baseline `6345f35`. Draft PR [#1](https://github.com/amyleesterling/kids-who-vibecode/pull/1) is open at remote commit `079884f` (the content-equivalent local commit is `8f64689`). The branch contains the complete 2027 private-application draft curriculum, additive operational sidecar, versioned Admin workflow, review shadow mode, dry-run editorial queue, tests, policies, and handoff. No production state, deployment, live account, public post/email, automatic publication, campaign, spending, legal terms, or private/production data changed.
+Implementation is checked and published for review on `agent/year-round-challenges-and-agent-operations` from baseline `6345f35`. Draft PR [#1](https://github.com/amyleesterling/kids-who-vibecode/pull/1) is open; implementation commit `079884f` is followed only by handoff-state updates (the content-equivalent local implementation commit is `8f64689`). The branch contains the complete 2027 private-application draft curriculum, additive operational sidecar, versioned Admin workflow, review shadow mode, dry-run editorial queue, tests, policies, and handoff. No production state, deployment, live account, public post/email, automatic publication, campaign, spending, legal terms, or private/production data changed.
 
 ## What changed most recently
 

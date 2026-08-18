@@ -27,7 +27,7 @@ Append concise session records. Do not rewrite older entries.
 
 ### Publication handoff
 
-- Published: branch `agent/year-round-challenges-and-agent-operations` at remote commit `079884f`; opened draft PR [#1](https://github.com/amyleesterling/kids-who-vibecode/pull/1). The content-equivalent local commit is `8f64689` because the connected GitHub publisher created the remote commit object.
+- Published: implementation commit `079884f` plus handoff-state follow-ups on branch `agent/year-round-challenges-and-agent-operations`; opened draft PR [#1](https://github.com/amyleesterling/kids-who-vibecode/pull/1). The content-equivalent local implementation commit is `8f64689` because the connected GitHub publisher created the remote commit object.
 - Evidence checked before publication: clean intentional diff; `git diff --cached --check`; complete `npm run check` gate described above; GitHub confirmed 41 changed files, 3,285 additions, 42 deletions, draft state, and the expected base/head.
 - Environment: local scratch checkout for implementation/tests; connected GitHub repository for branch, commit, and draft PR creation. No deployment or target D1 access occurred.
 - Unverified: GitHub CI/check results, independent review, production D1 inventory, staging behavior, and real-submission shadow performance.
