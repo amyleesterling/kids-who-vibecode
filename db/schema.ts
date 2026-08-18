@@ -1,6 +1,8 @@
 import type { ClubDatabase } from '../worker/index'
 import { scheduledChallenges } from './challenges'
 import { challengeDraftSeeds } from './challengeDrafts'
+import { yearRoundSchemaStatements } from './yearRoundSchema.mjs'
+import { seedYearRoundOperations } from './yearRoundSeeds.mjs'
 
 export const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS challenges (
@@ -191,6 +193,7 @@ export const schemaStatements = [
   `CREATE INDEX IF NOT EXISTS moderation_events_item_idx ON moderation_events (item_type, item_id, created_at)`,
   `CREATE INDEX IF NOT EXISTS safety_scans_status_updated_idx ON safety_scans (status, updated_at)`,
   `CREATE INDEX IF NOT EXISTS challenges_schedule_idx ON challenges (opens_at, closes_at, voting_opens_at, voting_closes_at)`,
+  ...yearRoundSchemaStatements,
 ]
 
 export async function ensureDatabase(db: ClubDatabase) {
@@ -230,4 +233,5 @@ export async function seedDatabase(db: ClubDatabase) {
       ELSE 'closed'
     END
   `).bind(now, now, now).run()
+  await seedYearRoundOperations(db)
 }

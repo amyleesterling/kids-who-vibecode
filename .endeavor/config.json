@@ -1,0 +1,27 @@
+{
+  "protocol": "endeavor-protocol",
+  "protocol_version": "0.1.0-alpha.1",
+  "project_name": "Vibe Code Kids Year-Round Challenge and Agentic Operations",
+  "profiles": [
+    "discovery",
+    "delivery",
+    "audit",
+    "communications",
+    "operations",
+    "synthesis"
+  ],
+  "requested_mode": "auto",
+  "created_at": "2026-08-18T18:08:05.265667+00:00",
+  "generated_files": [
+    "AGENT_ENTRY.md",
+    "PROJECT.md",
+    "WORKPLAN.md",
+    "DECISIONS.md",
+    "EVIDENCE.md",
+    "OPEN_QUESTIONS.md",
+    "RISKS.md",
+    "RUN_LOG.md",
+    "HANDOFF.md"
+  ],
+  "status": "initialized"
+}

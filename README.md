@@ -97,7 +97,7 @@ See **[TODO.md](TODO.md)** for launch follow-ups, including verified adult email
 
 ## Weekly email delivery
 
-Signups are stored immediately in D1. The Monday 9:00 a.m. Eastern delivery schedule is enabled through `.github/workflows/weekly-challenge-email.yml` and authenticated with `NEWSLETTER_CRON_SECRET`. Actual email delivery begins after the sending domain is verified and these production values are added:
+Signups are stored immediately in D1. The workflow currently runs Mondays at 13:00 UTC—9:00 a.m. Eastern during daylight time and 8:00 a.m. during standard time—and is authenticated with `NEWSLETTER_CRON_SECRET`. A timezone-aware 9:00 a.m. Eastern scheduler remains an operations follow-up. Actual email delivery begins after the sending domain is verified and these production values are added:
 
 - `NEWSLETTER_CRON_SECRET` — the same long random secret used by GitHub Actions
 - `RESEND_API_KEY` — a Resend API key for the verified sending domain
@@ -107,7 +107,7 @@ The sender reads the active challenge directly from D1, uses idempotency protect
 
 ## Clubhouse owner alerts
 
-Set `OWNER_NOTIFICATION_EMAIL` in the production site environment to receive a short email when a new project or challenge idea enters the moderation queue. Alerts contain only the submission type, time, and a link to Clubhouse Admin; child nicknames, project copy, and grown-up contact details stay out of the notification service. Delivery uses FormSubmit's free email endpoint. The first alert asks the owner to confirm the recipient address before later alerts are delivered.
+Set `OWNER_NOTIFICATION_EMAIL` in the production site environment to receive a short email when a new project or challenge idea enters the moderation queue. Alerts contain only the submission type, time, private record ID, and a link to Clubhouse Admin; child nicknames, project copy, and grown-up contact details stay out of the notification service. Delivery uses the configured Resend account and verified `NEWSLETTER_FROM_EMAIL` sender.
 
 ## Build
 
